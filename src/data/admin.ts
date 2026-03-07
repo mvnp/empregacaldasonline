@@ -225,6 +225,17 @@ export function getTipoAtividadeIcon(tipo: AtividadeRecente['tipo']) {
     }
 }
 
+export function getStatusCandidaturaColor(status: string) {
+    switch (status) {
+        case 'aprovado': return { bg: '#e8f5e9', color: '#2e7d32', label: 'Aprovado' }
+        case 'recusado': return { bg: '#ffebee', color: '#c62828', label: 'Recusado' }
+        case 'entrevista': return { bg: '#e3f2fd', color: '#1565c0', label: 'Entrevista' }
+        case 'em_analise': return { bg: '#fff3e0', color: '#e65100', label: 'Em Análise' }
+        case 'pendente': return { bg: '#f3e8ff', color: '#7c3aed', label: 'Pendente' }
+        default: return { bg: '#e8ecf5', color: '#09355F', label: status }
+    }
+}
+
 // ── Detalhe do Candidato (currículo completo) ────
 export interface ExperienciaProfissional {
     id: number

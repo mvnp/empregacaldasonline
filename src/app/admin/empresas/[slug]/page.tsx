@@ -3,12 +3,18 @@
 import { use } from 'react'
 import Link from 'next/link'
 import {
-    ArrowLeft, MapPin, Building2, Briefcase, Calendar, Users,
-    Mail, Phone, Globe, Linkedin, Award, Gift, ExternalLink,
-    FileText, Eye, Shield
+    MapPin, Building2, Briefcase, Calendar, Users,
+    Mail, Phone, Globe, Linkedin, Award, Gift,
+    Shield
 } from 'lucide-react'
 import { getEmpresaDetalhe, getStatusColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
+import DetailSection from '@/components/admin/DetailSection'
+import DetailInfoRow from '@/components/admin/DetailInfoRow'
+import DetailMiniInfo from '@/components/admin/DetailMiniInfo'
+import BackButton from '@/components/admin/BackButton'
+import TagBadge from '@/components/admin/TagBadge'
+import { FileText } from 'lucide-react'
 
 function getPlanoStyle(plano: string) {
     switch (plano) {
@@ -16,18 +22,6 @@ function getPlanoStyle(plano: string) {
         case 'profissional': return { bg: 'linear-gradient(135deg, #2AB9C0, #09355F)', color: '#fff', label: 'Profissional' }
         default: return { bg: '#f0f4f8', color: '#64748b', label: 'Gratuito' }
     }
-}
-
-const sectionStyle: React.CSSProperties = {
-    background: '#fff', borderRadius: 14, border: '1.5px solid #e8edf5',
-    overflow: 'hidden', marginBottom: '1.25rem',
-}
-const sectionHeaderStyle: React.CSSProperties = {
-    padding: '1rem 1.5rem', borderBottom: '1.5px solid #e8edf5',
-    display: 'flex', alignItems: 'center', gap: '0.5rem',
-}
-const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '0.95rem', fontWeight: 800, color: '#09355F', margin: 0,
 }
 
 export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -53,24 +47,14 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
             <AdminPageHeader
                 titulo={empresa.nome}
                 subtitulo={`${empresa.setor} · ${empresa.local}`}
-                acao={
-                    <Link href="/admin/empresas" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                        padding: '0.6rem 1.1rem', borderRadius: 10, fontSize: '0.82rem', fontWeight: 600,
-                        color: '#09355F', background: '#09355F0a', border: '1.5px solid #09355F14',
-                        textDecoration: 'none',
-                    }}>
-                        <ArrowLeft style={{ width: 15, height: 15 }} /> Voltar
-                    </Link>
-                }
+                acao={<BackButton href="/admin/empresas" />}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem', alignItems: 'start' }} className="admin-main-grid">
 
                 {/* ── Sidebar ── */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    {/* Card principal */}
-                    <div style={sectionStyle}>
+                    <DetailSection semHeader>
                         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
                             <div style={{
                                 width: 80, height: 80, borderRadius: 20, margin: '0 auto 1rem',
@@ -101,11 +85,11 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
                         </div>
 
                         <div style={{ borderTop: '1px solid #f0f4f8', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            <ContactRow icon={Mail} label={empresa.email} />
-                            <ContactRow icon={Phone} label={empresa.telefone} />
-                            <ContactRow icon={MapPin} label={empresa.endereco} />
-                            <ContactRow icon={FileText} label={`CNPJ: ${empresa.cnpj}`} />
-                            <ContactRow icon={Calendar} label={`Fundada em ${empresa.fundacao}`} />
+                            <DetailInfoRow icon={Mail} label={empresa.email} />
+                            <DetailInfoRow icon={Phone} label={empresa.telefone} />
+                            <DetailInfoRow icon={MapPin} label={empresa.endereco} />
+                            <DetailInfoRow icon={FileText} label={`CNPJ: ${empresa.cnpj}`} />
+                            <DetailInfoRow icon={Calendar} label={`Fundada em ${empresa.fundacao}`} />
                         </div>
 
                         <div style={{ borderTop: '1px solid #f0f4f8', padding: '1rem 1.5rem', display: 'flex', gap: '0.5rem' }}>
@@ -124,42 +108,22 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
                                 <Linkedin style={{ width: 14, height: 14 }} /> LinkedIn
                             </a>
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Stats rápidos */}
-                    <div style={sectionStyle}>
+                    <DetailSection semHeader>
                         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <MiniInfo icon={Briefcase} label="Vagas Ativas" value={String(empresa.vagasAtivas)} />
-                            <MiniInfo icon={Users} label="Funcionários" value={empresa.totalFuncionarios} />
-                            <MiniInfo icon={Award} label="Plano" value={planoStyle.label} />
-                            <MiniInfo icon={Calendar} label="Cadastro" value={empresa.dataCadastro} />
+                            <DetailMiniInfo icon={Briefcase} label="Vagas Ativas" value={String(empresa.vagasAtivas)} />
+                            <DetailMiniInfo icon={Users} label="Funcionários" value={empresa.totalFuncionarios} />
+                            <DetailMiniInfo icon={Award} label="Plano" value={planoStyle.label} />
+                            <DetailMiniInfo icon={Calendar} label="Cadastro" value={empresa.dataCadastro} />
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Tecnologias */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Shield style={{ width: 16, height: 16, color: '#2AB9C0' }} />
-                            <h3 style={{ ...sectionTitleStyle, fontSize: '0.88rem' }}>Tecnologias</h3>
-                        </div>
-                        <div style={{ padding: '1rem 1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                            {empresa.tecnologiasUsadas.map(t => (
-                                <span key={t} style={{
-                                    padding: '4px 12px', borderRadius: 9999, fontSize: '0.75rem', fontWeight: 600,
-                                    background: '#09355F0a', color: '#09355F', border: '1px solid #09355F14',
-                                }}>
-                                    {t}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
+                    <DetailSection icon={() => <Shield style={{ width: 16, height: 16, color: '#2AB9C0' }} />} titulo="Tecnologias">
+                        <TagBadge items={empresa.tecnologiasUsadas} />
+                    </DetailSection>
 
-                    {/* Benefícios */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Gift style={{ width: 16, height: 16, color: '#FBBF53' }} />
-                            <h3 style={{ ...sectionTitleStyle, fontSize: '0.88rem' }}>Benefícios</h3>
-                        </div>
+                    <DetailSection icon={() => <Gift style={{ width: 16, height: 16, color: '#FBBF53' }} />} titulo="Benefícios">
                         <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {empresa.beneficiosOferecidos.map(b => (
                                 <div key={b} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#374151' }}>
@@ -167,24 +131,18 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </DetailSection>
                 </div>
 
                 {/* ── Conteúdo principal ── */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-                    {/* Sobre */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Building2 style={{ width: 18, height: 18, color: '#FE8341' }} />
-                            <h2 style={sectionTitleStyle}>Sobre a Empresa</h2>
-                        </div>
+                    <DetailSection icon={() => <Building2 style={{ width: 18, height: 18, color: '#FE8341' }} />} titulo="Sobre a Empresa">
                         <div style={{ padding: '1.25rem 1.5rem' }}>
                             {empresa.descricao.split('\n').map((p, i) => (
                                 <p key={i} style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.7, margin: i > 0 ? '0.75rem 0 0' : 0 }}>{p}</p>
                             ))}
                         </div>
-                    </div>
+                    </DetailSection>
 
                     {/* Números */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }} className="admin-stats-grid">
@@ -205,19 +163,13 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
                     </div>
 
                     {/* Vagas publicadas */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Briefcase style={{ width: 18, height: 18, color: '#2AB9C0' }} />
-                            <h2 style={sectionTitleStyle}>Vagas Publicadas ({empresa.vagasPublicadas.length})</h2>
-                        </div>
+                    <DetailSection icon={() => <Briefcase style={{ width: 18, height: 18, color: '#2AB9C0' }} />} titulo={`Vagas Publicadas (${empresa.vagasPublicadas.length})`}>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                                 <thead>
                                     <tr style={{ background: '#fafbfd' }}>
                                         {['Vaga', 'Modalidade', 'Candidaturas', 'Status'].map(h => (
-                                            <th key={h} style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #e8edf5' }}>
-                                                {h}
-                                            </th>
+                                            <th key={h} style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #e8edf5' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -247,29 +199,9 @@ export default function EmpresaDetalhePage({ params }: { params: Promise<{ slug:
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </DetailSection>
                 </div>
             </div>
-        </div>
-    )
-}
-
-function ContactRow({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: '#475569' }}>
-            <Icon style={{ width: 14, height: 14, color: '#94a3b8', flexShrink: 0, marginTop: 2 }} />
-            <span style={{ wordBreak: 'break-word' }}>{label}</span>
-        </div>
-    )
-}
-
-function MiniInfo({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#64748b' }}>
-                <Icon style={{ width: 14, height: 14 }} /> {label}
-            </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#09355F' }}>{value}</span>
         </div>
     )
 }

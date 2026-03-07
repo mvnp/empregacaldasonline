@@ -3,35 +3,15 @@
 import { use } from 'react'
 import Link from 'next/link'
 import {
-    ArrowLeft, MapPin, Building2, Briefcase, Calendar, Users,
+    MapPin, Building2, Briefcase, Calendar, Users,
     Clock, DollarSign, CheckCircle2, Star, Gift, FileText,
     ExternalLink, Eye
 } from 'lucide-react'
-import { getVagaDetalhe, getStatusColor } from '@/data/admin'
+import { getVagaDetalhe, getStatusColor, getStatusCandidaturaColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-
-function getStatusCandidaturaColor(status: string) {
-    switch (status) {
-        case 'aprovado': return { bg: '#e8f5e9', color: '#2e7d32', label: 'Aprovado' }
-        case 'recusado': return { bg: '#ffebee', color: '#c62828', label: 'Recusado' }
-        case 'entrevista': return { bg: '#e3f2fd', color: '#1565c0', label: 'Entrevista' }
-        case 'em_analise': return { bg: '#fff3e0', color: '#e65100', label: 'Em Análise' }
-        case 'pendente': return { bg: '#f3e8ff', color: '#7c3aed', label: 'Pendente' }
-        default: return { bg: '#e8ecf5', color: '#09355F', label: status }
-    }
-}
-
-const sectionStyle: React.CSSProperties = {
-    background: '#fff', borderRadius: 14, border: '1.5px solid #e8edf5',
-    overflow: 'hidden', marginBottom: '1.25rem',
-}
-const sectionHeaderStyle: React.CSSProperties = {
-    padding: '1rem 1.5rem', borderBottom: '1.5px solid #e8edf5',
-    display: 'flex', alignItems: 'center', gap: '0.5rem',
-}
-const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '0.95rem', fontWeight: 800, color: '#09355F', margin: 0,
-}
+import DetailSection from '@/components/admin/DetailSection'
+import DetailMiniInfo from '@/components/admin/DetailMiniInfo'
+import BackButton from '@/components/admin/BackButton'
 
 export default function VagaDetalhePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = use(params)
@@ -56,16 +36,7 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
             <AdminPageHeader
                 titulo={vaga.titulo}
                 subtitulo={`${vaga.empresa} · ${vaga.local}`}
-                acao={
-                    <Link href="/admin/vagas" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                        padding: '0.6rem 1.1rem', borderRadius: 10, fontSize: '0.82rem', fontWeight: 600,
-                        color: '#09355F', background: '#09355F0a', border: '1.5px solid #09355F14',
-                        textDecoration: 'none',
-                    }}>
-                        <ArrowLeft style={{ width: 15, height: 15 }} /> Voltar
-                    </Link>
-                }
+                acao={<BackButton href="/admin/vagas" />}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.25rem', alignItems: 'start' }} className="admin-main-grid">
@@ -74,7 +45,7 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
                     {/* Header card */}
-                    <div style={sectionStyle}>
+                    <DetailSection semHeader>
                         <div style={{ padding: '1.5rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                                 <div style={{
@@ -103,27 +74,17 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                 <span style={{ padding: '4px 12px', borderRadius: 9999, fontSize: '0.75rem', fontWeight: 600, background: '#09355F0a', color: '#09355F' }}>{vaga.regime}</span>
                             </div>
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Descrição */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <FileText style={{ width: 18, height: 18, color: '#2AB9C0' }} />
-                            <h2 style={sectionTitleStyle}>Descrição da Vaga</h2>
-                        </div>
+                    <DetailSection icon={() => <FileText style={{ width: 18, height: 18, color: '#2AB9C0' }} />} titulo="Descrição da Vaga">
                         <div style={{ padding: '1.25rem 1.5rem' }}>
                             {vaga.descricao.split('\n').map((p, i) => (
                                 <p key={i} style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.7, margin: i > 0 ? '0.75rem 0 0' : 0 }}>{p}</p>
                             ))}
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Responsabilidades */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <CheckCircle2 style={{ width: 18, height: 18, color: '#16a34a' }} />
-                            <h2 style={sectionTitleStyle}>Responsabilidades</h2>
-                        </div>
+                    <DetailSection icon={() => <CheckCircle2 style={{ width: 18, height: 18, color: '#16a34a' }} />} titulo="Responsabilidades">
                         <div style={{ padding: '1.25rem 1.5rem' }}>
                             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                 {vaga.responsabilidades.map((r, i) => (
@@ -133,15 +94,11 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                 ))}
                             </ul>
                         </div>
-                    </div>
+                    </DetailSection>
 
                     {/* Requisitos + Diferenciais */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }} className="admin-cards-grid">
-                        <div style={sectionStyle}>
-                            <div style={sectionHeaderStyle}>
-                                <Star style={{ width: 18, height: 18, color: '#FE8341' }} />
-                                <h2 style={sectionTitleStyle}>Requisitos</h2>
-                            </div>
+                        <DetailSection icon={() => <Star style={{ width: 18, height: 18, color: '#FE8341' }} />} titulo="Requisitos">
                             <div style={{ padding: '1.25rem 1.5rem' }}>
                                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {vaga.requisitos.map((r, i) => (
@@ -151,12 +108,8 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                     ))}
                                 </ul>
                             </div>
-                        </div>
-                        <div style={sectionStyle}>
-                            <div style={sectionHeaderStyle}>
-                                <Star style={{ width: 18, height: 18, color: '#FBBF53' }} />
-                                <h2 style={sectionTitleStyle}>Diferenciais</h2>
-                            </div>
+                        </DetailSection>
+                        <DetailSection icon={() => <Star style={{ width: 18, height: 18, color: '#FBBF53' }} />} titulo="Diferenciais">
                             <div style={{ padding: '1.25rem 1.5rem' }}>
                                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {vaga.diferenciais.map((d, i) => (
@@ -166,23 +119,17 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                     ))}
                                 </ul>
                             </div>
-                        </div>
+                        </DetailSection>
                     </div>
 
                     {/* Candidatos */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Users style={{ width: 18, height: 18, color: '#09355F' }} />
-                            <h2 style={sectionTitleStyle}>Candidatos ({vaga.candidaturas})</h2>
-                        </div>
+                    <DetailSection icon={() => <Users style={{ width: 18, height: 18, color: '#09355F' }} />} titulo={`Candidatos (${vaga.candidaturas})`}>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                                 <thead>
                                     <tr style={{ background: '#fafbfd' }}>
                                         {['Candidato', 'Cargo Atual', 'Data', 'Status', ''].map(h => (
-                                            <th key={h} style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #e8edf5' }}>
-                                                {h}
-                                            </th>
+                                            <th key={h} style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #e8edf5' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -220,29 +167,23 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </DetailSection>
                 </div>
 
                 {/* ── Sidebar ── */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    {/* Resumo */}
-                    <div style={sectionStyle}>
+                    <DetailSection semHeader>
                         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <InfoRow icon={DollarSign} label="Salário" value={vaga.salario || 'A combinar'} />
-                            <InfoRow icon={Briefcase} label="Regime" value={vaga.regime} />
-                            <InfoRow icon={Clock} label="Horário" value={vaga.horario} />
-                            <InfoRow icon={MapPin} label="Modalidade" value={vaga.modalidade} />
-                            <InfoRow icon={Calendar} label="Publicada em" value={vaga.dataPublicacao} />
-                            <InfoRow icon={Users} label="Candidaturas" value={String(vaga.candidaturas)} />
+                            <DetailMiniInfo icon={DollarSign} label="Salário" value={vaga.salario || 'A combinar'} />
+                            <DetailMiniInfo icon={Briefcase} label="Regime" value={vaga.regime} />
+                            <DetailMiniInfo icon={Clock} label="Horário" value={vaga.horario} />
+                            <DetailMiniInfo icon={MapPin} label="Modalidade" value={vaga.modalidade} />
+                            <DetailMiniInfo icon={Calendar} label="Publicada em" value={vaga.dataPublicacao} />
+                            <DetailMiniInfo icon={Users} label="Candidaturas" value={String(vaga.candidaturas)} />
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Benefícios */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Gift style={{ width: 16, height: 16, color: '#FBBF53' }} />
-                            <h3 style={{ ...sectionTitleStyle, fontSize: '0.88rem' }}>Benefícios</h3>
-                        </div>
+                    <DetailSection icon={() => <Gift style={{ width: 16, height: 16, color: '#FBBF53' }} />} titulo="Benefícios">
                         <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             {vaga.beneficios.map(b => (
                                 <div key={b} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#374151' }}>
@@ -250,14 +191,9 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </DetailSection>
 
-                    {/* Sobre a empresa */}
-                    <div style={sectionStyle}>
-                        <div style={sectionHeaderStyle}>
-                            <Building2 style={{ width: 16, height: 16, color: '#FE8341' }} />
-                            <h3 style={{ ...sectionTitleStyle, fontSize: '0.88rem' }}>Sobre a Empresa</h3>
-                        </div>
+                    <DetailSection icon={() => <Building2 style={{ width: 16, height: 16, color: '#FE8341' }} />} titulo="Sobre a Empresa">
                         <div style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
                             <div style={{
                                 width: 50, height: 50, borderRadius: 12, margin: '0 auto 0.75rem',
@@ -275,20 +211,9 @@ export default function VagaDetalhePage({ params }: { params: Promise<{ slug: st
                                 <ExternalLink style={{ width: 12, height: 12 }} /> Ver empresa
                             </Link>
                         </div>
-                    </div>
+                    </DetailSection>
                 </div>
             </div>
-        </div>
-    )
-}
-
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#64748b' }}>
-                <Icon style={{ width: 14, height: 14 }} /> {label}
-            </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#09355F' }}>{value}</span>
         </div>
     )
 }
