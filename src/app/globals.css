@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* =============================================
    DESIGN SYSTEM — PORTAL DE EMPREGOS
    Cores: #09355F | #FBBF53 | #FE8341 | #2AB9C0
@@ -590,4 +596,219 @@ body {
   border-color: #2AB9C0;
   color: #09355F;
   background: #e8f9fa;
+}
+
+/* ── Auth Layout ─────────────────────────────── */
+.auth-layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-panel-left {
+    display: none;
+  }
+}
+
+/* Garante que o painel esquerdo estica até o fim da linha do grid */
+.auth-panel-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-right {
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1.5px solid #e8edf5;
+  border-radius: 20px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 4px 24px rgba(9, 53, 95, 0.08);
+}
+
+/* ── Inputs de formulário ────────────────────── */
+.auth-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #1a2332;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.auth-input::placeholder {
+  color: #94a3b8;
+}
+
+.auth-input:focus {
+  border-color: #09355F;
+  box-shadow: 0 0 0 3px rgba(9, 53, 95, 0.08);
+  background: #fff;
+}
+
+.auth-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+/* ── Botão Google ────────────────────────────── */
+.google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.google-btn:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Divider "ou" ────────────────────────────── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e8edf5;
+}
+
+/* ── Auth label ────────────────────────────── */
+.auth-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.01em;
+}
+
+/* ── Botão submit auth ──────────────────────── */
+.auth-submit {
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #09355F, #0d4278);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(9, 53, 95, 0.25);
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Input password wrapper ─────────────────── */
+.auth-input-wrapper {
+  position: relative;
+}
+
+.auth-input-wrapper .auth-input {
+  padding-right: 3rem;
+}
+
+.auth-input-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-toggle:hover {
+  color: #09355F;
+}
+
+/* ── Type selector (candidato vs empresa) ───── */
+.auth-type-btn {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e8edf5;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  font-family: inherit;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: #64748b;
+}
+
+.auth-type-btn:hover {
+  border-color: #09355F;
+  background: #f8fafc;
+}
+
+.auth-type-btn.active {
+  border-color: #09355F;
+  background: rgba(9, 53, 95, 0.04);
+  color: #09355F;
 }

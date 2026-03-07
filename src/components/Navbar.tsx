@@ -56,11 +56,9 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
                         </Link>
                     ))}
 
-                    <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.18)', margin: '0 0.4rem' }} />
-
                     <Link
                         href="/admin/login"
-                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.875rem', fontWeight: 500, color: 'rgba(255,255,255,0.78)', borderRadius: 7, textDecoration: 'none' }}
+                        style={{ padding: '0.45rem 0.9rem', fontSize: '0.875rem', fontWeight: 700, color: '#FBBF53', borderRadius: 8, textDecoration: 'none', border: '1.5px solid #FBBF53', marginLeft: '0.5rem' }}
                     >
                         Admin
                     </Link>
