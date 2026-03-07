@@ -812,3 +812,129 @@ body {
   background: rgba(9, 53, 95, 0.04);
   color: #09355F;
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVIDADE
+   ══════════════════════════════════════════════ */
+
+/* ── Navbar: desktop mostra nav normal ───────── */
+.nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  padding: 0.4rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: #09355F;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem 1.25rem;
+}
+
+.nav-mobile-menu.aberto {
+  display: flex;
+}
+
+.nav-mobile-link {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.nav-mobile-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-mobile-link-admin {
+  color: #FBBF53;
+  font-weight: 700;
+  border: 1.5px solid #FBBF53;
+  text-align: center;
+  margin-top: 0.25rem;
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  text-decoration: none;
+  display: block;
+}
+
+/* ── Homepage: grid vagas + filtro ───────────── */
+.home-vagas-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.home-vagas-grid>aside {
+  position: sticky;
+  top: 1.5rem;
+}
+
+/* ── Vaga / Blog single: conteúdo + sidebar ──── */
+.content-sidebar-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.content-sidebar-grid>aside {
+  position: sticky;
+  top: 1.25rem;
+}
+
+/* ══════════════════════════════════════════════
+   BREAKPOINTS
+   ══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* Navbar: hambúrguer aparece, nav some */
+  .nav-desktop {
+    display: none;
+  }
+
+  .nav-hamburger {
+    display: flex;
+  }
+
+  /* Homepage: filtro some (usa drawer) */
+  .home-vagas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-vagas-grid>aside {
+    display: none !important;
+  }
+
+  /* Vaga / Blog: sidebar vai para baixo */
+  .content-sidebar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .content-sidebar-grid>aside {
+    position: static !important;
+  }
+
+  /* Vaga: "Publicada em" alinha à esquerda no mobile */
+  .vaga-data {
+    text-align: left !important;
+  }
+}

@@ -161,8 +161,8 @@ export default async function VagaDetailPage({ params }: { params: Promise<{ id:
                             </div>
                         </div>
 
-                        {/* Data de publicação — canto direito */}
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        {/* Data de publicação */}
+                        <div className="vaga-data" style={{ textAlign: 'right', flexShrink: 0 }}>
                             <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>Publicada em</p>
                             <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{dataPublicacao}</p>
                             <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
@@ -175,7 +175,7 @@ export default async function VagaDetailPage({ params }: { params: Promise<{ id:
 
             {/* ── Conteúdo principal ── */}
             <main style={{ maxWidth: 1280, margin: '0 auto', padding: '2.5rem 2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '2rem', alignItems: 'start' }}>
+                <div className="content-sidebar-grid">
 
                     {/* ── Coluna esquerda: conteúdo ── */}
                     <div>
@@ -256,7 +256,7 @@ export default async function VagaDetailPage({ params }: { params: Promise<{ id:
                     </div>
 
                     {/* ── Coluna direita: sidebar ── */}
-                    <aside style={{ position: 'sticky', top: '1.25rem' }}>
+                    <aside>
                         <VagaDetailSidebar vaga={vaga} />
                     </aside>
 

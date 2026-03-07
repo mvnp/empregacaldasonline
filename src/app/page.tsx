@@ -114,8 +114,8 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Layout: lista (esquerda) + filtros (direita) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start' }}>
+          {/* Layout: vagas (esquerda) + filtros (direita) */}
+          <div className="home-vagas-grid">
 
             {/* Lista de vagas */}
             <div>
@@ -147,8 +147,8 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Filtros — sidebar desktop */}
-            <aside style={{ position: 'sticky', top: '1.5rem' }}>
+            {/* Filtros — sidebar desktop (some no mobile, usa drawer) */}
+            <aside>
               <FilterPanel {...filterPanelProps} />
             </aside>
 

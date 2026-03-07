@@ -1,18 +1,13 @@
-import Link from 'next/link'
-import { Briefcase } from 'lucide-react'
+'use client'
 
-// ─────────────────────────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────────────────────────
+import { useState } from 'react'
+import Link from 'next/link'
+import { Briefcase, Menu, X } from 'lucide-react'
+
 interface NavbarProps {
-    /**
-     * transparent — posição absoluta, sem fundo (homepage sobre o hero)
-     * solid       — sticky, fundo navy (páginas internas)
-     */
     variant?: 'transparent' | 'solid'
 }
 
-// Links de navegação — edite aqui para alterar o menu
 const NAV_LINKS = [
     { label: 'Vagas', href: '/vagas' },
     { label: 'Empresas', href: '/empresas' },
@@ -20,10 +15,8 @@ const NAV_LINKS = [
     { label: 'Blog', href: '/blog' },
 ]
 
-// ─────────────────────────────────────────────────────────────
-// Componente
-// ─────────────────────────────────────────────────────────────
 export default function Navbar({ variant = 'solid' }: NavbarProps) {
+    const [aberto, setAberto] = useState(false)
     const isTransparent = variant === 'transparent'
 
     const headerStyle: React.CSSProperties = isTransparent
@@ -32,6 +25,7 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
 
     return (
         <header style={headerStyle}>
+            {/* ── Barra principal ── */}
             <div style={{ maxWidth: 1280, margin: '0 auto', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
                 {/* Logo */}
@@ -44,8 +38,8 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
                     </span>
                 </Link>
 
-                {/* Navegação */}
-                <nav style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                {/* ── Nav desktop ── */}
+                <nav className="nav-desktop">
                     {NAV_LINKS.map(({ label, href }) => (
                         <Link
                             key={label}
@@ -68,7 +62,38 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
                     </Link>
                 </nav>
 
+                {/* ── Hambúrguer (mobile) ── */}
+                <button
+                    className="nav-hamburger"
+                    onClick={() => setAberto(!aberto)}
+                    aria-label={aberto ? 'Fechar menu' : 'Abrir menu'}
+                >
+                    {aberto
+                        ? <X style={{ width: 26, height: 26 }} />
+                        : <Menu style={{ width: 26, height: 26 }} />
+                    }
+                </button>
             </div>
+
+            {/* ── Menu mobile ── */}
+            <nav className={`nav-mobile-menu${aberto ? ' aberto' : ''}`}>
+                {NAV_LINKS.map(({ label, href }) => (
+                    <Link key={label} href={href} className="nav-mobile-link" onClick={() => setAberto(false)}>
+                        {label}
+                    </Link>
+                ))}
+                <Link href="/admin/login" className="nav-mobile-link-admin" onClick={() => setAberto(false)}>
+                    Admin
+                </Link>
+                <Link
+                    href="/publicar-vaga"
+                    className="btn-primary"
+                    style={{ marginTop: '0.5rem', borderRadius: 9, textAlign: 'center', padding: '0.7rem 1rem' }}
+                    onClick={() => setAberto(false)}
+                >
+                    Publicar Vaga
+                </Link>
+            </nav>
         </header>
     )
 }

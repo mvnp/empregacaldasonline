@@ -39,7 +39,7 @@ export default function BlogListPage() {
 
             {/* ── Conteúdo principal ── */}
             <main style={{ maxWidth: 1280, margin: '0 auto', padding: '2.5rem 2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start' }}>
+                <div className="content-sidebar-grid">
 
                     {/* Coluna esquerda */}
                     <div>
