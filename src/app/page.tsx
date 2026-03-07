@@ -68,7 +68,7 @@ export default function HomePage() {
     <div style={{ minHeight: '100vh', background: '#f5f7fa' }}>
 
       {/* Navbar absoluta sobre o hero */}
-      <Navbar />
+      <Navbar variant="transparent" />
 
       {/* Hero com barra de busca */}
       <HeroSection

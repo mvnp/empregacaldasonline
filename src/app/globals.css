@@ -393,3 +393,201 @@ body {
   background: #FBBF53;
   color: #09355F;
 }
+
+/* ── Breadcrumb ──────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.breadcrumb a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+
+.breadcrumb a:hover {
+  color: #09355F;
+}
+
+.breadcrumb-sep {
+  color: #cbd5e1;
+}
+
+.breadcrumb-current {
+  color: #09355F;
+  font-weight: 600;
+}
+
+/* ── Detalhe da vaga: conteúdo ───────────────── */
+.vaga-prose {
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.75;
+}
+
+.vaga-prose p {
+  margin-bottom: 1rem;
+}
+
+.vaga-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.vaga-section {
+  background: #fff;
+  border: 1.5px solid #e8edf5;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(9, 53, 95, 0.05);
+  margin-bottom: 1.25rem;
+}
+
+.vaga-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1.5px solid #e8edf5;
+  background: #fafbfd;
+}
+
+.vaga-section-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #09355F;
+  margin: 0;
+}
+
+.vaga-section-body {
+  padding: 1.25rem 1.5rem;
+}
+
+/* Lista de itens (requisitos, benefícios...) */
+.vaga-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vaga-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.vaga-list-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Badge de tipo (diferencial vs obrigatório) */
+.req-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #e8f5e9;
+  color: #2e7d32;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.req-badge.diferencial {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* ── Blog Cards ──────────────────────────────── */
+.blog-card-grande article {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.blog-card-grande:hover article {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(9, 53, 95, 0.12);
+  border-color: #2AB9C0;
+}
+
+.blog-card-compacto article {
+  transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.blog-card-compacto:hover article {
+  transform: translateY(-2px);
+  border-color: #2AB9C0;
+}
+
+/* Blog: posts relacionados (card pequeno) */
+.blog-card-relacionado {
+  transition: transform 0.22s ease, border-color 0.22s ease;
+  border: 1.5px solid #e8edf5;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  text-decoration: none;
+  display: block;
+}
+
+.blog-card-relacionado:hover {
+  transform: translateY(-2px);
+  border-color: #2AB9C0;
+}
+
+/* Blog: links da sidebar */
+.sidebar-post-link {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  transition: background 0.18s;
+}
+
+.sidebar-post-link:hover {
+  background: #f8fafc;
+}
+
+.sidebar-cat-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1.25rem;
+  text-decoration: none;
+  transition: background 0.18s;
+}
+
+.sidebar-cat-link:hover {
+  background: #f8fafc;
+}
+
+.sidebar-tag-link {
+  padding: 4px 12px;
+  background: #f0f4f8;
+  color: #475569;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: all 0.18s;
+}
+
+.sidebar-tag-link:hover {
+  border-color: #2AB9C0;
+  color: #09355F;
+  background: #e8f9fa;
+}
