@@ -53,3 +53,44 @@ O servidor estará disponível em: http://localhost:3000
 - Todas as chamadas de API centralizadas em `/src/services`
 - Tipos em `/src/types`
 - Configuração Supabase em `/src/lib/supabase.ts`
+
+## Backend — Decisão de Arquitetura
+
+> **Server Actions (Next.js) como base principal + Edge Functions (Supabase) apenas quando necessário.**
+
+### Server Actions — Usar para:
+- CRUD de vagas, candidatos, empresas
+- Login, cadastro, alterar senha
+- Upload de foto/documentos
+- Filtros, buscas, paginação
+- Qualquer operação iniciada pelo usuário dentro do Next.js
+
+### Onde ficam no código:
+```
+src/
+  actions/           → Server Actions organizadas por domínio
+    vagas.ts         → criar, editar, excluir, listar vagas
+    candidatos.ts    → cadastro, currículo, candidaturas
+    empresas.ts      → dados da empresa, plano
+    auth.ts          → login, cadastro, senha
+    upload.ts        → foto de perfil, documentos
+```
+
+### Regras para Server Actions:
+- Sempre marcar com `'use server'` no topo do arquivo
+- Usar `createClient()` do Supabase server-side (nunca o client-side)
+- Sempre validar dados de entrada antes de enviar ao banco
+- Retornar objetos tipados `{ success: boolean, data?, error? }`
+- Usar `revalidatePath()` ou `revalidateTag()` após mutações
+
+### Edge Functions (Supabase) — Usar SOMENTE para:
+- Webhooks externos (pagamento, integrações)
+- Cron jobs (expirar vagas, relatórios agendados)
+- API pública para terceiros (se necessário no futuro)
+- Tarefas que não são iniciadas por ação do usuário no frontend
+
+### Por que essa decisão:
+- Projeto é Next.js puro (sem app mobile ou frontend separado)
+- Server Actions mantêm tipagem end-to-end com os componentes
+- Deploy unificado no Docker/Easypanel (zero infraestrutura adicional)
+- Se surgir necessidade de API externa (mobile), criar Edge Functions **só para esses endpoints**
