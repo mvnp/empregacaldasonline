@@ -236,6 +236,72 @@ export function getStatusCandidaturaColor(status: string) {
     }
 }
 
+// ── Dados de Relatórios ──────────────────────────
+export const RELATORIO_KPIS = [
+    { label: 'Novas Vagas', valor: 127, anterior: 98, icon: 'briefcase' },
+    { label: 'Novos Candidatos', valor: 342, anterior: 285, icon: 'users' },
+    { label: 'Candidaturas', valor: 1284, anterior: 1150, icon: 'filetext' },
+    { label: 'Taxa de Conversão', valor: 18.5, anterior: 15.2, icon: 'trendingup', sufixo: '%' },
+]
+
+export const RELATORIO_VAGAS_MES = [
+    { mes: 'Set', vagas: 45, candidaturas: 380 },
+    { mes: 'Out', vagas: 62, candidaturas: 510 },
+    { mes: 'Nov', vagas: 78, candidaturas: 620 },
+    { mes: 'Dez', vagas: 55, candidaturas: 480 },
+    { mes: 'Jan', vagas: 98, candidaturas: 870 },
+    { mes: 'Fev', vagas: 115, candidaturas: 1050 },
+    { mes: 'Mar', vagas: 127, candidaturas: 1284 },
+]
+
+export const RELATORIO_STATUS_CANDIDATURAS = [
+    { status: 'Pendente', valor: 385, color: '#7c3aed' },
+    { status: 'Em Análise', valor: 312, color: '#e65100' },
+    { status: 'Entrevista', valor: 245, color: '#1565c0' },
+    { status: 'Aprovado', valor: 198, color: '#2e7d32' },
+    { status: 'Recusado', valor: 144, color: '#c62828' },
+]
+
+export const RELATORIO_TOP_VAGAS = [
+    { titulo: 'Desenvolvedor Full-Stack Senior', empresa: 'TechBrasil Ltda.', candidaturas: 89 },
+    { titulo: 'UX/UI Designer Senior', empresa: 'StartupX', candidaturas: 76 },
+    { titulo: 'DevOps Engineer', empresa: 'CloudNine', candidaturas: 68 },
+    { titulo: 'Product Manager', empresa: 'InnovateBR', candidaturas: 62 },
+    { titulo: 'Analista de Dados Python', empresa: 'DataCorp', candidaturas: 57 },
+]
+
+export const RELATORIO_CANDIDATOS_CIDADE = [
+    { cidade: 'São Paulo', total: 128 },
+    { cidade: 'Rio de Janeiro', total: 85 },
+    { cidade: 'Belo Horizonte', total: 42 },
+    { cidade: 'Curitiba', total: 35 },
+    { cidade: 'Porto Alegre', total: 28 },
+    { cidade: 'Florianópolis', total: 24 },
+]
+
+export const RELATORIO_EMPRESAS_PLANO = [
+    { plano: 'Gratuito', valor: 22, color: '#94a3b8' },
+    { plano: 'Profissional', valor: 12, color: '#2AB9C0' },
+    { plano: 'Enterprise', valor: 6, color: '#FE8341' },
+]
+
+export const RELATORIO_TOP_EMPRESAS = [
+    { nome: 'TechBrasil Ltda.', vagas: 18, contratacoes: 12, plano: 'enterprise' as const },
+    { nome: 'StartupX', vagas: 14, contratacoes: 9, plano: 'profissional' as const },
+    { nome: 'CloudNine', vagas: 11, contratacoes: 7, plano: 'enterprise' as const },
+    { nome: 'InnovateBR', vagas: 9, contratacoes: 6, plano: 'profissional' as const },
+    { nome: 'DataCorp', vagas: 8, contratacoes: 4, plano: 'gratuito' as const },
+]
+
+export const RELATORIO_AREAS_BUSCADAS = [
+    { area: 'Desenvolvimento', porcentagem: 38 },
+    { area: 'Design', porcentagem: 18 },
+    { area: 'Dados/Analytics', porcentagem: 15 },
+    { area: 'DevOps/Infra', porcentagem: 12 },
+    { area: 'Produto', porcentagem: 9 },
+    { area: 'Marketing', porcentagem: 8 },
+]
+
 // ── Detalhe do Candidato (currículo completo) ────
 export interface ExperienciaProfissional {
     id: number
