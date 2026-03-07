@@ -30,6 +30,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -39,6 +40,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  overflow-x: hidden;
 }
 
 /* ── Scrollbar ───────────────────────────────── */
@@ -936,5 +938,57 @@ body {
   /* Vaga: "Publicada em" alinha à esquerda no mobile */
   .vaga-data {
     text-align: left !important;
+  }
+
+  /* Blog: cards compactos viram verticais (imagem em cima) */
+  .blog-card-compacto article {
+    flex-direction: column !important;
+  }
+
+  .blog-card-compacto article>div:first-child {
+    width: 100% !important;
+    height: 180px;
+    flex-shrink: unset !important;
+  }
+
+  /* ── Admin Dashboard ─────────────── */
+  .admin-sidebar {
+    transform: translateX(-100%);
+    width: 280px !important;
+  }
+
+  .admin-sidebar.admin-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .admin-sidebar-close {
+    display: flex !important;
+  }
+
+  .admin-content {
+    margin-left: 0 !important;
+  }
+
+  .admin-hamburger {
+    display: flex !important;
+  }
+
+  .admin-collapse-btn {
+    display: none !important;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .admin-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Mobile pequeno (≤ 480px) ────────────────── */
+@media (max-width: 480px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr !important;
   }
 }

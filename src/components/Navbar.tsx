@@ -51,7 +51,7 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
                     ))}
 
                     <Link
-                        href="/admin/login"
+                        href="/login"
                         style={{ padding: '0.45rem 0.9rem', fontSize: '0.875rem', fontWeight: 700, color: '#FBBF53', borderRadius: 8, textDecoration: 'none', border: '1.5px solid #FBBF53', marginLeft: '0.5rem' }}
                     >
                         Admin
@@ -82,7 +82,7 @@ export default function Navbar({ variant = 'solid' }: NavbarProps) {
                         {label}
                     </Link>
                 ))}
-                <Link href="/admin/login" className="nav-mobile-link-admin" onClick={() => setAberto(false)}>
+                <Link href="/login" className="nav-mobile-link-admin" onClick={() => setAberto(false)}>
                     Admin
                 </Link>
                 <Link

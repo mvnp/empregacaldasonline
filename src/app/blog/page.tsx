@@ -70,7 +70,7 @@ export default function BlogListPage() {
                     </div>
 
                     {/* Sidebar direita */}
-                    <aside style={{ position: 'sticky', top: '1.25rem' }}>
+                    <aside>
                         <BlogSidebar />
                     </aside>
 
