@@ -25,6 +25,8 @@ export interface VagaAdmin {
     candidaturas: number
     status: 'ativa' | 'pausada' | 'expirada'
     dataPublicacao: string
+    salario?: string
+    nivel?: string
 }
 
 export interface UsuarioAdmin {
@@ -34,6 +36,31 @@ export interface UsuarioAdmin {
     tipo: 'candidato' | 'empresa'
     dataCadastro: string
     status: 'ativo' | 'inativo'
+}
+
+export interface CandidatoAdmin {
+    id: number
+    nome: string
+    email: string
+    cargo: string
+    local: string
+    experiencia: string
+    habilidades: string[]
+    dataCadastro: string
+    status: 'ativo' | 'inativo'
+    candidaturas: number
+}
+
+export interface EmpresaAdmin {
+    id: number
+    nome: string
+    setor: string
+    local: string
+    vagasAtivas: number
+    totalFuncionarios: string
+    dataCadastro: string
+    status: 'ativo' | 'inativo'
+    plano: 'gratuito' | 'profissional' | 'enterprise'
 }
 
 // ── Stats Admin ─────────────────────────────────
@@ -74,25 +101,80 @@ export const EMPREGADOR_ATIVIDADES: AtividadeRecente[] = [
     { id: 6, tipo: 'candidatura', descricao: 'Lucas Souza candidatou-se para DevOps Engineer', tempo: '3h atrás' },
 ]
 
-// ── Vagas Admin ─────────────────────────────────
-export const ADMIN_VAGAS: VagaAdmin[] = [
-    { id: 1, titulo: 'Desenvolvedor Front-End React', empresa: 'TechBrasil Ltda.', local: 'São Paulo, SP', modalidade: 'Remoto', candidaturas: 47, status: 'ativa', dataPublicacao: '2026-02-28' },
-    { id: 2, titulo: 'UX/UI Designer Senior', empresa: 'StartupX', local: 'Rio de Janeiro, RJ', modalidade: 'Híbrido', candidaturas: 23, status: 'ativa', dataPublicacao: '2026-03-01' },
-    { id: 3, titulo: 'Gerente Comercial', empresa: 'Grupo Expansão', local: 'Belo Horizonte, MG', modalidade: 'Presencial', candidaturas: 25, status: 'ativa', dataPublicacao: '2026-02-25' },
-    { id: 4, titulo: 'Analista de Dados Python', empresa: 'DataCorp', local: 'Curitiba, PR', modalidade: 'Remoto', candidaturas: 38, status: 'expirada', dataPublicacao: '2026-02-10' },
-    { id: 5, titulo: 'DevOps Engineer', empresa: 'CloudTech', local: 'Florianópolis, SC', modalidade: 'Remoto', candidaturas: 15, status: 'ativa', dataPublicacao: '2026-03-05' },
-    { id: 6, titulo: 'Product Manager', empresa: 'InnovateBR', local: 'São Paulo, SP', modalidade: 'Híbrido', candidaturas: 31, status: 'pausada', dataPublicacao: '2026-02-20' },
-]
+// ── VAGAS (36+ para lazy loading) ───────────────
+const _TITULOS = ['Desenvolvedor Front-End React', 'UX/UI Designer Senior', 'Gerente Comercial', 'Analista de Dados Python', 'DevOps Engineer', 'Product Manager', 'Engenheiro de Software', 'Analista de Marketing Digital', 'Desenvolvedor Back-End Node.js', 'Scrum Master', 'QA Engineer', 'Designer Gráfico', 'Analista Financeiro', 'Consultor SAP', 'Arquiteto de Software', 'Tech Lead', 'Desenvolvedor Full-Stack', 'Analista de RH', 'Gerente de Projetos', 'Coordenador de TI']
+const _EMPRESAS = ['TechBrasil Ltda.', 'StartupX', 'Grupo Expansão', 'DataCorp', 'CloudTech', 'InnovateBR', 'Digital Solutions', 'MaxSoft', 'BrasilCode', 'FutureApps', 'NetPrime', 'SmartHR', 'CoreTech', 'BlueWave', 'AlphaDigital']
+const _CIDADES = ['São Paulo, SP', 'Rio de Janeiro, RJ', 'Belo Horizonte, MG', 'Curitiba, PR', 'Florianópolis, SC', 'Porto Alegre, RS', 'Brasília, DF', 'Recife, PE', 'Salvador, BA', 'Campinas, SP']
+const _MODALIDADES = ['Remoto', 'Híbrido', 'Presencial']
+const _STATUS_VAGA: ('ativa' | 'pausada' | 'expirada')[] = ['ativa', 'ativa', 'ativa', 'pausada', 'expirada']
+const _NIVEIS = ['Júnior', 'Pleno', 'Sênior', 'Especialista']
+const _SALARIOS = ['R$ 3.000 – R$ 5.000', 'R$ 5.000 – R$ 8.000', 'R$ 8.000 – R$ 12.000', 'R$ 12.000 – R$ 18.000', 'R$ 15.000 – R$ 25.000', 'A combinar']
 
-// ── Vagas Empregador ────────────────────────────
-export const EMPREGADOR_VAGAS: VagaAdmin[] = [
-    { id: 1, titulo: 'Desenvolvedor Front-End React', empresa: 'Minha Empresa', local: 'São Paulo, SP', modalidade: 'Remoto', candidaturas: 47, status: 'ativa', dataPublicacao: '2026-02-28' },
-    { id: 2, titulo: 'UX/UI Designer Senior', empresa: 'Minha Empresa', local: 'São Paulo, SP', modalidade: 'Híbrido', candidaturas: 23, status: 'ativa', dataPublicacao: '2026-03-01' },
-    { id: 3, titulo: 'DevOps Engineer', empresa: 'Minha Empresa', local: 'São Paulo, SP', modalidade: 'Remoto', candidaturas: 15, status: 'ativa', dataPublicacao: '2026-03-05' },
-    { id: 4, titulo: 'Analista de Dados', empresa: 'Minha Empresa', local: 'São Paulo, SP', modalidade: 'Remoto', candidaturas: 38, status: 'expirada', dataPublicacao: '2026-02-10' },
-]
+function gerarVagas(qtd: number): VagaAdmin[] {
+    return Array.from({ length: qtd }, (_, i) => ({
+        id: i + 1,
+        titulo: _TITULOS[i % _TITULOS.length],
+        empresa: _EMPRESAS[i % _EMPRESAS.length],
+        local: _CIDADES[i % _CIDADES.length],
+        modalidade: _MODALIDADES[i % _MODALIDADES.length],
+        candidaturas: Math.floor(Math.random() * 80) + 5,
+        status: _STATUS_VAGA[i % _STATUS_VAGA.length],
+        dataPublicacao: `2026-0${(i % 3) + 1}-${String((i % 28) + 1).padStart(2, '0')}`,
+        salario: _SALARIOS[i % _SALARIOS.length],
+        nivel: _NIVEIS[i % _NIVEIS.length],
+    }))
+}
 
-// ── Usuários Admin ──────────────────────────────
+export const TODAS_VAGAS: VagaAdmin[] = gerarVagas(42)
+export const ADMIN_VAGAS: VagaAdmin[] = TODAS_VAGAS.slice(0, 6)
+export const EMPREGADOR_VAGAS: VagaAdmin[] = TODAS_VAGAS.slice(0, 4).map(v => ({ ...v, empresa: 'Minha Empresa' }))
+
+// ── CANDIDATOS (36+ para lazy loading) ──────────
+const _NOMES = ['Maria Silva', 'João Santos', 'Ana Costa', 'Pedro Lima', 'Fernanda Rocha', 'Lucas Souza', 'Carla Mendes', 'Rafael Alves', 'Beatriz Ferreira', 'Gabriel Martins', 'Juliana Oliveira', 'Marcos Ribeiro', 'Patricia Gomes', 'Thiago Barbosa', 'Camila Nascimento', 'Bruno Pereira', 'Larissa Cardoso', 'Felipe Araújo', 'Amanda Duarte', 'Roberto Vieira', 'Isabela Moreira', 'Diego Castro', 'Letícia Correia', 'André Teixeira', 'Vanessa Pinto', 'Gustavo Lopes', 'Renata Dias', 'Eduardo Nunes', 'Daniela Freitas', 'Matheus Santos', 'Cristina Reis', 'Leonardo Azevedo', 'Priscila Melo', 'Rodrigo Monteiro', 'Aline Campos', 'Victor Hugo', 'Sabrina Costa', 'Henrique Lima', 'Natália Souza', 'Caio Fernandes']
+const _CARGOS = ['Desenvolvedor Front-End', 'Desenvolvedor Back-End', 'Full-Stack Developer', 'UX Designer', 'Product Manager', 'Analista de Dados', 'DevOps Engineer', 'QA Analyst', 'Scrum Master', 'Tech Lead', 'Designer Gráfico', 'Analista de Marketing', 'Gerente de Projetos', 'Arquiteto de Software', 'Analista de RH']
+const _EXPERIENCIAS = ['1 ano', '2 anos', '3 anos', '4 anos', '5 anos', '6+ anos', '8+ anos', '10+ anos']
+const _HABILIDADES_POOL = ['React', 'TypeScript', 'Node.js', 'Python', 'Java', 'AWS', 'Docker', 'Figma', 'SQL', 'MongoDB', 'Git', 'Scrum', 'Next.js', 'Tailwind', 'GraphQL', 'Kubernetes', 'Go', 'Vue.js', 'Angular', 'PostgreSQL']
+
+function gerarCandidatos(qtd: number): CandidatoAdmin[] {
+    return Array.from({ length: qtd }, (_, i) => ({
+        id: i + 1,
+        nome: _NOMES[i % _NOMES.length],
+        email: _NOMES[i % _NOMES.length].toLowerCase().replace(' ', '.') + '@email.com',
+        cargo: _CARGOS[i % _CARGOS.length],
+        local: _CIDADES[i % _CIDADES.length],
+        experiencia: _EXPERIENCIAS[i % _EXPERIENCIAS.length],
+        habilidades: [_HABILIDADES_POOL[(i * 3) % _HABILIDADES_POOL.length], _HABILIDADES_POOL[(i * 3 + 1) % _HABILIDADES_POOL.length], _HABILIDADES_POOL[(i * 3 + 2) % _HABILIDADES_POOL.length]],
+        dataCadastro: `2026-0${(i % 3) + 1}-${String((i % 28) + 1).padStart(2, '0')}`,
+        status: (i % 7 === 0 ? 'inativo' : 'ativo') as 'ativo' | 'inativo',
+        candidaturas: Math.floor(Math.random() * 15) + 1,
+    }))
+}
+
+export const TODOS_CANDIDATOS: CandidatoAdmin[] = gerarCandidatos(40)
+
+// ── EMPRESAS (36+ para lazy loading) ────────────
+const _SETORES = ['Tecnologia', 'Finanças', 'Saúde', 'Educação', 'Varejo', 'Indústria', 'Consultoria', 'Logística', 'Marketing', 'Energia']
+const _FUNCIONARIOS = ['1–10', '11–50', '51–200', '201–500', '501–1000', '1000+']
+const _PLANOS: ('gratuito' | 'profissional' | 'enterprise')[] = ['gratuito', 'profissional', 'profissional', 'enterprise']
+const _NOMES_EMPRESA = ['TechBrasil Ltda.', 'StartupX', 'Grupo Expansão', 'DataCorp', 'CloudTech', 'InnovateBR', 'Digital Solutions', 'MaxSoft', 'BrasilCode', 'FutureApps', 'NetPrime', 'SmartHR', 'CoreTech', 'BlueWave', 'AlphaDigital', 'VisionTech', 'SkyLab', 'CodeNation', 'DevHouse', 'PixelForge', 'ByteWorks', 'AppMasters', 'NeoSoft', 'WebForce', 'DataDriven', 'CloudBase', 'TechPulse', 'DigiLogic', 'SoftEdge', 'InfoPlus', 'CyberHub', 'MegaByte', 'CodeCraft', 'SmartBiz', 'GoDigital', 'NextGen Corp', 'Quantum Labs', 'DataStream', 'LogicWare', 'TrueCode']
+
+function gerarEmpresas(qtd: number): EmpresaAdmin[] {
+    return Array.from({ length: qtd }, (_, i) => ({
+        id: i + 1,
+        nome: _NOMES_EMPRESA[i % _NOMES_EMPRESA.length],
+        setor: _SETORES[i % _SETORES.length],
+        local: _CIDADES[i % _CIDADES.length],
+        vagasAtivas: Math.floor(Math.random() * 12),
+        totalFuncionarios: _FUNCIONARIOS[i % _FUNCIONARIOS.length],
+        dataCadastro: `2026-0${(i % 3) + 1}-${String((i % 28) + 1).padStart(2, '0')}`,
+        status: (i % 8 === 0 ? 'inativo' : 'ativo') as 'ativo' | 'inativo',
+        plano: _PLANOS[i % _PLANOS.length],
+    }))
+}
+
+export const TODAS_EMPRESAS: EmpresaAdmin[] = gerarEmpresas(40)
+
+// ── Usuários Admin (dashboard) ──────────────────
 export const ADMIN_USUARIOS: UsuarioAdmin[] = [
     { id: 1, nome: 'Maria Silva', email: 'maria@email.com', tipo: 'candidato', dataCadastro: '2026-03-01', status: 'ativo' },
     { id: 2, nome: 'TechBrasil Ltda.', email: 'rh@techbrasil.com', tipo: 'empresa', dataCadastro: '2026-02-28', status: 'ativo' },

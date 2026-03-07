@@ -984,11 +984,30 @@ body {
   .admin-main-grid {
     grid-template-columns: 1fr !important;
   }
+
+  .admin-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
 }
 
 /* ── Mobile pequeno (≤ 480px) ────────────────── */
 @media (max-width: 480px) {
   .admin-stats-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .admin-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Spin animation ──────────────── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
