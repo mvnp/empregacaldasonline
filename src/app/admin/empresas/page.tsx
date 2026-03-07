@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import {
     MapPin, Building2, Users, Briefcase, Award, Globe
 } from 'lucide-react'
@@ -123,13 +124,14 @@ export default function AdminEmpresasPage() {
                                 <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                                     <Briefcase style={{ width: 11, height: 11, display: 'inline', verticalAlign: '-1px' }} /> Desde {e.dataCadastro}
                                 </span>
-                                <button style={{
+                                <Link href={`/admin/empresas/${e.id}`} style={{
                                     background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
                                     padding: '0.3rem 0.7rem', cursor: 'pointer',
                                     fontSize: '0.72rem', fontWeight: 600, color: '#FE8341',
+                                    textDecoration: 'none',
                                 }}>
                                     Ver detalhes
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     )

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import {
     MapPin, Building2, Briefcase, Eye, Calendar,
     Users, Filter
@@ -122,14 +123,15 @@ export default function AdminVagasPage() {
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#94a3b8' }}>
                                     <Calendar style={{ width: 12, height: 12 }} /> {v.dataPublicacao}
                                 </span>
-                                <button style={{
+                                <Link href={`/admin/vagas/${v.id}`} style={{
                                     background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
                                     padding: '0.3rem 0.65rem', cursor: 'pointer',
                                     fontSize: '0.72rem', fontWeight: 600, color: '#2AB9C0',
                                     display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                    textDecoration: 'none',
                                 }}>
                                     <Eye style={{ width: 12, height: 12 }} /> Ver
-                                </button>
+                                </Link>
                             </div>
                         </div>
                     )

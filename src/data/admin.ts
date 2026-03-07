@@ -224,3 +224,272 @@ export function getTipoAtividadeIcon(tipo: AtividadeRecente['tipo']) {
         default: return { emoji: '📌', color: '#09355F' }
     }
 }
+
+// ── Detalhe do Candidato (currículo completo) ────
+export interface ExperienciaProfissional {
+    id: number
+    cargo: string
+    empresa: string
+    periodo: string
+    atual: boolean
+    descricao: string
+}
+
+export interface FormacaoAcademica {
+    id: number
+    curso: string
+    instituicao: string
+    periodo: string
+    tipo: 'Graduação' | 'Pós-Graduação' | 'MBA' | 'Mestrado' | 'Doutorado' | 'Curso Técnico' | 'Certificação'
+}
+
+export interface DocumentoAnexo {
+    id: number
+    nome: string
+    tipo: 'pdf' | 'doc' | 'img' | 'zip'
+    tamanho: string
+    dataUpload: string
+}
+
+export interface IdiomaItem {
+    idioma: string
+    nivel: 'Básico' | 'Intermediário' | 'Avançado' | 'Fluente' | 'Nativo'
+}
+
+export interface CandidatoDetalhe extends CandidatoAdmin {
+    sobrenome: string
+    telefone: string
+    celular: string
+    dataNascimento: string
+    cpf: string
+    bio: string
+    linkedin: string
+    github: string
+    website: string
+    pretensaoSalarial: string
+    disponibilidade: string
+    cep: string
+    logradouro: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
+    formacoes: FormacaoAcademica[]
+    experiencias: ExperienciaProfissional[]
+    idiomas: IdiomaItem[]
+    documentos: DocumentoAnexo[]
+    candidaturasDetalhes: { vaga: string; empresa: string; data: string; status: 'pendente' | 'em_analise' | 'entrevista' | 'aprovado' | 'recusado' }[]
+}
+
+export function getCandidatoDetalhe(slug: string): CandidatoDetalhe | undefined {
+    const id = parseInt(slug)
+    const candidato = TODOS_CANDIDATOS.find(c => c.id === id)
+    if (!candidato) return undefined
+
+    const nomePartes = candidato.nome.split(' ')
+
+    return {
+        ...candidato,
+        sobrenome: nomePartes.length > 1 ? nomePartes.slice(1).join(' ') : '',
+        telefone: `(${11 + (id % 10)}) ${3000 + id}-${1000 + id * 3}`,
+        celular: `(${11 + (id % 10)}) 9${8000 + id}-${2000 + id * 2}`,
+        dataNascimento: `19${85 + (id % 15)}-0${(id % 12) + 1}-${String((id % 28) + 1).padStart(2, '0')}`,
+        cpf: `${String(100 + id).slice(0, 3)}.${String(400 + id).slice(0, 3)}.${String(700 + id).slice(0, 3)}-${String(10 + (id % 90)).slice(0, 2)}`,
+        bio: `Profissional ${candidato.cargo} com ${candidato.experiencia} de experiência no mercado de tecnologia. Apaixonado por criar soluções inovadoras e colaborar com equipes multidisciplinares. Busco constantemente me atualizar com as melhores práticas e novas tecnologias do setor.`,
+        linkedin: `https://linkedin.com/in/${candidato.nome.toLowerCase().replace(' ', '-')}`,
+        github: `https://github.com/${candidato.nome.toLowerCase().replace(' ', '')}`,
+        website: id % 3 === 0 ? `https://${candidato.nome.toLowerCase().replace(' ', '')}.dev` : '',
+        pretensaoSalarial: _SALARIOS[id % _SALARIOS.length],
+        disponibilidade: id % 3 === 0 ? 'Imediata' : id % 3 === 1 ? '15 dias' : '30 dias',
+        cep: `0${1000 + id * 10}-${100 + id}`,
+        logradouro: ['Rua das Flores', 'Av. Brasil', 'Rua Augusta', 'Av. Paulista', 'Rua XV de Novembro'][id % 5],
+        numero: String(100 + id * 7),
+        complemento: id % 2 === 0 ? `Apto ${100 + id}` : '',
+        bairro: ['Centro', 'Jardins', 'Bela Vista', 'Copacabana', 'Boa Viagem'][id % 5],
+        cidade: candidato.local.split(',')[0].trim(),
+        estado: candidato.local.split(',')[1]?.trim() || 'SP',
+        formacoes: [
+            {
+                id: 1,
+                curso: ['Ciência da Computação', 'Engenharia de Software', 'Sistemas de Informação', 'Design Digital', 'Administração'][id % 5],
+                instituicao: ['USP', 'UNICAMP', 'UFMG', 'UFRJ', 'PUC-SP', 'FIAP', 'Mackenzie'][id % 7],
+                periodo: `20${String(10 + (id % 5)).padStart(2, '0')} – 20${String(14 + (id % 5)).padStart(2, '0')}`,
+                tipo: 'Graduação' as const,
+            },
+            ...(id % 2 === 0 ? [{
+                id: 2,
+                curso: ['Gestão de Projetos', 'Inteligência Artificial', 'UX Research', 'Data Science', 'Cloud Computing'][id % 5],
+                instituicao: ['USP', 'FGV', 'FIAP', 'Coursera', 'MIT OpenCourseWare'][id % 5],
+                periodo: `20${String(18 + (id % 3)).padStart(2, '0')} – 20${String(19 + (id % 3)).padStart(2, '0')}`,
+                tipo: 'Pós-Graduação' as const,
+            }] : []),
+            ...(id % 4 === 0 ? [{
+                id: 3,
+                curso: ['AWS Solutions Architect', 'Google Cloud Professional', 'Scrum Master Certified', 'PMP', 'Kubernetes Administrator'][id % 5],
+                instituicao: ['AWS', 'Google', 'Scrum Alliance', 'PMI', 'CNCF'][id % 5],
+                periodo: `2024`,
+                tipo: 'Certificação' as const,
+            }] : []),
+        ],
+        experiencias: [
+            {
+                id: 1,
+                cargo: candidato.cargo,
+                empresa: _EMPRESAS[id % _EMPRESAS.length],
+                periodo: '2023 – Atual',
+                atual: true,
+                descricao: `Responsável pelo desenvolvimento e manutenção de aplicações web utilizando ${candidato.habilidades.join(', ')}. Colaboração com equipe de produto para definir requisitos e implementar novas funcionalidades.`,
+            },
+            {
+                id: 2,
+                cargo: `${candidato.cargo} Júnior`,
+                empresa: _EMPRESAS[(id + 3) % _EMPRESAS.length],
+                periodo: '2021 – 2023',
+                atual: false,
+                descricao: 'Desenvolvimento de interfaces responsivas e integração com APIs REST. Participação em code reviews e implementação de testes unitários e de integração.',
+            },
+            ...(id % 3 === 0 ? [{
+                id: 3,
+                cargo: 'Estagiário de Desenvolvimento',
+                empresa: _EMPRESAS[(id + 7) % _EMPRESAS.length],
+                periodo: '2020 – 2021',
+                atual: false,
+                descricao: 'Apoio no desenvolvimento de funcionalidades e correção de bugs. Aprendizado de metodologias ágeis e boas práticas de programação.',
+            }] : []),
+        ],
+        idiomas: [
+            { idioma: 'Português', nivel: 'Nativo' },
+            { idioma: 'Inglês', nivel: (['Intermediário', 'Avançado', 'Fluente'] as const)[id % 3] },
+            ...(id % 3 === 0 ? [{ idioma: 'Espanhol', nivel: 'Básico' as const }] : []),
+        ],
+        documentos: [
+            { id: 1, nome: `curriculo_${candidato.nome.toLowerCase().replace(' ', '_')}.pdf`, tipo: 'pdf' as const, tamanho: `${120 + id * 3}KB`, dataUpload: '2026-02-15' },
+            { id: 2, nome: 'certificado_graduacao.pdf', tipo: 'pdf' as const, tamanho: `${250 + id * 5}KB`, dataUpload: '2026-01-20' },
+            ...(id % 2 === 0 ? [{ id: 3, nome: 'portfolio.pdf', tipo: 'pdf' as const, tamanho: `${1.2 + (id % 5) * 0.3}MB`, dataUpload: '2026-02-28' }] : []),
+            ...(id % 3 === 0 ? [{ id: 4, nome: 'carta_recomendacao.pdf', tipo: 'pdf' as const, tamanho: `${80 + id * 2}KB`, dataUpload: '2026-03-01' }] : []),
+            ...(id % 4 === 0 ? [{ id: 5, nome: 'certificados_cursos.zip', tipo: 'zip' as const, tamanho: `${2.5 + (id % 3)}MB`, dataUpload: '2026-02-10' }] : []),
+        ],
+        candidaturasDetalhes: [
+            { vaga: _TITULOS[id % _TITULOS.length], empresa: _EMPRESAS[id % _EMPRESAS.length], data: '2026-03-05', status: 'em_analise' as const },
+            { vaga: _TITULOS[(id + 3) % _TITULOS.length], empresa: _EMPRESAS[(id + 2) % _EMPRESAS.length], data: '2026-02-28', status: 'entrevista' as const },
+            { vaga: _TITULOS[(id + 6) % _TITULOS.length], empresa: _EMPRESAS[(id + 4) % _EMPRESAS.length], data: '2026-02-15', status: (['aprovado', 'recusado', 'pendente'] as const)[id % 3] },
+        ],
+    }
+}
+
+// ── Detalhe da Vaga ──────────────────────────────
+export interface VagaDetalhe extends VagaAdmin {
+    descricao: string
+    requisitos: string[]
+    diferenciais: string[]
+    beneficios: string[]
+    responsabilidades: string[]
+    regime: string
+    horario: string
+    candidatosRecentes: { id: number; nome: string; cargo: string; data: string; status: 'pendente' | 'em_analise' | 'entrevista' | 'aprovado' | 'recusado' }[]
+}
+
+const _BENEFICIOS = ['Vale Refeição', 'Vale Transporte', 'Plano de Saúde', 'Plano Odontológico', 'Gympass', 'Day Off no Aniversário', 'Home Office', 'PLR', 'Seguro de Vida', 'Auxílio Home Office', 'Horário Flexível', 'Stock Options']
+const _REQUISITOS_POOL = ['Experiência com metodologias ágeis (Scrum/Kanban)', 'Conhecimento em Git e versionamento de código', 'Experiência com bancos de dados relacionais e NoSQL', 'Inglês intermediário ou superior', 'Experiência em trabalho remoto', 'Capacidade de comunicação e trabalho em equipe', 'Conhecimento em Cloud (AWS, GCP ou Azure)', 'Experiência com CI/CD e DevOps', 'Domínio de testes automatizados', 'Conhecimento em arquitetura de microsserviços']
+
+export function getVagaDetalhe(slug: string): VagaDetalhe | undefined {
+    const id = parseInt(slug)
+    const vaga = TODAS_VAGAS.find(v => v.id === id)
+    if (!vaga) return undefined
+
+    return {
+        ...vaga,
+        descricao: `Estamos em busca de um(a) ${vaga.titulo} para integrar nosso time de ${vaga.modalidade === 'Remoto' ? 'trabalho remoto' : vaga.local}. A pessoa ideal será responsável por contribuir com projetos inovadores, colaborando com equipes multidisciplinares para entregar soluções de alto impacto.\n\nSe você é apaixonado(a) por tecnologia e busca um ambiente dinâmico e colaborativo, essa vaga é para você!`,
+        requisitos: [
+            `${(id % 3) + 2}+ anos de experiência na área`,
+            _REQUISITOS_POOL[id % _REQUISITOS_POOL.length],
+            _REQUISITOS_POOL[(id + 3) % _REQUISITOS_POOL.length],
+            _REQUISITOS_POOL[(id + 5) % _REQUISITOS_POOL.length],
+            `Formação em ${['Ciência da Computação', 'Engenharia de Software', 'Sistemas de Informação', 'áreas correlatas'][id % 4]} ou equivalente`,
+        ],
+        diferenciais: [
+            _REQUISITOS_POOL[(id + 7) % _REQUISITOS_POOL.length],
+            `Certificação ${['AWS', 'Google Cloud', 'Scrum', 'PMP'][id % 4]}`,
+            'Experiência em startups ou empresas de tecnologia',
+        ],
+        beneficios: [
+            _BENEFICIOS[id % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 1) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 3) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 5) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 7) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 9) % _BENEFICIOS.length],
+        ],
+        responsabilidades: [
+            'Desenvolver e manter aplicações de alta qualidade',
+            'Participar de revisões de código e contribuir para a melhoria contínua',
+            'Colaborar com designers e product managers na definição de requisitos',
+            'Garantir a qualidade e performance das entregas',
+            'Documentar processos e soluções técnicas',
+        ],
+        regime: ['CLT', 'PJ', 'CLT'][id % 3],
+        horario: vaga.modalidade === 'Remoto' ? 'Flexível' : '09h às 18h',
+        candidatosRecentes: Array.from({ length: Math.min(vaga.candidaturas, 6) }, (_, i) => ({
+            id: (id * 10) + i + 1,
+            nome: _NOMES[(id + i) % _NOMES.length],
+            cargo: _CARGOS[(id + i) % _CARGOS.length],
+            data: `2026-0${(i % 3) + 1}-${String((i % 28) + 5).padStart(2, '0')}`,
+            status: (['pendente', 'em_analise', 'entrevista', 'aprovado', 'recusado'] as const)[i % 5],
+        })),
+    }
+}
+
+// ── Detalhe da Empresa ───────────────────────────
+export interface EmpresaDetalhe extends EmpresaAdmin {
+    descricao: string
+    website: string
+    email: string
+    telefone: string
+    cnpj: string
+    fundacao: string
+    linkedin: string
+    endereco: string
+    vagasPublicadas: { id: number; titulo: string; modalidade: string; candidaturas: number; status: 'ativa' | 'pausada' | 'expirada' }[]
+    beneficiosOferecidos: string[]
+    tecnologiasUsadas: string[]
+}
+
+export function getEmpresaDetalhe(slug: string): EmpresaDetalhe | undefined {
+    const id = parseInt(slug)
+    const empresa = TODAS_EMPRESAS.find(e => e.id === id)
+    if (!empresa) return undefined
+
+    return {
+        ...empresa,
+        descricao: `A ${empresa.nome} é uma empresa líder no setor de ${empresa.setor}, com sede em ${empresa.local}. Com um time de ${empresa.totalFuncionarios} colaboradores, trabalhamos com as mais modernas tecnologias para entregar soluções inovadoras ao mercado.\n\nNosso objetivo é transformar o futuro do ${empresa.setor.toLowerCase()} no Brasil através de produtos e serviços de alta qualidade.`,
+        website: `https://www.${empresa.nome.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br`,
+        email: `rh@${empresa.nome.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br`,
+        telefone: `(${11 + (id % 10)}) ${3000 + id}-${4000 + id * 2}`,
+        cnpj: `${String(10 + id).slice(0, 2)}.${String(100 + id * 3).slice(0, 3)}.${String(200 + id * 7).slice(0, 3)}/0001-${String(10 + (id % 90)).slice(0, 2)}`,
+        fundacao: `20${String(10 + (id % 14)).padStart(2, '0')}`,
+        linkedin: `https://linkedin.com/company/${empresa.nome.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        endereco: `${['Rua das Flores', 'Av. Brasil', 'Rua Augusta', 'Av. Paulista', 'Rua XV de Novembro'][id % 5]}, ${100 + id * 11} – ${['Centro', 'Jardins', 'Bela Vista', 'Vila Olímpia', 'Pinheiros'][id % 5]}, ${empresa.local}`,
+        vagasPublicadas: Array.from({ length: Math.max(empresa.vagasAtivas, 2) }, (_, i) => ({
+            id: (id * 100) + i + 1,
+            titulo: _TITULOS[(id + i) % _TITULOS.length],
+            modalidade: _MODALIDADES[(id + i) % _MODALIDADES.length],
+            candidaturas: Math.floor(Math.random() * 60) + 3,
+            status: (['ativa', 'ativa', 'ativa', 'pausada', 'expirada'] as const)[i % 5],
+        })),
+        beneficiosOferecidos: [
+            _BENEFICIOS[id % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 2) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 4) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 6) % _BENEFICIOS.length],
+            _BENEFICIOS[(id + 8) % _BENEFICIOS.length],
+        ],
+        tecnologiasUsadas: [
+            _HABILIDADES_POOL[id % _HABILIDADES_POOL.length],
+            _HABILIDADES_POOL[(id + 2) % _HABILIDADES_POOL.length],
+            _HABILIDADES_POOL[(id + 4) % _HABILIDADES_POOL.length],
+            _HABILIDADES_POOL[(id + 6) % _HABILIDADES_POOL.length],
+            _HABILIDADES_POOL[(id + 8) % _HABILIDADES_POOL.length],
+        ],
+    }
+}

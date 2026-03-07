@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import {
     MapPin, Briefcase, Mail, Clock, Filter, User
 } from 'lucide-react'
@@ -115,13 +116,14 @@ export default function AdminCandidatosPage() {
                             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                                 <User style={{ width: 11, height: 11, display: 'inline', verticalAlign: '-1px' }} /> {c.candidaturas} candidaturas
                             </span>
-                            <button style={{
+                            <Link href={`/admin/candidatos/${c.id}`} style={{
                                 background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
                                 padding: '0.3rem 0.7rem', cursor: 'pointer',
                                 fontSize: '0.72rem', fontWeight: 600, color: '#2AB9C0',
+                                textDecoration: 'none',
                             }}>
                                 Ver perfil
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 ))}
