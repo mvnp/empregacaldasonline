@@ -1,71 +1,32 @@
 'use client'
 
 import {
-    TrendingUp, TrendingDown, Users, Briefcase, Building2,
-    FileText, Eye, ArrowUpRight, Clock
+    Users, Briefcase, Building2, FileText, Eye,
+    ArrowUpRight, Clock
 } from 'lucide-react'
 
 import {
     ADMIN_STATS, ADMIN_ATIVIDADES, ADMIN_VAGAS, ADMIN_USUARIOS,
     GRAFICO_CANDIDATURAS, getStatusColor, getTipoAtividadeIcon
 } from '@/data/admin'
+import AdminPageHeader from '@/components/admin/AdminPageHeader'
+import AdminStatCard from '@/components/admin/AdminStatCard'
 
-// ─────────────────────────────────────────────────────────────
-// Dashboard Admin
-// ─────────────────────────────────────────────────────────────
+const STAT_ICONS = [Briefcase, Users, Building2, FileText]
+const STAT_COLORS = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
+
 export default function AdminDashboard() {
     const maxGrafico = Math.max(...GRAFICO_CANDIDATURAS.map(d => d.valor))
 
     return (
         <div>
-            {/* Header */}
-            <div style={{ marginBottom: '1.75rem' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F', marginBottom: '0.25rem' }}>
-                    Dashboard
-                </h1>
-                <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                    Visão geral da plataforma — dados atualizados em tempo real
-                </p>
-            </div>
+            <AdminPageHeader titulo="Dashboard" subtitulo="Visão geral da plataforma — dados atualizados em tempo real" />
 
             {/* ── Stats Cards ── */}
             <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
-                {ADMIN_STATS.map((stat, i) => {
-                    const icons = [Briefcase, Users, Building2, FileText]
-                    const colors = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
-                    const Icon = icons[i]
-                    return (
-                        <div key={stat.label} style={{
-                            background: '#fff', borderRadius: 14, padding: '1.25rem 1.5rem',
-                            border: '1.5px solid #e8edf5', boxShadow: '0 2px 8px rgba(9,53,95,0.04)',
-                            position: 'relative', overflow: 'hidden',
-                        }}>
-                            {/* Decoração de fundo */}
-                            <div style={{ position: 'absolute', top: -12, right: -12, width: 60, height: 60, borderRadius: '50%', background: `${colors[i]}08`, pointerEvents: 'none' }} />
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                <div style={{
-                                    width: 42, height: 42, borderRadius: 11,
-                                    background: `${colors[i]}14`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    <Icon style={{ width: 20, height: 20, color: colors[i] }} />
-                                </div>
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
-                                    fontSize: '0.72rem', fontWeight: 700,
-                                    color: stat.positivo ? '#16a34a' : '#dc2626',
-                                    background: stat.positivo ? '#f0fdf4' : '#fef2f2',
-                                    padding: '2px 7px', borderRadius: 9999,
-                                }}>
-                                    {stat.positivo ? <TrendingUp style={{ width: 11, height: 11 }} /> : <TrendingDown style={{ width: 11, height: 11 }} />}
-                                    {stat.variacao}
-                                </span>
-                            </div>
-                            <p style={{ fontSize: '1.65rem', fontWeight: 900, color: '#09355F', lineHeight: 1, marginBottom: '0.2rem' }}>{stat.valor}</p>
-                            <p style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500 }}>{stat.label}</p>
-                        </div>
-                    )
-                })}
+                {ADMIN_STATS.map((stat, i) => (
+                    <AdminStatCard key={stat.label} stat={stat} icon={STAT_ICONS[i]} color={STAT_COLORS[i]} />
+                ))}
             </div>
 
             {/* ── Grid: Gráfico + Atividades ── */}

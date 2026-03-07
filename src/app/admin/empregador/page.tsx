@@ -1,8 +1,7 @@
 'use client'
 
 import {
-    TrendingUp, TrendingDown, Briefcase, Users, Eye,
-    ArrowUpRight, Clock, Plus, BarChart3
+    Briefcase, Users, Eye, ArrowUpRight, Clock, Plus, BarChart3
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -10,71 +9,36 @@ import {
     EMPREGADOR_STATS, EMPREGADOR_ATIVIDADES, EMPREGADOR_VAGAS,
     GRAFICO_EMPREGADOR, getStatusColor, getTipoAtividadeIcon
 } from '@/data/admin'
+import AdminPageHeader from '@/components/admin/AdminPageHeader'
+import AdminStatCard from '@/components/admin/AdminStatCard'
 
-// ─────────────────────────────────────────────────────────────
-// Dashboard Empregador
-// ─────────────────────────────────────────────────────────────
+const STAT_ICONS = [Briefcase, Users, Eye, BarChart3]
+const STAT_COLORS = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
+
 export default function EmpregadorDashboard() {
     const maxGrafico = Math.max(...GRAFICO_EMPREGADOR.map(d => d.valor))
 
     return (
         <div>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F', marginBottom: '0.25rem' }}>
-                        Bem-vindo de volta! 👋
-                    </h1>
-                    <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-                        Acompanhe o desempenho das suas vagas e candidaturas
-                    </p>
-                </div>
-                <Link
-                    href="/publicar-vaga"
-                    className="btn-primary"
-                    style={{ padding: '0.65rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                >
-                    <Plus style={{ width: 16, height: 16 }} /> Nova Vaga
-                </Link>
-            </div>
+            <AdminPageHeader
+                titulo="Bem-vindo de volta! 👋"
+                subtitulo="Acompanhe o desempenho das suas vagas e candidaturas"
+                acao={
+                    <Link
+                        href="/publicar-vaga"
+                        className="btn-primary"
+                        style={{ padding: '0.65rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                    >
+                        <Plus style={{ width: 16, height: 16 }} /> Nova Vaga
+                    </Link>
+                }
+            />
 
             {/* ── Stats Cards ── */}
             <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
-                {EMPREGADOR_STATS.map((stat, i) => {
-                    const icons = [Briefcase, Users, Eye, BarChart3]
-                    const colors = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
-                    const Icon = icons[i]
-                    return (
-                        <div key={stat.label} style={{
-                            background: '#fff', borderRadius: 14, padding: '1.25rem 1.5rem',
-                            border: '1.5px solid #e8edf5', boxShadow: '0 2px 8px rgba(9,53,95,0.04)',
-                            position: 'relative', overflow: 'hidden',
-                        }}>
-                            <div style={{ position: 'absolute', top: -12, right: -12, width: 60, height: 60, borderRadius: '50%', background: `${colors[i]}08`, pointerEvents: 'none' }} />
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                <div style={{
-                                    width: 42, height: 42, borderRadius: 11,
-                                    background: `${colors[i]}14`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    <Icon style={{ width: 20, height: 20, color: colors[i] }} />
-                                </div>
-                                <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
-                                    fontSize: '0.72rem', fontWeight: 700,
-                                    color: stat.positivo ? '#16a34a' : '#dc2626',
-                                    background: stat.positivo ? '#f0fdf4' : '#fef2f2',
-                                    padding: '2px 7px', borderRadius: 9999,
-                                }}>
-                                    {stat.positivo ? <TrendingUp style={{ width: 11, height: 11 }} /> : <TrendingDown style={{ width: 11, height: 11 }} />}
-                                    {stat.variacao}
-                                </span>
-                            </div>
-                            <p style={{ fontSize: '1.65rem', fontWeight: 900, color: '#09355F', lineHeight: 1, marginBottom: '0.2rem' }}>{stat.valor}</p>
-                            <p style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500 }}>{stat.label}</p>
-                        </div>
-                    )
-                })}
+                {EMPREGADOR_STATS.map((stat, i) => (
+                    <AdminStatCard key={stat.label} stat={stat} icon={STAT_ICONS[i]} color={STAT_COLORS[i]} />
+                ))}
             </div>
 
             {/* ── Grid: Gráfico + Atividades ── */}
