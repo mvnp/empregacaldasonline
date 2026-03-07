@@ -243,15 +243,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </button>
 
                         {/* Avatar */}
-                        <div style={{
-                            width: 36, height: 36, borderRadius: 10,
-                            background: 'linear-gradient(135deg, #09355F, #0d4a82)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: '#FBBF53', fontWeight: 800, fontSize: '0.85rem',
-                            cursor: 'pointer',
-                        }}>
+                        <Link
+                            href="/admin/perfil"
+                            title="Meu Perfil"
+                            style={{
+                                width: 36, height: 36, borderRadius: 10,
+                                background: 'linear-gradient(135deg, #09355F, #0d4a82)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#FBBF53', fontWeight: 800, fontSize: '0.85rem',
+                                cursor: 'pointer', textDecoration: 'none',
+                            }}
+                        >
                             {isEmpregador ? 'E' : 'A'}
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

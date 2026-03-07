@@ -1011,3 +1011,32 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* ── Toast slide-in animation ────── */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ── Input filter base ──────────── */
+.input-filter {
+  width: 100%;
+  background: #f8fafc;
+  border: 1.5px solid #e8edf5;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #1a2332;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.input-filter:focus {
+  border-color: #2AB9C0;
+}
