@@ -136,7 +136,7 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
             </div>
 
             {/* ── Featured Image ── */}
-            <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 2rem' }}>
+            <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 2rem', marginTop: '2rem' }}>
                 <div style={{ position: 'relative', height: 420, borderRadius: '0 0 20px 20px', overflow: 'hidden', boxShadow: '0 8px 40px rgba(9,53,95,0.2)' }}>
                     <Image
                         src={post.imagemCapa}

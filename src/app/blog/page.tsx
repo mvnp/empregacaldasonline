@@ -21,8 +21,8 @@ export default function BlogListPage() {
             <Navbar variant="solid" />
 
             {/* ── Banner da página ── */}
-            <div style={{ background: '#09355F', padding: '3rem 2rem 3.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+            <div style={{ background: '#09355F', padding: '3rem 0 3.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 2rem' }}>
                     <nav className="breadcrumb" style={{ marginBottom: '1.25rem' }}>
                         <Link href="/">Início</Link>
                         <span className="breadcrumb-sep"><ChevronRight style={{ width: 13, height: 13 }} /></span>
