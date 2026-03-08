@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, LogIn, User, Building2, ArrowRight } from 'lucide-react'
@@ -19,7 +19,7 @@ function GoogleLogo() {
     )
 }
 
-export default function LoginPage() {
+function LoginContent() {
     const searchParams = useSearchParams()
     const [email, setEmail] = useState('')
     const [senha, setSenha] = useState('')
@@ -168,5 +168,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense>
+            <LoginContent />
+        </Suspense>
     )
 }

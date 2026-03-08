@@ -41,7 +41,7 @@ export async function cadastrarCandidato(formData: {
         email: formData.email,
         telefone: formData.telefone || null,
         area_interesse: formData.area || null,
-    })
+    } as any)
 
     if (dbError) {
         await admin.auth.admin.deleteUser(authData.user.id)
@@ -98,7 +98,7 @@ export async function cadastrarEmpresa(formData: {
         setor: formData.setor || null,
         tamanho_empresa: formData.tamanho || null,
         responsavel_rh: formData.responsavel || null,
-    })
+    } as any)
 
     if (dbError) {
         await admin.auth.admin.deleteUser(authData.user.id)
@@ -140,7 +140,7 @@ export async function login(formData: {
         .from('users')
         .select('*')
         .eq('auth_id', authData.user.id)
-        .single()
+        .single() as { data: any; error: any }
 
     if (userError || !user) {
         return {
@@ -200,7 +200,7 @@ export async function getUsuarioLogado(): Promise<User | null> {
         .from('users')
         .select('*')
         .eq('auth_id', authUser.id)
-        .single()
+        .single() as { data: any; error: any }
 
     return user as User | null
 }
