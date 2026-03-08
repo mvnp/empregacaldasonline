@@ -1,0 +1,369 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import {
+    ArrowLeft, Save, Plus, X, Briefcase, MapPin, Building2,
+    DollarSign, FileText, Mail, ExternalLink, Star
+} from 'lucide-react'
+import { cadastrarVaga, type VagaFormData } from '@/actions/vagas'
+
+export default function CadastrarVagaPage() {
+    const [loading, setLoading] = useState(false)
+    const [erro, setErro] = useState('')
+
+    const [form, setForm] = useState({
+        titulo: '',
+        descricao: '',
+        empresa: '',
+        local: '',
+        modalidade: '' as VagaFormData['modalidade'],
+        tipo_contrato: '',
+        nivel: '',
+        salario_min: '',
+        salario_max: '',
+        mostrar_salario: true,
+        email_contato: '',
+        link_externo: '',
+        status: 'ativa',
+        destaque: false,
+    })
+
+    const [responsabilidades, setResponsabilidades] = useState<string[]>([''])
+    const [requisitos, setRequisitos] = useState<string[]>([''])
+    const [diferenciais, setDiferenciais] = useState<string[]>([''])
+    const [beneficios, setBeneficios] = useState<string[]>([''])
+
+    function updateField(field: string, value: any) {
+        setForm(prev => ({ ...prev, [field]: value }))
+    }
+
+    function addItem(setter: React.Dispatch<React.SetStateAction<string[]>>) {
+        setter(prev => [...prev, ''])
+    }
+
+    function removeItem(setter: React.Dispatch<React.SetStateAction<string[]>>, index: number) {
+        setter(prev => prev.filter((_, i) => i !== index))
+    }
+
+    function updateItem(setter: React.Dispatch<React.SetStateAction<string[]>>, index: number, value: string) {
+        setter(prev => prev.map((item, i) => i === index ? value : item))
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault()
+        setErro('')
+
+        if (!form.titulo.trim()) { setErro('Título é obrigatório.'); return }
+        if (!form.empresa.trim()) { setErro('Empresa é obrigatória.'); return }
+        if (!form.modalidade) { setErro('Modalidade é obrigatória.'); return }
+
+        setLoading(true)
+
+        try {
+            const resultado = await cadastrarVaga({
+                ...form,
+                responsabilidades: responsabilidades.filter(r => r.trim()),
+                requisitos: requisitos.filter(r => r.trim()),
+                diferenciais: diferenciais.filter(r => r.trim()),
+                beneficios: beneficios.filter(r => r.trim()),
+            })
+
+            if (!resultado.success) {
+                setLoading(false)
+                setErro(resultado.error || 'Erro ao criar vaga.')
+                return
+            }
+
+            window.location.href = '/admin/vagas'
+        } catch {
+            setLoading(false)
+            setErro('Erro de conexão. Tente novamente.')
+        }
+    }
+
+    // ── Estilo ─────────
+    const inputStyle: React.CSSProperties = {
+        width: '100%', padding: '0.7rem 0.85rem', borderRadius: 10,
+        border: '1.5px solid #e2e8f0', fontSize: '0.875rem', color: '#09355F',
+        background: '#f8fafc', outline: 'none', transition: 'border-color 0.18s',
+    }
+    const labelStyle: React.CSSProperties = {
+        fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.35rem', display: 'block',
+    }
+    const sectionTitle: React.CSSProperties = {
+        fontSize: '1rem', fontWeight: 800, color: '#09355F', marginBottom: '1rem',
+        paddingBottom: '0.5rem', borderBottom: '2px solid #e8edf5',
+        display: 'flex', alignItems: 'center', gap: '0.5rem',
+    }
+    const cardStyle: React.CSSProperties = {
+        background: '#fff', borderRadius: 16, padding: '1.5rem',
+        border: '1.5px solid #e8edf5', boxShadow: '0 2px 12px rgba(9,53,95,0.04)',
+        marginBottom: '1.25rem',
+    }
+
+    return (
+        <div>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Link href="/admin/vagas" style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 36, height: 36, borderRadius: 10, background: '#f1f5f9',
+                        color: '#64748b', textDecoration: 'none', transition: 'background 0.18s',
+                    }}>
+                        <ArrowLeft style={{ width: 18, height: 18 }} />
+                    </Link>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F' }}>Cadastrar Vaga</h1>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Preencha os dados da nova vaga</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Erro */}
+            {erro && (
+                <div style={{
+                    background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12,
+                    padding: '0.85rem 1.25rem', marginBottom: '1.25rem',
+                    fontSize: '0.85rem', color: '#dc2626', fontWeight: 500,
+                }}>
+                    {erro}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                {/* ── Dados Principais ── */}
+                <div style={cardStyle}>
+                    <h2 style={sectionTitle}><Briefcase style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Dados Principais</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={labelStyle}>Título da Vaga *</label>
+                            <input
+                                style={inputStyle} placeholder="Ex: Desenvolvedor Front-End React"
+                                value={form.titulo} onChange={e => updateField('titulo', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Empresa *</label>
+                            <input
+                                style={inputStyle} placeholder="Nome da empresa"
+                                value={form.empresa} onChange={e => updateField('empresa', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Local</label>
+                            <input
+                                style={inputStyle} placeholder="Ex: São Paulo, SP"
+                                value={form.local} onChange={e => updateField('local', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Modalidade *</label>
+                            <select style={inputStyle} value={form.modalidade} onChange={e => updateField('modalidade', e.target.value)}>
+                                <option value="">Selecione...</option>
+                                <option value="remoto">Remoto</option>
+                                <option value="hibrido">Híbrido</option>
+                                <option value="presencial">Presencial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Tipo de Contrato</label>
+                            <select style={inputStyle} value={form.tipo_contrato} onChange={e => updateField('tipo_contrato', e.target.value)}>
+                                <option value="">Selecione...</option>
+                                <option value="clt">CLT</option>
+                                <option value="pj">PJ</option>
+                                <option value="estagio">Estágio</option>
+                                <option value="temporario">Temporário</option>
+                                <option value="freelancer">Freelancer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Nível</label>
+                            <select style={inputStyle} value={form.nivel} onChange={e => updateField('nivel', e.target.value)}>
+                                <option value="">Selecione...</option>
+                                <option value="estagio">Estágio</option>
+                                <option value="junior">Júnior</option>
+                                <option value="pleno">Pleno</option>
+                                <option value="senior">Sênior</option>
+                                <option value="gerente">Gerente</option>
+                                <option value="diretor">Diretor</option>
+                            </select>
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={labelStyle}>Descrição</label>
+                            <textarea
+                                style={{ ...inputStyle, minHeight: 120, resize: 'vertical' }}
+                                placeholder="Descreva a vaga, cultura da empresa, oportunidades..."
+                                value={form.descricao} onChange={e => updateField('descricao', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Remuneração ── */}
+                <div style={cardStyle}>
+                    <h2 style={sectionTitle}><DollarSign style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Remuneração</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={labelStyle}>Salário Mínimo (R$)</label>
+                            <input
+                                type="number" step="0.01" style={inputStyle} placeholder="Ex: 3000.00"
+                                value={form.salario_min} onChange={e => updateField('salario_min', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Salário Máximo (R$)</label>
+                            <input
+                                type="number" step="0.01" style={inputStyle} placeholder="Ex: 5000.00"
+                                value={form.salario_max} onChange={e => updateField('salario_max', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.82rem', color: '#374151', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={form.mostrar_salario} onChange={e => updateField('mostrar_salario', e.target.checked)} />
+                        Mostrar salário publicamente na vaga
+                    </label>
+                </div>
+
+                {/* ── Contato ── */}
+                <div style={cardStyle}>
+                    <h2 style={sectionTitle}><Mail style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Contato</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={labelStyle}>E-mail de contato</label>
+                            <input
+                                type="email" style={inputStyle} placeholder="rh@empresa.com"
+                                value={form.email_contato} onChange={e => updateField('email_contato', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Link externo</label>
+                            <input
+                                style={inputStyle} placeholder="https://empresa.com/vaga"
+                                value={form.link_externo} onChange={e => updateField('link_externo', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Itens dinâmicos ── */}
+                {renderListSection('Responsabilidades', 'O que o profissional vai fazer...', responsabilidades, setResponsabilidades)}
+                {renderListSection('Requisitos', 'Experiência com React, TypeScript...', requisitos, setRequisitos)}
+                {renderListSection('Diferenciais', 'Conhecimento em AWS, Docker...', diferenciais, setDiferenciais)}
+                {renderListSection('Benefícios', 'Vale-refeição, plano de saúde...', beneficios, setBeneficios)}
+
+                {/* ── Configurações ── */}
+                <div style={cardStyle}>
+                    <h2 style={sectionTitle}><Star style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Configurações</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={labelStyle}>Status</label>
+                            <select style={inputStyle} value={form.status} onChange={e => updateField('status', e.target.value)}>
+                                <option value="ativa">Ativa</option>
+                                <option value="rascunho">Rascunho</option>
+                                <option value="pausada">Pausada</option>
+                            </select>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'end', paddingBottom: '0.25rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#374151', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={form.destaque} onChange={e => updateField('destaque', e.target.checked)} />
+                                Vaga em destaque
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Botões ── */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                    <Link href="/admin/vagas" style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        padding: '0.7rem 1.5rem', borderRadius: 10,
+                        border: '1.5px solid #e2e8f0', background: '#fff',
+                        color: '#64748b', fontSize: '0.875rem', fontWeight: 600,
+                        textDecoration: 'none', cursor: 'pointer', transition: 'border-color 0.18s',
+                    }}>
+                        Cancelar
+                    </Link>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            padding: '0.7rem 1.75rem', borderRadius: 10,
+                            background: loading ? '#94a3b8' : 'linear-gradient(135deg, #09355F, #0d4a80)',
+                            color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+                            border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                            boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
+                            transition: 'all 0.18s',
+                        }}
+                    >
+                        {loading ? (
+                            <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                        ) : (
+                            <Save style={{ width: 16, height: 16 }} />
+                        )}
+                        {loading ? 'Salvando...' : 'Cadastrar Vaga'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    )
+
+    // ── Componente de lista dinâmica ──
+    function renderListSection(
+        titulo: string,
+        placeholder: string,
+        items: string[],
+        setItems: React.Dispatch<React.SetStateAction<string[]>>
+    ) {
+        return (
+            <div style={cardStyle}>
+                <h2 style={sectionTitle}>
+                    <FileText style={{ width: 18, height: 18, color: '#2AB9C0' }} /> {titulo}
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {items.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <input
+                                style={{ ...inputStyle, flex: 1 }}
+                                placeholder={placeholder}
+                                value={item}
+                                onChange={e => updateItem(setItems, idx, e.target.value)}
+                            />
+                            {items.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeItem(setItems, idx)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        width: 34, height: 34, borderRadius: 8, border: 'none',
+                                        background: '#fef2f2', color: '#dc2626', cursor: 'pointer',
+                                        flexShrink: 0, transition: 'background 0.18s',
+                                    }}
+                                    aria-label={`Remover ${titulo.toLowerCase()}`}
+                                >
+                                    <X style={{ width: 14, height: 14 }} />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => addItem(setItems)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                        marginTop: '0.65rem', padding: '0.45rem 0.85rem',
+                        borderRadius: 8, border: '1.5px dashed #cbd5e1',
+                        background: '#f8fafc', color: '#64748b',
+                        fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                        transition: 'all 0.18s',
+                    }}
+                >
+                    <Plus style={{ width: 14, height: 14 }} /> Adicionar {titulo.toLowerCase().slice(0, -1)}
+                </button>
+            </div>
+        )
+    }
+}
