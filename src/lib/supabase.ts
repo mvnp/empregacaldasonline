@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -32,7 +33,18 @@ export async function createServerSupabaseClient() {
     })
 }
 
+// Admin client com service_role (bypassa RLS — usar SOMENTE no server)
+let _adminClient: ReturnType<typeof createSupabaseClient> | null = null
+export function createAdminClient() {
+    if (!_adminClient) {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+        _adminClient = createSupabaseClient(supabaseUrl, serviceRoleKey)
+    }
+    return _adminClient
+}
+
 // Static client (sem cookies, para cache e RSC sem auth)
 export function createStaticClient() {
     return createBrowserClient(supabaseUrl, supabaseAnonKey)
 }
+

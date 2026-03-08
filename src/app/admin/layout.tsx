@@ -169,19 +169,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     >
                         {sidebarCollapsed ? <ChevronRight style={{ width: 18, height: 18 }} /> : <><ChevronLeft style={{ width: 18, height: 18 }} /> Recolher</>}
                     </button>
-                    <Link
-                        href="/login"
+                    <button
+                        onClick={async () => {
+                            const { logout } = await import('@/actions/auth')
+                            await logout()
+                        }}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '0.75rem',
                             padding: sidebarCollapsed ? '0.7rem' : '0.6rem 0.85rem',
-                            borderRadius: 10, textDecoration: 'none',
-                            color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem',
+                            borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', width: '100%',
                             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                         }}
+                        aria-label="Sair"
                     >
                         <LogOut style={{ width: 18, height: 18 }} />
                         {!sidebarCollapsed && 'Sair'}
-                    </Link>
+                    </button>
                 </div>
             </aside>
 

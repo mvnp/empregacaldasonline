@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, Building2, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import AuthPanel from '@/components/AuthPanel'
+import { cadastrarEmpresa } from '@/actions/auth'
 
 const SETORES = ['Tecnologia', 'Saúde', 'Educação', 'Varejo', 'Indústria', 'Financeiro', 'Logística', 'Construção', 'Agronegócio', 'Outro']
 const TAMANHOS = ['1–10 funcionários', '11–50 funcionários', '51–200 funcionários', '201–500 funcionários', '500+ funcionários']
@@ -44,9 +45,25 @@ export default function CadastroEmpresaPage() {
         if (form.senha !== form.confirmarSenha) { setErro('As senhas não coincidem.'); return }
         if (!aceito) { setErro('Você precisa aceitar os Termos de Uso.'); return }
         setLoading(true)
-        await new Promise(r => setTimeout(r, 1500))
-        setLoading(false)
-        setSucesso(true)
+        const resultado = await cadastrarEmpresa({
+            razaoSocial: form.razaoSocial,
+            cnpj: form.cnpj,
+            email: form.email,
+            telefone: form.telefone,
+            setor: form.setor,
+            tamanho: form.tamanho,
+            responsavel: form.responsavel,
+            senha: form.senha,
+        })
+
+        if (!resultado.success) {
+            setLoading(false)
+            setErro(resultado.error || 'Erro ao criar conta.')
+            return
+        }
+
+        // Auto-login feito na action — redirecionar para o painel
+        window.location.href = resultado.redirectTo || '/admin/empregador'
     }
 
     if (sucesso) {

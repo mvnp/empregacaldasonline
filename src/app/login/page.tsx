@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, LogIn, User, Building2, ArrowRight } from 'lucide-react'
 import AuthPanel from '@/components/AuthPanel'
+import { login as loginAction } from '@/actions/auth'
 
 // ── Google "G" logo ────────────────────────────────────────
 function GoogleLogo() {
@@ -18,6 +20,7 @@ function GoogleLogo() {
 }
 
 export default function LoginPage() {
+    const searchParams = useSearchParams()
     const [email, setEmail] = useState('')
     const [senha, setSenha] = useState('')
     const [mostrarSenha, setMostrarSenha] = useState(false)
@@ -30,9 +33,22 @@ export default function LoginPage() {
         setErro('')
         if (!email || !senha) { setErro('Preencha e-mail e senha.'); return }
         setLoading(true)
-        await new Promise(r => setTimeout(r, 1200)) // simula requisição
-        setLoading(false)
-        setErro('Credenciais inválidas. Verifique e tente novamente.') // demo
+
+        try {
+            const resultado = await loginAction({ email, senha })
+
+            if (!resultado.success) {
+                setLoading(false)
+                setErro(resultado.error || 'Erro ao fazer login.')
+                return
+            }
+
+            const redirect = searchParams.get('redirect')
+            window.location.href = redirect || resultado.redirectTo || '/admin'
+        } catch {
+            setLoading(false)
+            setErro('Erro de conexão. Tente novamente.')
+        }
     }
 
     return (

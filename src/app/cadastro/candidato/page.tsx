@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, User, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import AuthPanel from '@/components/AuthPanel'
+import { cadastrarCandidato } from '@/actions/auth'
 
 // ── Google logo ────────────────────────────────────────────
 function GoogleLogo() {
@@ -45,9 +46,23 @@ export default function CadastroCandidatoPage() {
         if (!aceito) { setErro('Você precisa aceitar os Termos de Uso.'); return }
 
         setLoading(true)
-        await new Promise(r => setTimeout(r, 1500))
-        setLoading(false)
-        setSucesso(true)
+        const resultado = await cadastrarCandidato({
+            nome: form.nome,
+            sobrenome: form.sobrenome,
+            email: form.email,
+            telefone: form.telefone,
+            area: form.area,
+            senha: form.senha,
+        })
+
+        if (!resultado.success) {
+            setLoading(false)
+            setErro(resultado.error || 'Erro ao criar conta.')
+            return
+        }
+
+        // Auto-login feito na action — redirecionar para o painel
+        window.location.href = resultado.redirectTo || '/admin/candidato'
     }
 
     if (sucesso) {
