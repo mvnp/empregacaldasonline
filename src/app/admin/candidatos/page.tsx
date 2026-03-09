@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
-    MapPin, Briefcase, Mail, Clock, Filter, User
+    MapPin, Briefcase, Mail, Clock, Filter, User, Plus
 } from 'lucide-react'
 import { TODOS_CANDIDATOS } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -47,7 +47,22 @@ export default function AdminCandidatosPage() {
 
     return (
         <div>
-            <AdminPageHeader titulo="Candidatos" subtitulo={`${candidatosFiltrados.length} candidatos encontrados`} />
+            <AdminPageHeader
+                titulo="Candidatos"
+                subtitulo={`${candidatosFiltrados.length} candidatos encontrados`}
+                acao={
+                    <Link href="/admin/candidatos/cadastrar" style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                        padding: '0.6rem 1.25rem', borderRadius: 10,
+                        background: 'linear-gradient(135deg, #09355F, #0d4a80)',
+                        color: '#fff', fontSize: '0.82rem', fontWeight: 700,
+                        textDecoration: 'none', boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
+                        transition: 'all 0.18s',
+                    }}>
+                        <Plus style={{ width: 16, height: 16 }} /> Cadastrar Candidato
+                    </Link>
+                }
+            />
 
             <AdminFilterBar onBuscar={() => setExibidos(POR_PAGINA)}>
                 <FilterSearchInput value={busca} onChange={setBusca} placeholder="Buscar candidato..." />
