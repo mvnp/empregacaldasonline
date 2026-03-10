@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
-    MapPin, Building2, Users, Briefcase, Award, Globe
+    MapPin, Building2, Users, Briefcase, Award, Globe, Upload
 } from 'lucide-react'
 import { TODAS_EMPRESAS } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -11,6 +11,7 @@ import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSelect from '@/components/admin/FilterSelect'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
+import ImportarEstabelecimentosModal from '@/components/admin/ImportarEstabelecimentosModal'
 
 const POR_PAGINA = 18
 
@@ -29,6 +30,7 @@ export default function AdminEmpresasPage() {
     const [filtroPlano, setFiltroPlano] = useState('')
     const [exibidos, setExibidos] = useState(POR_PAGINA)
     const [carregando, setCarregando] = useState(false)
+    const [modalImportarAberto, setModalImportarAberto] = useState(false)
 
     const empresasFiltradas = useMemo(() => {
         return TODAS_EMPRESAS.filter(e => {
@@ -55,7 +57,32 @@ export default function AdminEmpresasPage() {
 
     return (
         <div>
-            <AdminPageHeader titulo="Empresas" subtitulo={`${empresasFiltradas.length} empresas cadastradas`} />
+            <AdminPageHeader
+                titulo="Empresas"
+                subtitulo={`${empresasFiltradas.length} empresas cadastradas`}
+                acao={
+                    <button
+                        id="btn-importar-estabelecimentos"
+                        onClick={() => setModalImportarAberto(true)}
+                        title="Importar estabelecimentos via CSV"
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            background: 'linear-gradient(135deg, #09355F, #2AB9C0)',
+                            color: '#fff', border: 'none', borderRadius: 12,
+                            padding: '0.65rem 1.1rem', cursor: 'pointer',
+                            fontWeight: 600, fontSize: '0.82rem',
+                            boxShadow: '0 2px 8px rgba(9,53,95,0.18)',
+                            transition: 'opacity 0.15s',
+                            whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                    >
+                        <Upload className="w-4 h-4" />
+                        Importar CSV
+                    </button>
+                }
+            />
 
             <AdminFilterBar onBuscar={() => setExibidos(POR_PAGINA)}>
                 <FilterSearchInput value={busca} onChange={setBusca} placeholder="Buscar empresa..." />
@@ -145,6 +172,11 @@ export default function AdminEmpresasPage() {
                 onCarregarMais={handleCarregarMais}
                 entidade="empresas"
             />
+
+            {/* Modal de importação CSV */}
+            {modalImportarAberto && (
+                <ImportarEstabelecimentosModal onClose={() => setModalImportarAberto(false)} />
+            )}
         </div>
     )
 }
