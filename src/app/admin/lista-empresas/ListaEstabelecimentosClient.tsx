@@ -181,7 +181,7 @@ export default function ListaEstabelecimentosClient({ initialData, initialCount,
                 onLimpar={handleLimparBusca}
                 temFiltroAtivo={buscaAtiva !== '' || filtroCnaeAtivo !== ''}
             >
-                <FilterSearchInput value={buscaInput} onChange={setBuscaInput} placeholder="Buscar por Nome ou Bairro..." />
+                <FilterSearchInput value={buscaInput} onChange={setBuscaInput} placeholder="Buscar por nome fantasia, bairro, cnpj ou atividade" />
                 <FilterSelect icon={Building2} value={filtroCnae} onChange={setFiltroCnae} placeholder="Todos os CNAEs" flex="0 1 350px" opcoes={cnaesOpcoes} />
             </AdminFilterBar>
 

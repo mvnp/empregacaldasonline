@@ -208,11 +208,15 @@ export async function buscarEstabelecimentosPaginado(busca: string, start: numbe
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const codigosCnae = (cnaesEncontrados as any[])?.map(c => c.codigo) || [];
 
+        // Limpa pontuações para procurar de forma otimizada caso o usuário digite um CNPJ formatado
+        const limpoCnpj = busca.replace(/\D/g, '');
+        const qCnpj = limpoCnpj ? `"%${limpoCnpj}%"` : q;
+
         // Filtra também pelo código array se encontrar
         if (codigosCnae.length > 0) {
-            query = query.or(`nome_fantasia.ilike.${q},bairro.ilike.${q},cnae_fiscal_principal.in.(${codigosCnae.join(',')})`);
+            query = query.or(`nome_fantasia.ilike.${q},bairro.ilike.${q},cnpj_basico.ilike.${qCnpj},cnae_fiscal_principal.in.(${codigosCnae.join(',')})`);
         } else {
-            query = query.or(`nome_fantasia.ilike.${q},bairro.ilike.${q}`);
+            query = query.or(`nome_fantasia.ilike.${q},bairro.ilike.${q},cnpj_basico.ilike.${qCnpj}`);
         }
     }
 
