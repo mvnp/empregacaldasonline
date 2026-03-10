@@ -161,7 +161,7 @@ export async function importarEstabelecimentosCSV(
     }
 }
 
-export async function buscarEstabelecimentosPaginado(busca: string, start: number, limit: number, filtroCnae?: string) {
+export async function buscarEstabelecimentosPaginado(busca: string, start: number, limit: number, filtroCnae?: string, esconderSemNome: boolean = false) {
     const supabaseAdmin = createAdminClient();
     const userClient = await createServerSupabaseClient();
     const { data: { user } } = await userClient.auth.getUser();
@@ -224,7 +224,12 @@ export async function buscarEstabelecimentosPaginado(busca: string, start: numbe
         query = query.eq('cnae_fiscal_principal', filtroCnae);
     }
 
-    const noSearch = !busca && !filtroCnae;
+    if (esconderSemNome) {
+        // Usa is.null para tratar db null, e neq para campo que apenas foi enviado vazio
+        query = query.not('nome_fantasia', 'is', null).neq('nome_fantasia', '');
+    }
+
+    const noSearch = !busca && !filtroCnae && !esconderSemNome;
 
     // Se não tiver busca ativa, tiramos os favoritos da listagem sequencial padrão
     if (noSearch && favoritosIds.length > 0) {
@@ -303,6 +308,73 @@ export async function toggleEstabelecimentoFavorito(estabelecimento_id: number, 
         if (error) return { erro: error.message };
     }
 
+    return { sucesso: true };
+}
+
+export async function atualizarNomeFantasia(id: number, nome_fantasia: string) {
+    const userClient = await createServerSupabaseClient();
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return { erro: 'Usuário não autenticado' };
+
+    const supabaseAdmin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
+        .from('_estabelecimentos')
+        .update({ nome_fantasia })
+        .eq('id', id);
+
+    if (error) {
+        return { erro: error.message };
+    }
+
+    return { sucesso: true };
+}
+
+export async function atualizarTelefone1(id: number, ddd_1: string, telefone_1: string) {
+    const userClient = await createServerSupabaseClient();
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return { erro: 'Usuário não autenticado' };
+
+    const supabaseAdmin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
+        .from('_estabelecimentos')
+        .update({ ddd_1, telefone_1 })
+        .eq('id', id);
+
+    if (error) return { erro: error.message };
+    return { sucesso: true };
+}
+
+export async function atualizarTelefone2(id: number, ddd_2: string, telefone_2: string) {
+    const userClient = await createServerSupabaseClient();
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return { erro: 'Usuário não autenticado' };
+
+    const supabaseAdmin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
+        .from('_estabelecimentos')
+        .update({ ddd_2, telefone_2 })
+        .eq('id', id);
+
+    if (error) return { erro: error.message };
+    return { sucesso: true };
+}
+
+export async function atualizarEmail(id: number, correio_eletronico: string) {
+    const userClient = await createServerSupabaseClient();
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) return { erro: 'Usuário não autenticado' };
+
+    const supabaseAdmin = createAdminClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
+        .from('_estabelecimentos')
+        .update({ correio_eletronico })
+        .eq('id', id);
+
+    if (error) return { erro: error.message };
     return { sucesso: true };
 }
 

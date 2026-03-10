@@ -5,10 +5,11 @@ interface LoadMoreButtonProps {
     exibidos: number
     carregando: boolean
     onCarregarMais: () => void
+    onCarregarTudo?: () => void
     entidade: string
 }
 
-export default function LoadMoreButton({ totalFiltrado, exibidos, carregando, onCarregarMais, entidade }: LoadMoreButtonProps) {
+export default function LoadMoreButton({ totalFiltrado, exibidos, carregando, onCarregarMais, onCarregarTudo, entidade }: LoadMoreButtonProps) {
     const temMais = exibidos < totalFiltrado
     const restantes = totalFiltrado - exibidos
     const visivel = Math.min(exibidos, totalFiltrado)
@@ -34,6 +35,21 @@ export default function LoadMoreButton({ totalFiltrado, exibidos, carregando, on
             <p style={{ textAlign: 'center', fontSize: '0.78rem', color: '#94a3b8', marginTop: '1rem' }}>
                 Exibindo {visivel} de {totalFiltrado} {entidade}
             </p>
+            {temMais && onCarregarTudo && (
+                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                    <button
+                        onClick={onCarregarTudo}
+                        disabled={carregando}
+                        style={{
+                            background: 'none', border: 'none', color: '#2AB9C0',
+                            fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                            textDecoration: 'underline', opacity: carregando ? 0.7 : 1
+                        }}
+                    >
+                        {carregando ? 'Carregando...' : 'Carregar Tudo'}
+                    </button>
+                </div>
+            )}
         </>
     )
 }
