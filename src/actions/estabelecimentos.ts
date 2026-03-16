@@ -381,18 +381,34 @@ export async function atualizarEmail(id: number, correio_eletronico: string) {
 export async function buscarCnaes() {
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-        .from('_cnaes')
-        .select('*')
-        .order('descricao', { ascending: true });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let allCnaes: any[] = [];
+    let start = 0;
+    const limit = 1000;
 
-    if (error) {
-        console.error("Erro na busca de cnaes:", error);
-        return { data: [], erro: true };
+    while (true) {
+        const { data, error } = await supabase
+            .from('_cnaes')
+            .select('*')
+            .order('descricao', { ascending: true })
+            .range(start, start + limit - 1);
+
+        if (error) {
+            console.error("Erro na busca de cnaes:", error);
+            return { data: [], erro: true };
+        }
+
+        if (data && data.length > 0) {
+            allCnaes = [...allCnaes, ...data];
+            if (data.length < limit) break;
+            start += limit;
+        } else {
+            break;
+        }
     }
 
     return {
-        data: data || [],
+        data: allCnaes,
         erro: false
     };
 }
