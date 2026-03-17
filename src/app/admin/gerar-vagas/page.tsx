@@ -30,14 +30,14 @@ export default function GerarVagasPage() {
       // Usar formatação do WhatsApp com asteriscos para ficar em negrito
       parts.push(`*${titulo.toUpperCase()}*`);
     }
-    
+
     const validDinamicos = dinamicos.filter(item => item.trim() !== '');
     if (validDinamicos.length > 0) {
       parts.push(validDinamicos.map(item => `👷 ${item}`).join('\n'));
     }
 
     if (telefone) {
-      parts.push(`☎️ ${telefone}`);
+      parts.push(`☎️ CONTRATANTE\n☎️ ${telefone}`);
     }
 
     parts.push(`💭 entrar no grupo, enviar currículo https://chat.whatsapp.com/KIYDOOBhx9LLc9hWOKmFOE`);
@@ -45,7 +45,7 @@ export default function GerarVagasPage() {
 
     // Une os blocos com dois newlines (quebra de linha dupla)
     const textToCopy = parts.join('\n\n');
-    
+
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -57,7 +57,7 @@ export default function GerarVagasPage() {
       {/* Lado Esquerdo - Formulário */}
       <div className="flex-1 bg-white p-6 rounded-lg shadow-sm border border-zinc-200">
         <h2 className="text-xl font-bold mb-6 text-zinc-800">Gerador de Vagas</h2>
-        
+
         <div className="space-y-6">
           {/* Input 1 */}
           <div>
@@ -137,14 +137,14 @@ export default function GerarVagasPage() {
       {/* Lado Direito - Preview */}
       <div className="flex-1 bg-white p-6 rounded-lg shadow-sm border border-zinc-200 flex flex-col">
         <h2 className="text-xl font-bold mb-6 text-zinc-800">Preview</h2>
-        
+
         <div className="bg-zinc-50 p-6 rounded-lg min-h-[300px] whitespace-pre-wrap flex flex-col text-zinc-900 border border-zinc-200 flex-1">
           {titulo && (
             <div className="font-bold uppercase text-lg mb-4">
               {titulo}
             </div>
           )}
-          
+
           {dinamicos.some(item => item.trim() !== '') && (
             <div className={`text-zinc-800 ${telefone ? 'mb-4' : ''}`}>
               {dinamicos.filter(item => item.trim() !== '').map((item, index) => (
@@ -157,10 +157,11 @@ export default function GerarVagasPage() {
 
           {telefone && (
             <div className="text-zinc-800">
-              ☎️ {telefone}
+              <div>☎️ CONTRATANTE</div>
+              <div>☎️ {telefone}</div>
             </div>
           )}
-          
+
           {(titulo || dinamicos.some(item => item.trim() !== '') || telefone) && (
             <>
               <div className="text-zinc-800 mt-4">
@@ -171,7 +172,7 @@ export default function GerarVagasPage() {
               </div>
             </>
           )}
-          
+
           {!titulo && !dinamicos.some(item => item.trim() !== '') && !telefone && (
             <div className="text-zinc-400 italic text-center py-10 my-auto">
               Preencha o formulário ao lado para ver o preview.
@@ -183,11 +184,10 @@ export default function GerarVagasPage() {
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleCopy}
-            className={`flex items-center gap-2 px-6 py-2 rounded-md font-medium transition-colors ${
-              copied 
-                ? "bg-green-100 text-green-700 hover:bg-green-200" 
-                : "bg-red-600 text-white hover:bg-red-700"
-            }`}
+            className={`flex items-center gap-2 px-6 py-2 rounded-md font-medium transition-colors ${copied
+              ? "bg-green-100 text-green-700 hover:bg-green-200"
+              : "bg-red-600 text-white hover:bg-red-700"
+              }`}
           >
             {copied ? (
               <>
