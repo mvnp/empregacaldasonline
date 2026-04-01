@@ -38,10 +38,12 @@ Acesso total ao sistema. Gerencia vagas, candidatos, empresas, relatórios e con
 | `/admin` | `app/admin/page.tsx` | Dashboard geral (KPIs, tabelas recentes, atividade) |
 | `/admin/vagas` | `app/admin/vagas/page.tsx` | Listagem de todas as vagas (filtros + lazy load) |
 | `/admin/vagas/[slug]` | `app/admin/vagas/[slug]/page.tsx` | Detalhe de uma vaga (descrição, candidatos, requisitos) |
+| `/admin/gerar-vagas` | `app/admin/gerar-vagas/page.tsx` | Geração de vagas e descritivos inteligentes |
 | `/admin/candidatos` | `app/admin/candidatos/page.tsx` | Listagem de todos os candidatos (cards + lazy load) |
 | `/admin/candidatos/[slug]` | `app/admin/candidatos/[slug]/page.tsx` | Perfil completo do candidato (currículo, documentos) |
 | `/admin/empresas` | `app/admin/empresas/page.tsx` | Listagem de todas as empresas (cards + lazy load) |
 | `/admin/empresas/[slug]` | `app/admin/empresas/[slug]/page.tsx` | Detalhe da empresa (sobre, vagas publicadas, contato) |
+| `/admin/lista-empresas` | `app/admin/lista-empresas/page.tsx` | Controle secundário/listagem avançada das empresas cadastradas |
 | `/admin/relatorios` | `app/admin/relatorios/page.tsx` | Relatórios com gráficos (Recharts) e KPIs comparativos |
 | `/admin/configuracoes` | `app/admin/configuracoes/page.tsx` | Configurações do portal (8 seções com abas) |
 | `/admin/perfil` | `app/admin/perfil/page.tsx` | Perfil do usuário logado (dados pessoais, foto) |
@@ -129,8 +131,10 @@ src/app/
     ├── page.tsx                      # Dashboard Admin
     ├── perfil/page.tsx               # Perfil do usuário
     ├── vagas/                        # Vagas (admin)
+    ├── gerar-vagas/                  # IA / Criação de Vagas
     ├── candidatos/                   # Candidatos (admin)
     ├── empresas/                     # Empresas (admin)
+    ├── lista-empresas/               # Controle de Empregadores
     ├── relatorios/page.tsx           # Relatórios (admin)
     ├── configuracoes/page.tsx        # Configurações (admin)
     ├── empregador/                   # Painel empregador

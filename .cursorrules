@@ -1,0 +1,3 @@
+O assistente DEVE SEMPRE ler e seguir as diretrizes documentadas no arquivo `.agent/PROJECT_CONTEXT.md` antes de executar qualquer solicitação enviada por prompt.
+
+Esse arquivo contém o mapa completo e atualizado de tecnologias (Next.js 16+, Supabase, Tailwind v4) e funcionalidades (Site Público, Blog, Painel Admin separadamente consolidado).  O assistente precisa ter plena consciência do contexto do projeto antes de alterar arquivos, para não fugir da arquitetura e design patterns estabelecidos. O não cumprimento dessa regra prejudica ativamente a escalabilidade do projeto EMPREGACALDAS.
