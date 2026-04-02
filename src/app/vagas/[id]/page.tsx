@@ -79,9 +79,9 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
             {/* Header / Navbar adaptado */}
             <div style={{ background: 'linear-gradient(135deg, #09355F, #062340)', position: 'relative', zIndex: 10 }}>
                 <Navbar variant="transparent" />
-                
+
                 {/* Reduced Hero Section */}
-                <div style={{ padding: '3rem 2rem 4rem', maxWidth: 1100, margin: '0 auto', color: '#fff' }}>
+                <div style={{ padding: '5rem 2rem 3.5rem', maxWidth: 1280, margin: '0 auto', color: '#fff' }}>
                     <Link href="/" style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#2AB9C0',
                         fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', marginBottom: '1.5rem',
@@ -128,8 +128,8 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
 
             {/* Layout principal */}
             <main style={{ flex: 1, padding: '2.5rem 2rem 5rem' }}>
-                <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-publica-grid">
-                    
+                <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-publica-grid">
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {/* Descrição */}
                         <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f0f4f8' }}>
@@ -197,7 +197,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
 
                     {/* Sidebar Direita */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: '2rem' }}>
-                        
+
                         {/* Cartão Sobre a Empresa */}
                         {empresaPerfil && (
                             <div style={{ background: '#fff', padding: '1.75rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #f0f4f8', textAlign: 'center' }}>
@@ -211,10 +211,10 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                                 </div>
                                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#09355F', margin: '0 0 0.25rem' }}>{empresaPerfil.nome_fantasia}</h3>
                                 <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 1.25rem' }}>{empresaPerfil.setor || 'Setor não informado'} · {empresaPerfil.local || vaga.local}</p>
-                                
+
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', marginBottom: '0', borderTop: '1px solid #f0f4f8', paddingTop: '1rem' }}>
                                     <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '1.1rem', fontWeight: 800, color: '#09355F', margin: 0 }}>{empresaPerfil.vagas?.filter((v:any) => v.status === 'ativa').length || 1}</p>
+                                        <p style={{ fontSize: '1.1rem', fontWeight: 800, color: '#09355F', margin: 0 }}>{empresaPerfil.vagas?.filter((v: any) => v.status === 'ativa').length || 1}</p>
                                         <p style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>Vagas Ativas</p>
                                     </div>
                                     <div style={{ width: 1, background: '#f0f4f8' }} />
@@ -282,7 +282,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                     }
                 `}</style>
             </main>
-            
+
             <Footer />
         </div>
     )
