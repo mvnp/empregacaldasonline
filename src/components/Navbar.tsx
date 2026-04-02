@@ -12,6 +12,7 @@ const NAV_LINKS = [
     { label: 'Vagas', href: '/vagas' },
     { label: 'Empresas', href: '/empresas' },
     { label: 'Carreiras', href: '/carreiras' },
+    { label: 'Contato', href: '/contato' },
     { label: 'Blog', href: '/blog' },
 ]
 
