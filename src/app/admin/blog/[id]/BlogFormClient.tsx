@@ -3,8 +3,9 @@
 import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
 import { Editor } from '@tinymce/tinymce-react'
+import { salvarPostBlog } from '@/actions/blog'
 
 interface BlogFormProps {
     data: any
@@ -28,8 +29,10 @@ export default function BlogFormClient({ data, categories }: BlogFormProps) {
         authorRole: data?.authorRole || 'Especialista',
         readingTime: data?.readingTime || 5,
         featured: data?.featured || false,
-        imageUrl: data?.imageUrl || '/blog-placeholder.png'
+        imageUrl: data?.imageUrl || ''
     })
+
+    const [imagemArquivo, setImagemArquivo] = useState<File | null>(null)
 
     const handleChange = (e: any) => {
         const { name, value, type, checked } = e.target
@@ -39,12 +42,49 @@ export default function BlogFormClient({ data, categories }: BlogFormProps) {
         }))
     }
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setImagemArquivo(e.target.files[0])
+        }
+    }
+
     const handleSave = async () => {
         setLoading(true)
         try {
-            // Em uma impl. real teríamos uma action "salvarPostBlog(payload)"
-            alert('Artigo salvo com sucesso! (Demostração)')
-            router.push('/admin/blog')
+            const editorContent = editorRef.current ? editorRef.current.getContent() : formData.content
+
+            const fmData = new FormData()
+            if (!isNew && data?.id) {
+                fmData.append('id', data.id)
+            } else {
+                fmData.append('id', 'novo')
+            }
+            
+            fmData.append('title', formData.title)
+            fmData.append('slug', formData.slug)
+            fmData.append('categoryId', formData.categoryId)
+            fmData.append('excerpt', formData.excerpt)
+            fmData.append('content', editorContent)
+            fmData.append('tags', formData.tags)
+            fmData.append('authorName', formData.authorName)
+            fmData.append('authorRole', formData.authorRole)
+            fmData.append('readingTime', formData.readingTime.toString())
+            fmData.append('featured', formData.featured ? 'true' : 'false')
+            fmData.append('imageUrl', formData.imageUrl)
+
+            if (imagemArquivo) {
+                fmData.append('imagemArquivo', imagemArquivo)
+            }
+
+            const res = await salvarPostBlog(fmData)
+            
+            if (res.success) {
+                alert('Artigo salvo com sucesso!')
+                router.push('/admin/blog')
+            } else {
+                alert('Erro: ' + res.error)
+            }
+
         } catch (error) {
             console.error('Erro ao salvar:', error)
             alert('Erro ao salvar artigo.')
@@ -120,18 +160,37 @@ export default function BlogFormClient({ data, categories }: BlogFormProps) {
                     />
                 </div>
 
+                {/* Bloco de Imagem Capa via Upload ou Input Existente */}
+                <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: 8, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#09355F' }}>
+                        <ImageIcon size={16} /> Imagem de Capa
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-start' }}>
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.8rem', fontWeight: 600 }}>Fazer Upload de Nova Imagem</label>
+                            <input type="file" accept="image/*" onChange={handleFileChange} style={{ width: '100%', padding: '0.5rem', background: '#fff', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem' }} />
+                            <small style={{ color: '#64748b', display: 'block', marginTop: '0.3rem' }}>* O upload de arquivo substituirá a URL abaixo.</small>
+                        </div>
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.8rem', fontWeight: 600 }}>Ou Usar URL Existente</label>
+                            <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} placeholder="/blog-placeholder.png" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Infos adicionais */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', padding: '1.5rem', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                     <div>
                         <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>Autor (Nome)</label>
                         <input name="authorName" value={formData.authorName} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} />
                     </div>
                     <div>
-                        <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>Tempo Leitura (min)</label>
-                        <input type="number" name="readingTime" value={formData.readingTime} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} />
+                        <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>Autor (Cargo)</label>
+                        <input name="authorRole" value={formData.authorRole} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} />
                     </div>
                     <div>
-                        <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>URL Imagem Capa</label>
-                        <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} />
+                        <label className="input-label" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>Tempo Leitura (min)</label>
+                        <input type="number" name="readingTime" value={formData.readingTime} onChange={handleChange} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: 6 }} />
                     </div>
                 </div>
 
