@@ -73,7 +73,7 @@ function normNivel(n) {
     const key = n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return (_a = map[key]) !== null && _a !== void 0 ? _a : null;
 }
-const VAGAS = [
+const VAGAS_BASE = [
     // ── 1: Desenvolvedor Front-End React ───────────────────────────────────────
     {
         titulo: 'Desenvolvedor Front-End React',
@@ -389,6 +389,11 @@ const VAGAS = [
         email: 'tech@fintechboost.com.br',
     },
 ];
+const VAGAS = [];
+for (let i = 0; i < 40; i++) {
+    const base = VAGAS_BASE[i % VAGAS_BASE.length];
+    VAGAS.push(Object.assign(Object.assign({}, base), { titulo: `${base.titulo} - ${i + 1}`, empresa: i % 2 === 0 ? base.empresa : `${base.empresa} Group`, destaque: i % 6 === 0 }));
+}
 // ─── Seed ─────────────────────────────────────────────────────────────────────
 async function seed() {
     var _a, _b;

@@ -102,17 +102,114 @@ export async function cadastrarVaga(formData: VagaFormData) {
     return { success: true, vagaId }
 }
 
-// ── Listar vagas ──
+// ── Listar vagas (admin — sem paginação) ──
 export async function listarVagas() {
     const admin = createAdminClient()
 
     const { data, error } = await admin
         .from('vagas')
-        .select('*')
+        .select('*, candidaturas(id)')
         .order('created_at', { ascending: false }) as { data: any; error: any }
 
     if (error) return []
     return data || []
+}
+
+// ── Listar vagas públicas com paginação e filtros ──
+export interface FiltrosPublicos {
+    busca?: string
+    modalidade?: string   // 'remoto' | 'hibrido' | 'presencial' | ''
+    nivel?: string        // 'junior' | 'pleno' | 'senior' | ...
+    tipo_contrato?: string // 'clt' | 'pj' | ...
+    apenasDestaque?: boolean
+    page?: number         // 1-indexed
+    perPage?: number      // padrão 5
+}
+
+export interface VagaPublica {
+    id: number
+    titulo: string
+    empresa: string
+    local: string | null
+    modalidade: string
+    tipo_contrato: string | null
+    nivel: string | null
+    salario_min: number | null
+    salario_max: number | null
+    mostrar_salario: boolean
+    destaque: boolean
+    created_at: string
+}
+
+export interface ListagemVagasResult {
+    vagas: VagaPublica[]
+    total: number
+    page: number
+    perPage: number
+    totalPages: number
+}
+
+export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promise<ListagemVagasResult> {
+    const admin = createAdminClient()
+
+    const page = Math.max(1, filtros.page ?? 1)
+    const perPage = filtros.perPage ?? 5
+    const from = (page - 1) * perPage
+    const to = from + perPage - 1
+
+    // Build query para count
+    let countQuery = admin
+        .from('vagas')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'ativa')
+
+    // Build query para dados
+    let dataQuery = admin
+        .from('vagas')
+        .select('id, titulo, empresa, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, destaque, created_at')
+        .eq('status', 'ativa')
+        .order('destaque', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+    // Filtros opcionais
+    if (filtros.busca?.trim()) {
+        const termo = `%${filtros.busca.trim()}%`
+        countQuery = countQuery.or(`titulo.ilike.${termo},empresa.ilike.${termo}`)
+        dataQuery = dataQuery.or(`titulo.ilike.${termo},empresa.ilike.${termo}`)
+    }
+    if (filtros.modalidade) {
+        countQuery = countQuery.eq('modalidade', filtros.modalidade)
+        dataQuery = dataQuery.eq('modalidade', filtros.modalidade)
+    }
+    if (filtros.nivel) {
+        countQuery = countQuery.eq('nivel', filtros.nivel)
+        dataQuery = dataQuery.eq('nivel', filtros.nivel)
+    }
+    if (filtros.tipo_contrato) {
+        countQuery = countQuery.eq('tipo_contrato', filtros.tipo_contrato)
+        dataQuery = dataQuery.eq('tipo_contrato', filtros.tipo_contrato)
+    }
+    if (filtros.apenasDestaque) {
+        countQuery = countQuery.eq('destaque', true)
+        dataQuery = dataQuery.eq('destaque', true)
+    }
+
+    const [{ count }, { data }] = await Promise.all([
+        countQuery as any,
+        dataQuery as any,
+    ])
+
+    const total = count ?? 0
+    const vagas: VagaPublica[] = data ?? []
+
+    return {
+        vagas,
+        total,
+        page,
+        perPage,
+        totalPages: Math.max(1, Math.ceil(total / perPage)),
+    }
 }
 
 // ── Buscar vaga por ID com itens ──
@@ -120,7 +217,7 @@ export async function buscarVaga(id: number) {
     const admin = createAdminClient()
 
     const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
-        admin.from('vagas').select('*').eq('id', id).single(),
+        admin.from('vagas').select('*, candidaturas(*, candidato:candidatos(*))').eq('id', id).single(),
         admin.from('vaga_responsabilidades').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_requisitos').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_diferenciais').select('*').eq('vaga_id', id).order('ordem'),

@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:vagas": "tsc --project tsconfig.seed.json && node --require dotenv/config .ts-seed-out/seed-vagas.js"
+    "seed:vagas": "tsc --project tsconfig.seed.json && node --require dotenv/config .ts-seed-out/seed-vagas.js",
+    "seed:candidatos": "tsc --project tsconfig.seed.json && node --require dotenv/config .ts-seed-out/seed-candidatos.js",
+    "seed:candidaturas": "tsc --project tsconfig.seed.json && node --require dotenv/config .ts-seed-out/seed-candidaturas.js",
+    "seed:empresas": "tsc --project tsconfig.seed.json && node --require dotenv/config .ts-seed-out/seed-empresas.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",

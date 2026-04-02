@@ -172,12 +172,37 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
     return { success: true, candidatoId: candId }
 }
 
+// ── Buscar candidato por ID ──
+export async function buscarCandidato(id: number) {
+    const admin = createAdminClient()
+
+    const { data, error } = await admin
+        .from('candidatos')
+        .select(`
+            *,
+            experiencias:candidato_experiencias(*),
+            formacoes:candidato_formacoes(*),
+            habilidades:candidato_habilidades(*),
+            idiomas:candidato_idiomas(*),
+            documentos:candidato_documentos(*),
+            candidaturas:candidaturas(
+                status, created_at,
+                vaga:vagas(titulo, empresa)
+            )
+        `)
+        .eq('id', id)
+        .single() as { data: any; error: any }
+
+    if (error || !data) return null
+    return data
+}
+
 // ── Listar candidatos ──
 export async function listarCandidatos() {
     const admin = createAdminClient()
     const { data, error } = await admin
         .from('candidatos')
-        .select('*')
+        .select('*, candidato_habilidades(texto), candidato_experiencias(data_inicio), candidaturas(id)')
         .order('created_at', { ascending: false }) as { data: any; error: any }
 
     if (error) return []

@@ -103,7 +103,7 @@ interface VagaSeed {
   link_externo?: string
 }
 
-const VAGAS: VagaSeed[] = [
+const VAGAS_BASE: VagaSeed[] = [
   // ── 1: Desenvolvedor Front-End React ───────────────────────────────────────
   {
     titulo: 'Desenvolvedor Front-End React',
@@ -434,6 +434,17 @@ const VAGAS: VagaSeed[] = [
     email: 'tech@fintechboost.com.br',
   },
 ]
+
+const VAGAS: VagaSeed[] = []
+for (let i = 0; i < 40; i++) {
+  const base = VAGAS_BASE[i % VAGAS_BASE.length]
+  VAGAS.push({
+    ...base,
+    titulo: `${base.titulo} - ${i + 1}`,
+    empresa: i % 2 === 0 ? base.empresa : `${base.empresa} Group`,
+    destaque: i % 6 === 0, // Alguns destaques a cada 6 vagas
+  })
+}
 
 // ─── Seed ─────────────────────────────────────────────────────────────────────
 
