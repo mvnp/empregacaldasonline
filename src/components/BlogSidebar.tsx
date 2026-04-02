@@ -3,14 +3,29 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Search, Clock, ChevronRight, Tag, Megaphone, ArrowRight } from 'lucide-react'
-import { BLOG_CATEGORIAS, getPostsRecentes, formatarDataBlog, getCategoriaColor } from '@/data/blog'
+import { formatarDataBlog, getCategoriaColor } from '@/data/blog'
+
+interface CategoriaSidebar {
+    nome: string
+    contagem: number
+}
+
+interface PostSidebar {
+    id: string
+    slug: string
+    titulo: string
+    imagemCapa: string
+    tempoLeitura: number
+}
 
 interface BlogSidebarProps {
     slugAtual?: string
+    categorias: CategoriaSidebar[]
+    recentes: PostSidebar[]
 }
 
-export default function BlogSidebar({ slugAtual }: BlogSidebarProps) {
-    const postsRecentes = getPostsRecentes(4).filter(p => p.slug !== slugAtual)
+export default function BlogSidebar({ slugAtual, categorias, recentes }: BlogSidebarProps) {
+    const postsRecentes = recentes.filter(p => p.slug !== slugAtual).slice(0, 4)
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -76,12 +91,12 @@ export default function BlogSidebar({ slugAtual }: BlogSidebarProps) {
                     <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#09355F', margin: 0 }}>Categorias</h3>
                 </div>
                 <div style={{ padding: '0.5rem 0' }}>
-                    {BLOG_CATEGORIAS.map((cat, i) => (
+                    {categorias.map((cat, i) => (
                         <Link
                             key={cat.nome}
                             href={`/blog?categoria=${encodeURIComponent(cat.nome)}`}
                             className="sidebar-cat-link"
-                            style={{ borderBottom: i < BLOG_CATEGORIAS.length - 1 ? '1px solid #f0f4f8' : 'none' }}
+                            style={{ borderBottom: i < categorias.length - 1 ? '1px solid #f0f4f8' : 'none' }}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: getCategoriaColor(cat.nome), flexShrink: 0 }} />
@@ -97,7 +112,6 @@ export default function BlogSidebar({ slugAtual }: BlogSidebarProps) {
 
             {/* ── Anuncie Aqui ── */}
             <div style={{ borderRadius: 14, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #FE8341, #FBBF53)', padding: '1.75rem 1.25rem', textAlign: 'center' }}>
-                {/* Decoração */}
                 <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', bottom: -15, left: -15, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
 
