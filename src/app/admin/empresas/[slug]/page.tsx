@@ -65,7 +65,11 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
         status: empresaDb.status as 'ativa' | 'inativa',
         email: empresaDb.email_contato || 'Sem e-mail',
         telefone: empresaDb.telefone || 'Sem telefone',
-        endereco: `${empresaDb.logradouro || ''}, ${empresaDb.numero || ''} - ${empresaDb.bairro || ''}, ${empresaDb.cidade || ''}/${empresaDb.estado || ''}`.replace(/^, | - , \/$/, ''),
+        endereco: [
+            `${empresaDb.logradouro || ''}, ${empresaDb.numero || ''}`,
+            empresaDb.bairro || '',
+            (empresaDb.cidade && empresaDb.estado) ? `${empresaDb.cidade}/${empresaDb.estado}` : empresaDb.local
+        ].filter(Boolean).join(' - '),
         cnpj: empresaDb.cnpj || '00.000.000/0000-00',
         fundacao: empresaDb.fundacao_ano || 2000,
         website: empresaDb.website,
