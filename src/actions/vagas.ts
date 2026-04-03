@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
+import { requireAdmin, requireAdminOrEmpregador } from '@/lib/server-auth'
 import { redirect } from 'next/navigation'
 
 // ── Tipos ──
@@ -104,7 +105,12 @@ export async function cadastrarVaga(formData: VagaFormData) {
 
 // ── Listar vagas (admin — sem paginação) ──
 export async function listarVagas() {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
 
     const { data, error } = await admin
         .from('vagas')
@@ -214,7 +220,14 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
 
 // ── Buscar vaga por ID com itens ──
 export async function buscarVaga(id: number) {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        // SECURITY PATCH: Ver os dados da vaga completa INCLUINDO candidaturas (PII) requer privilégios.
+        const res = await requireAdminOrEmpregador();
+        admin = res.adminClient;
+    } catch {
+        return null; // A rota pública usa listarVagasPublicas/outros getters para não expor os e-mails dos candidatos. Se tentarem buscarVaga direta, é bloqueado.
+    }
 
     const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
         admin.from('vagas').select('*, candidaturas(*, candidato:candidatos(*))').eq('id', id).single(),

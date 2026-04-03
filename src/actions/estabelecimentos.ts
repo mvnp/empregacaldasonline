@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient, createServerSupabaseClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/server-auth'
 
 // Campos esperados do CSV (na ordem do header)
 const CSV_HEADERS = [
@@ -70,7 +71,8 @@ export async function importarEstabelecimentosCSV(
     csvContent: string,
     options: { limparAntes?: boolean } = {}
 ) {
-    const supabase = createAdminClient()
+    // SECURITY PATCH: Blindar deleção/inserção em massa
+    const supabase = await requireAdmin()
 
     const lines = csvContent
         .split('\n')
@@ -312,11 +314,13 @@ export async function toggleEstabelecimentoFavorito(estabelecimento_id: number, 
 }
 
 export async function atualizarNomeFantasia(id: number, nome_fantasia: string) {
-    const userClient = await createServerSupabaseClient();
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return { erro: 'Usuário não autenticado' };
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = await requireAdmin();
+    } catch (e: any) {
+        return { erro: e.message };
+    }
 
-    const supabaseAdmin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin as any)
         .from('_estabelecimentos')
@@ -331,11 +335,13 @@ export async function atualizarNomeFantasia(id: number, nome_fantasia: string) {
 }
 
 export async function atualizarTelefone1(id: number, ddd_1: string, telefone_1: string) {
-    const userClient = await createServerSupabaseClient();
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return { erro: 'Usuário não autenticado' };
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = await requireAdmin();
+    } catch (e: any) {
+        return { erro: e.message };
+    }
 
-    const supabaseAdmin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin as any)
         .from('_estabelecimentos')
@@ -347,11 +353,13 @@ export async function atualizarTelefone1(id: number, ddd_1: string, telefone_1: 
 }
 
 export async function atualizarTelefone2(id: number, ddd_2: string, telefone_2: string) {
-    const userClient = await createServerSupabaseClient();
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return { erro: 'Usuário não autenticado' };
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = await requireAdmin();
+    } catch (e: any) {
+        return { erro: e.message };
+    }
 
-    const supabaseAdmin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin as any)
         .from('_estabelecimentos')
@@ -363,11 +371,13 @@ export async function atualizarTelefone2(id: number, ddd_2: string, telefone_2: 
 }
 
 export async function atualizarEmail(id: number, correio_eletronico: string) {
-    const userClient = await createServerSupabaseClient();
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return { erro: 'Usuário não autenticado' };
+    let supabaseAdmin;
+    try {
+        supabaseAdmin = await requireAdmin();
+    } catch (e: any) {
+        return { erro: e.message };
+    }
 
-    const supabaseAdmin = createAdminClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabaseAdmin as any)
         .from('_estabelecimentos')

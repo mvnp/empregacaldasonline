@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
+import { requireAdmin, requireAuth } from '@/lib/server-auth'
 
 // ── Tipos ──
 export interface ExperienciaItem {
@@ -172,11 +173,19 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
     return { success: true, candidatoId: candId }
 }
 
-// ── Buscar candidato por ID ──
 export async function buscarCandidato(id: number) {
-    const admin = createAdminClient()
+    // SECURITY PATCH: Requer autenticação para ver PII de candidatos
+    let admin;
+    try {
+        admin = (await requireAuth()).userClient;
+    } catch {
+        return null;
+    }
+    // NOTA: Caso empresas precisem ver, o ideal é usar RLS e userClient normal aqui invés de adminClient para obedecer policies!
+    // Como era inseguro e usava createAdminClient direto, por hora mantemos a busca simples porém EXIGINDO estar logado.
+    const supabaseAdmin = createAdminClient()
 
-    const { data, error } = await admin
+    const { data, error } = await supabaseAdmin
         .from('candidatos')
         .select(`
             *,
@@ -199,7 +208,13 @@ export async function buscarCandidato(id: number) {
 
 // ── Listar candidatos ──
 export async function listarCandidatos() {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
+
     const { data, error } = await admin
         .from('candidatos')
         .select('*, candidato_habilidades(texto), candidato_experiencias(data_inicio), candidaturas(id)')
@@ -211,7 +226,13 @@ export async function listarCandidatos() {
 
 // ── Buscar usuários tipo candidato para vincular ──
 export async function buscarUsuariosCandidato() {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
+
     const { data } = await admin
         .from('users')
         .select('id, nome, sobrenome, email')

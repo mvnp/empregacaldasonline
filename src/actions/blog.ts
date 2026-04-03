@@ -1,21 +1,31 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/server-auth'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { revalidatePath } from 'next/cache'
 
+const MimeTypesPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
+const ExtensoesPermitidas = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg']
+
 // Salva o arquivo de imagem localmente e retorna o caminho
 async function salvarImagemLocal(file: File): Promise<string> {
+    // SECURITY PATCH: Restringir MimeTypes e tamanho
+    if (!MimeTypesPermitidos.includes(file.type)) {
+        throw new Error('Tipo de arquivo não permitido por razões de segurança. Somente imagens.')
+    }
+    if (file.size > 5 * 1024 * 1024) throw new Error('A imagem não pode exceder 5MB.')
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Pegar extensão original
-    const ext = file.name.split('.').pop() || 'png'
+    let ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+    if (!ExtensoesPermitidas.includes(ext)) {
+        ext = 'png' // Força PNG se a extensão for mascarada/inválida
+    }
     const fileName = `blog_${Date.now()}_${crypto.randomUUID().split('-')[0]}.${ext}`
 
-    // Certificar de que a pasta existe
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'blog')
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true })
@@ -29,7 +39,13 @@ async function salvarImagemLocal(file: File): Promise<string> {
 
 export async function salvarPostBlog(formData: FormData) {
     try {
-        const admin = createAdminClient()
+        // SECURITY PATCH: Firewall de Privilégios com RLS Bypass seguro
+        let admin;
+        try {
+            admin = await requireAdmin()
+        } catch (e: any) {
+            return { success: false, error: e.message }
+        }
 
         const id = formData.get('id') as string | null
         const isNew = !id || id === 'novo'

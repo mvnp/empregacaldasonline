@@ -1,9 +1,15 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/server-auth'
 
 export async function listarEmpresas() {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
 
     const { data, error } = await admin
         .from('empresas')
@@ -18,7 +24,12 @@ export async function listarEmpresas() {
 }
 
 export async function buscarEmpresa(id: number) {
-    const admin = createAdminClient()
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return null;
+    }
 
     const { data, error } = await admin
         .from('empresas')
