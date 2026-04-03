@@ -10,6 +10,7 @@ import {
 import {
     cadastrarCandidato as cadastrarAction,
     buscarUsuariosCandidato,
+    buscarMeuUserId,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem, type DocumentoItem
 } from '@/actions/candidatos'
 
@@ -57,7 +58,22 @@ export default function CadastrarCandidatoPage() {
     const [documentos, setDocumentos] = useState<DocumentoItem[]>([{ titulo: '', tipo: '', url: '' }])
 
     useEffect(() => {
-        buscarUsuariosCandidato().then(setUsuarios)
+        async function load() {
+            const users = await buscarUsuariosCandidato();
+            setUsuarios(users);
+            
+            const meuId = await buscarMeuUserId();
+            if (meuId) {
+                const u = users.find((x: any) => x.id === meuId);
+                setForm(prev => ({
+                    ...prev,
+                    user_id: meuId,
+                    nome_completo: prev.nome_completo || (u ? `${u.nome || ''} ${u.sobrenome || ''}`.trim() : ''),
+                    email: prev.email || (u?.email || ''),
+                }));
+            }
+        }
+        load();
     }, [])
 
     function updateField(field: string, value: any) {

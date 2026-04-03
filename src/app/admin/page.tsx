@@ -1,5 +1,8 @@
 'use client'
 
+import React from 'react'
+import { useRouter } from 'next/navigation'
+
 import {
     Users, Briefcase, Building2, FileText, Eye,
     ArrowUpRight, Clock
@@ -11,11 +14,24 @@ import {
 } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminStatCard from '@/components/admin/AdminStatCard'
+import { verificarPermissao } from '@/actions/auth'
 
 const STAT_ICONS = [Briefcase, Users, Building2, FileText]
 const STAT_COLORS = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
 
 export default function AdminDashboard() {
+    // Client-side effect for redirect se não for admin
+    const [verificado, setVerificado] = React.useState(false)
+    const router = useRouter()
+
+    React.useEffect(() => {
+        verificarPermissao(['admin']).then(() => {
+            setVerificado(true)
+        }).catch(() => {})
+    }, [])
+
+    if (!verificado) return null
+
     const maxGrafico = Math.max(...GRAFICO_CANDIDATURAS.map(d => d.valor))
 
     return (

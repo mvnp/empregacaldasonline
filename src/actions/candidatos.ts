@@ -242,3 +242,14 @@ export async function buscarUsuariosCandidato() {
 
     return data || []
 }
+
+export async function buscarMeuUserId() {
+    try {
+        const { user } = await requireAuth();
+        const adminClient = createAdminClient();
+        const { data } = await adminClient.from('users').select('id').eq('auth_id', user.id).single() as { data: any };
+        return data?.id || null;
+    } catch {
+        return null;
+    }
+}

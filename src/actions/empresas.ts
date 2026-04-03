@@ -59,3 +59,37 @@ export async function buscarEmpresaPublica(id: number) {
         .single() as { data: any }
     return data || null
 }
+
+export async function listarMinhasEmpresas() {
+    let user;
+    const admin = createAdminClient()
+    try {
+        const { getUsuarioLogado } = await import('@/actions/auth')
+        user = await getUsuarioLogado()
+    } catch { return [] }
+
+    if (!user) return []
+
+    const { data, error } = await admin
+        .from('empresas')
+        .select(`*, vagas(id, status)`)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false }) as { data: any; error: any }
+
+    return error ? [] : (data || [])
+}
+
+export async function listarEmpresasPublicas() {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+        .from('empresas')
+        .select(`
+            *,
+            vagas(id, status)
+        `)
+        .eq('status', 'ativa')
+        .order('nome_fantasia', { ascending: true }) as { data: any; error: any }
+
+    if (error) return []
+    return data || []
+}

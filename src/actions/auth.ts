@@ -16,10 +16,13 @@ export async function cadastrarCandidato(formData: {
 }) {
     const supabase = await createServerSupabaseClient()
 
-    // 1. Criar usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const admin = createAdminClient()
+
+    // 1. Criar usuário no Supabase Auth com bypass de confirmação
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
         email: formData.email,
         password: formData.senha,
+        email_confirm: true,
     })
 
     if (authError || !authData.user) {
@@ -32,7 +35,6 @@ export async function cadastrarCandidato(formData: {
     }
 
     // 2. Inserir na tabela users vinculando auth_id (admin client bypassa RLS)
-    const admin = createAdminClient()
     const { error: dbError } = await admin.from('users').insert({
         auth_id: authData.user.id,
         tipo: 'candidato' as TipoUsuario,
@@ -70,10 +72,13 @@ export async function cadastrarEmpresa(formData: {
 }) {
     const supabase = await createServerSupabaseClient()
 
-    // 1. Criar usuário no Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const admin = createAdminClient()
+
+    // 1. Criar usuário no Supabase Auth com bypass de confirmação
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
         email: formData.email,
         password: formData.senha,
+        email_confirm: true,
     })
 
     if (authError || !authData.user) {
@@ -86,7 +91,6 @@ export async function cadastrarEmpresa(formData: {
     }
 
     // 2. Inserir na tabela users como empregador (admin client bypassa RLS)
-    const admin = createAdminClient()
     const { error: dbError } = await admin.from('users').insert({
         auth_id: authData.user.id,
         tipo: 'empregador' as TipoUsuario,
@@ -203,6 +207,20 @@ export async function getUsuarioLogado(): Promise<User | null> {
         .single() as { data: any; error: any }
 
     return user as User | null
+}
+
+// ── Obter perfil com relação ao candidato ──
+export async function getMeuPerfilCompleto() {
+    const user = await getUsuarioLogado()
+    if (!user) return null
+
+    const admin = createAdminClient()
+    if (user.tipo === 'candidato') {
+        const { data: candidato } = await admin.from('candidatos').select('*').eq('user_id', user.id).single() as { data: any }
+        return { ...user, candidato_perfil: candidato || null }
+    }
+    
+    return { ...user }
 }
 
 // ── Verificar permissão (para uso em Server Components/Actions) ──

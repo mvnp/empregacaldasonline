@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
     Camera, User, Mail, Phone, MapPin, Building2, Globe,
     Save, FileText, Linkedin, Github, Calendar, Shield
 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
+import { getMeuPerfilCompleto } from '@/actions/auth'
 
 // Dados mock do usuário
 const MOCK_USER = {
@@ -34,14 +35,44 @@ const MOCK_USER = {
 }
 
 export default function PerfilPage() {
-    const [dados, setDados] = useState(MOCK_USER)
+    const [dados, setDados] = useState<any>(MOCK_USER)
     const [fotoPreview, setFotoPreview] = useState('')
     const [salvando, setSalvando] = useState(false)
     const [salvou, setSalvou] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    useEffect(() => {
+        getMeuPerfilCompleto().then((res) => {
+            if (res) {
+                const c = (res as any).candidato_perfil || {}
+                setDados({
+                    nome: res.nome || '',
+                    sobrenome: res.sobrenome || '',
+                    email: res.email || '',
+                    telefone: res.telefone || '',
+                    celular: c.whatsapp || '',
+                    dataNascimento: res.data_nascimento || c.data_nascimento || '',
+                    cpf: '',
+                    cargo: res.tipo === 'admin' ? 'ADMIN' : (res.tipo === 'empregador' ? 'EMPREGADOR' : (c.cargo_desejado || 'CANDIDATO')),
+                    bio: c.resumo || '',
+                    foto: res.avatar_url || '',
+                    cep: '',
+                    logradouro: '',
+                    numero: '',
+                    complemento: '',
+                    bairro: '',
+                    cidade: c.local || '',
+                    estado: '',
+                    linkedin: c.linkedin || '',
+                    github: c.github || '',
+                    website: c.portfolio || '',
+                })
+            }
+        })
+    }, [])
+
     function handleChange(campo: string, valor: string) {
-        setDados(prev => ({ ...prev, [campo]: valor }))
+        setDados((prev: any) => ({ ...prev, [campo]: valor }))
     }
 
     function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {

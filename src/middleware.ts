@@ -44,9 +44,10 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/vagas')
 
     if (isPublica) {
-        // Se já logado e acessa /login, redireciona pra /admin
         if (user && pathname === '/login') {
-            return NextResponse.redirect(new URL('/admin', request.url))
+            // Em vez de forçar /admin, deixamos a página de login gerenciar pra onde vai se já estiver autenticado
+            // Ou manda pro /auth-router (ainda não existe) ou apenas não redireciona aqui.
+            // Para não quebrar, vamos redirecionar para uma rota que decide isso depois (vamos implementar um hook ou auth.ts lida com isso)
         }
         return response
     }
