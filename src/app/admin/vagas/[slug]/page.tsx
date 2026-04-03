@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
     MapPin, Building2, Briefcase, Calendar, Users,
     Clock, DollarSign, CheckCircle2, Star, Gift, FileText,
-    ExternalLink, Eye
+    ExternalLink, Eye, Bot
 } from 'lucide-react'
 import { getStatusColor, getStatusCandidaturaColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -65,6 +65,7 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
         horario: vagaDb.modalidade === 'remoto' ? 'Flexível' : 'Horário Comercial',
         telefone: vagaDb.telefone || null,
         whatsapp: vagaDb.whatsapp || null,
+        json_content: vagaDb.json_content || null,
         dataPublicacao: `${ano}-${mes}-${dia}`,
         candidaturas: (vagaDb.candidaturas || []).length,
         candidatosRecentes: (vagaDb.candidaturas || [])
@@ -232,6 +233,20 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
                             </table>
                         </div>
                     </DetailSection>
+
+                    {/* Exibição do JSON da IA (Se houver) */}
+                    {vaga.json_content && (
+                        <DetailSection icon={() => <Bot style={{ width: 18, height: 18, color: '#10a37f' }} />} titulo="Extração Original (IA)">
+                            <div style={{ padding: '1rem 1.5rem' }}>
+                                <details style={{ background: '#f8fafc', borderRadius: 10, padding: '0.8rem 1rem', border: '1px solid #e2e8f0' }}>
+                                    <summary style={{ fontWeight: 600, color: '#475569', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Ver JSON Bruto Salvo</summary>
+                                    <pre style={{ margin: '1rem 0 0', padding: '1.25rem', background: '#0f172a', color: '#f8fafc', borderRadius: 10, overflowX: 'auto', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                                        {JSON.stringify(vaga.json_content, null, 2)}
+                                    </pre>
+                                </details>
+                            </div>
+                        </DetailSection>
+                    )}
                 </div>
 
                 {/* ── Sidebar ── */}

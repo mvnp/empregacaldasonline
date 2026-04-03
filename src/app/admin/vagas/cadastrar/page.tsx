@@ -34,6 +34,7 @@ export default function CadastrarVagaPage() {
         telefone_contato: '',
         whatsapp_contato: '',
         link_externo: '',
+        json_content: '',
         status: 'ativa',
         destaque: false,
     })
@@ -109,14 +110,16 @@ export default function CadastrarVagaPage() {
 
                 if (response.data) {
                     const json = response.data
+                    
+                    updateField('json_content', JSON.stringify(json, null, 2))
 
                     // ─── Campos Simples ───
                     if (json.titulo) updateField('titulo', json.titulo)
                     if (json.empresa) updateField('empresa', json.empresa)
                     if (json.local) updateField('local', json.local)
                     if (json.descricao) updateField('descricao', json.descricao)
-                    if (json.telefone) updateField('telefone_contato', json.telefone)
-                    if (json.whatsapp) updateField('whatsapp_contato', json.whatsapp)
+                    if (json.telefone || json.telefone_contato) updateField('telefone_contato', json.telefone || json.telefone_contato)
+                    if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', json.whatsapp || json.whatsapp_contato)
 
                     // ─── Mapeamentos (Upper Case p/ keys seguras) ───
                     const modalidadeMap: Record<string, string> = { 'REMOTO': 'remoto', 'HIBRIDO': 'hibrido', 'PRESENCIAL': 'presencial' }
@@ -300,6 +303,19 @@ export default function CadastrarVagaPage() {
             )}
 
             <form onSubmit={handleSubmit}>
+                {/* ── Extrator de IA Result ── */}
+                {form.json_content && (
+                    <div style={cardStyle}>
+                        <h2 style={sectionTitle}><Bot style={{ width: 18, height: 18, color: '#10a37f' }} /> Extração via Inteligência Artificial</h2>
+                        <details style={{ background: '#f8fafc', borderRadius: 10, padding: '0.8rem 1rem', border: '1px solid #e2e8f0' }}>
+                            <summary style={{ fontWeight: 600, color: '#475569', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Ver JSON Bruto Retornado</summary>
+                            <pre style={{ margin: '1rem 0 0', padding: '1.25rem', background: '#0f172a', color: '#f8fafc', borderRadius: 10, overflowX: 'auto', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                                {form.json_content}
+                            </pre>
+                        </details>
+                    </div>
+                )}
+
                 {/* ── Dados Principais ── */}
                 <div style={cardStyle}>
                     <h2 style={sectionTitle}><Briefcase style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Dados Principais</h2>
@@ -312,7 +328,19 @@ export default function CadastrarVagaPage() {
                             />
                         </div>
                         <div>
-                            <label style={labelStyle}>Empresa *</label>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                <label style={{ ...labelStyle, marginBottom: 0 }}>Empresa *</label>
+                                {form.empresa.trim() && (
+                                    <a
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(form.empresa.trim())}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ fontSize: '0.75rem', fontWeight: 600, color: '#2AB9C0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                    >
+                                        Buscar <ExternalLink style={{ width: 11, height: 11 }} />
+                                    </a>
+                                )}
+                            </div>
                             <input
                                 style={inputStyle} placeholder="Nome da empresa"
                                 value={form.empresa} onChange={e => updateField('empresa', e.target.value)}

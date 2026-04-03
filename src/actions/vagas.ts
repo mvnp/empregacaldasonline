@@ -22,6 +22,7 @@ export interface VagaFormData {
     link_externo: string
     status: string
     destaque: boolean
+    json_content?: string | null
     responsabilidades: string[]
     requisitos: string[]
     diferenciais: string[]
@@ -78,6 +79,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
         link_externo: formData.link_externo?.trim() || null,
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
+        json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         criado_por: user.id,
     } as any).select('id').single() as { data: any; error: any }
 
