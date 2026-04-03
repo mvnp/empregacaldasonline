@@ -609,9 +609,16 @@ function SecaoOpenAI() {
                             onChange={e => setModel(e.target.value)} 
                             style={inputStyle}
                         >
-                            <option value="gpt-4o">GPT-4o (Recomendado para visão)</option>
-                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini</option>
+                            <option value="gpt-4o">GPT-4o (Visão) - ($2.50 IN / $10.00 OUT)</option>
+                            <option value="gpt-4o-mini">GPT-4o Mini - ($0.15 IN / $0.60 OUT)</option>
+                            <option value="chatgpt-4o-latest">ChatGPT-4o Latest - ($5.00 IN / $15.00 OUT)</option>
+                            <option value="o1">o1 - ($15.00 IN / $60.00 OUT)</option>
+                            <option value="o1-preview">o1-Preview - ($15.00 IN / $60.00 OUT)</option>
+                            <option value="o1-mini">o1-Mini - ($3.00 IN / $12.00 OUT)</option>
+                            <option value="o3-mini">o3-Mini - ($1.10 IN / $4.40 OUT)</option>
+                            <option value="gpt-4.5-preview">GPT-4.5 Preview - ($75.00 IN / $150.00 OUT)</option>
+                            <option value="gpt-5">GPT-5 - ($100.00 IN / $300.00 OUT)</option>
+                            <option value="gpt-5-turbo">GPT-5 Turbo - ($30.00 IN / $90.00 OUT)</option>
                         </select>
                     </div>
                 </div>

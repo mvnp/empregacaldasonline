@@ -31,6 +31,8 @@ export default function CadastrarVagaPage() {
         salario_max: '',
         mostrar_salario: true,
         email_contato: '',
+        telefone_contato: '',
+        whatsapp_contato: '',
         link_externo: '',
         status: 'ativa',
         destaque: false,
@@ -106,8 +108,49 @@ export default function CadastrarVagaPage() {
                 }
 
                 if (response.data) {
-                    if (response.data.titulo) updateField('titulo', response.data.titulo)
-                    if (response.data.descricao) updateField('descricao', response.data.descricao)
+                    const json = response.data
+
+                    // ─── Campos Simples ───
+                    if (json.titulo) updateField('titulo', json.titulo)
+                    if (json.empresa) updateField('empresa', json.empresa)
+                    if (json.local) updateField('local', json.local)
+                    if (json.descricao) updateField('descricao', json.descricao)
+                    if (json.telefone) updateField('telefone_contato', json.telefone)
+                    if (json.whatsapp) updateField('whatsapp_contato', json.whatsapp)
+
+                    // ─── Mapeamentos (Upper Case p/ keys seguras) ───
+                    const modalidadeMap: Record<string, string> = { 'REMOTO': 'remoto', 'HIBRIDO': 'hibrido', 'PRESENCIAL': 'presencial' }
+                    if (json.modalidade) updateField('modalidade', modalidadeMap[json.modalidade?.toUpperCase()] || 'presencial')
+
+                    const contratoMap: Record<string, string> = { 'CLT': 'clt', 'PJ': 'pj', 'ESTAGIO': 'estagio', 'TEMPORARIO': 'temporario', 'FREELANCER': 'freelancer' }
+                    if (json.tipo_contrato) updateField('tipo_contrato', contratoMap[json.tipo_contrato?.toUpperCase()] || 'clt')
+
+                    const nivelMap: Record<string, string> = { 'ESTAGIO': 'estagio', 'JUNIOR': 'junior', 'PLENO': 'pleno', 'SENIOR': 'senior', 'GERENTE': 'gerente', 'DIRETOR': 'diretor' }
+                    if (json.nivel) updateField('nivel', nivelMap[json.nivel?.toUpperCase()] || 'pleno')
+
+                    if (json.configuracoes?.status) updateField('status', json.configuracoes.status.toLowerCase())
+
+                     // ─── Remuneração ───
+                    const parseBRL = (value: any) => {
+                        if (!value) return ''
+                        return String(value).replace(/\./g, '').replace(',', '.')
+                    }
+                    if (json.remuneracao?.minimo) updateField('salario_min', parseBRL(json.remuneracao.minimo))
+                    if (json.remuneracao?.maximo) updateField('salario_max', parseBRL(json.remuneracao.maximo))
+
+                    // ─── Arrays (Responsabilidades, Benefícios...) ───
+                    if (Array.isArray(json.responsabilidades) && json.responsabilidades.length) {
+                        setResponsabilidades(json.responsabilidades.filter((i: string) => i))
+                    }
+                    if (Array.isArray(json.requisitos) && json.requisitos.length) {
+                        setRequisitos(json.requisitos.filter((i: string) => i))
+                    }
+                    if (Array.isArray(json.diferenciais) && json.diferenciais.length) {
+                        setDiferenciais(json.diferenciais.filter((i: string) => i))
+                    }
+                    if (Array.isArray(json.beneficios) && json.beneficios.length) {
+                        setBeneficios(json.beneficios.filter((i: string) => i))
+                    }
                 }
                 
                 setShowAIModal(false)
@@ -366,6 +409,20 @@ export default function CadastrarVagaPage() {
                             <input
                                 style={inputStyle} placeholder="https://empresa.com/vaga"
                                 value={form.link_externo} onChange={e => updateField('link_externo', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Telefone Comercial</label>
+                            <input
+                                type="tel" style={inputStyle} placeholder="(00) 0000-0000"
+                                value={form.telefone_contato} onChange={e => updateField('telefone_contato', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>WhatsApp</label>
+                            <input
+                                type="tel" style={inputStyle} placeholder="(00) 90000-0000"
+                                value={form.whatsapp_contato} onChange={e => updateField('whatsapp_contato', e.target.value)}
                             />
                         </div>
                     </div>

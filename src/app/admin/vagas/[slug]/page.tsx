@@ -63,6 +63,8 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
         salario: vagaDb.salario_min ? `R$ ${vagaDb.salario_min}` : 'A combinar',
         regime: vagaDb.tipo_contrato || 'CLT',
         horario: vagaDb.modalidade === 'remoto' ? 'Flexível' : 'Horário Comercial',
+        telefone: vagaDb.telefone || null,
+        whatsapp: vagaDb.whatsapp || null,
         dataPublicacao: `${ano}-${mes}-${dia}`,
         candidaturas: (vagaDb.candidaturas || []).length,
         candidatosRecentes: (vagaDb.candidaturas || [])
@@ -240,6 +242,8 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
                             <DetailMiniInfo icon={Briefcase} label="Regime" value={vaga.regime.toUpperCase()} />
                             <DetailMiniInfo icon={Clock} label="Horário" value={vaga.horario} />
                             <DetailMiniInfo icon={MapPin} label="Modalidade" value={vaga.modalidade} />
+                            {vaga.telefone && <DetailMiniInfo icon={MapPin} label="Telefone" value={vaga.telefone} />}
+                            {vaga.whatsapp && <DetailMiniInfo icon={MapPin} label="WhatsApp" value={vaga.whatsapp} />}
                             <DetailMiniInfo icon={Calendar} label="Publicada em" value={vaga.dataPublicacao} />
                             <DetailMiniInfo icon={Users} label="Candidaturas" value={String(vaga.candidaturas)} />
                         </div>

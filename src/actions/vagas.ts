@@ -17,6 +17,8 @@ export interface VagaFormData {
     salario_max: string
     mostrar_salario: boolean
     email_contato: string
+    telefone_contato: string
+    whatsapp_contato: string
     link_externo: string
     status: string
     destaque: boolean
@@ -71,6 +73,8 @@ export async function cadastrarVaga(formData: VagaFormData) {
         salario_max: formData.salario_max ? parseFloat(formData.salario_max) : null,
         mostrar_salario: formData.mostrar_salario,
         email_contato: formData.email_contato?.trim() || null,
+        telefone: formData.telefone_contato?.trim() || null,
+        whatsapp: formData.whatsapp_contato?.trim() || null,
         link_externo: formData.link_externo?.trim() || null,
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
