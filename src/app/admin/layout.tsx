@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -33,6 +33,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname()
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [mobileSidebar, setMobileSidebar] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+        const stored = localStorage.getItem('sidebar_collapsed')
+        if (stored === 'true') {
+            setSidebarCollapsed(true)
+        }
+    }, [])
+
+    const toggleSidebar = () => {
+        const newState = !sidebarCollapsed
+        setSidebarCollapsed(newState)
+        localStorage.setItem('sidebar_collapsed', String(newState))
+    }
 
     const isEmpregador = pathname.startsWith('/admin/empregador')
     const menu = isEmpregador ? EMPREGADOR_MENU : ADMIN_MENU

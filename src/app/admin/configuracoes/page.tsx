@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     Building2, Mail, CreditCard, Shield, ClipboardCheck, Bell,
     Globe, FileText, Save, Eye, EyeOff, Plus, Trash2, ToggleLeft,
-    ToggleRight, Upload, AlertTriangle, Check, ChevronRight
+    ToggleRight, Upload, AlertTriangle, Check, ChevronRight, Cpu
 } from 'lucide-react'
 
 // ── Seções do menu ──
@@ -17,6 +17,7 @@ const SECOES = [
     { id: 'notificacoes', label: 'Notificações', icon: Bell },
     { id: 'seo', label: 'SEO & Integrações', icon: Globe },
     { id: 'termos', label: 'Termos & LGPD', icon: FileText },
+    { id: 'openai', label: 'Open AI Setup', icon: Cpu },
 ]
 
 // ── Estilos compartilhados ──
@@ -535,6 +536,132 @@ function SecaoTermos() {
     )
 }
 
+// ── Seção: Open AI Setup ──
+function SecaoOpenAI() {
+    const [apiKey, setApiKey] = useState('')
+    const [model, setModel] = useState('gpt-4o')
+    const [title, setTitle] = useState('Leitor de Vagas (IA)')
+    const [prompt, setPrompt] = useState('Extraia as informações desta imagem de anúncio de vaga de emprego e retorne um objeto JSON com as seguintes chaves: "titulo" (Título da Vaga) e "descricao" (Descrição da Vaga contendo responsabilidades, requisitos, etc.). Em caso de indisponibilidade não preencha.')
+
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [msg, setMsg] = useState('')
+
+    useEffect(() => {
+        import('@/actions/openai').then((mod) => {
+            mod.lerConfiguracaoOpenAI().then((config) => {
+                if (config) {
+                    setApiKey(config.openai_token)
+                    setModel(config.model)
+                    if (config.title) setTitle(config.title)
+                    if (config.prompt) setPrompt(config.prompt)
+                }
+                setLoading(false)
+            })
+        })
+    }, [])
+
+    const saveSettings = async () => {
+        setSaving(true)
+        setMsg('')
+        const { salvarConfiguracaoOpenAI } = await import('@/actions/openai')
+        const result = await salvarConfiguracaoOpenAI({ openai_token: apiKey, model, title, prompt })
+        setSaving(false)
+
+        if (result.success) {
+            setMsg('Configurações salvas de forma segura no banco de dados!')
+            setTimeout(() => setMsg(''), 3000)
+        } else {
+            setMsg('Erro ao salvar: ' + result.error)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div style={cardStyle}>
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Carregando configurações da IA...</div>
+            </div>
+        )
+    }
+
+    return (
+        <div style={cardStyle}>
+            <div style={cardHeaderStyle}>
+                <Cpu style={{ width: 18, height: 18, color: '#10a37f' }} />
+                <h2 style={cardTitleStyle}>Integração Open AI</h2>
+            </div>
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }} className="admin-cards-grid">
+                    <div>
+                        <label style={labelStyle}>API Key da Open AI</label>
+                        <input 
+                            type="password" 
+                            value={apiKey} 
+                            onChange={e => setApiKey(e.target.value)} 
+                            style={inputStyle} 
+                            placeholder="sk-..." 
+                        />
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Modelo</label>
+                        <select 
+                            value={model} 
+                            onChange={e => setModel(e.target.value)} 
+                            style={inputStyle}
+                        >
+                            <option value="gpt-4o">GPT-4o (Recomendado para visão)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style={{ marginTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }} className="admin-cards-grid">
+                    <div>
+                        <label style={labelStyle}>Título da Tarefa</label>
+                        <input 
+                            type="text" 
+                            value={title} 
+                            onChange={e => setTitle(e.target.value)} 
+                            style={inputStyle} 
+                            placeholder="Ex: Leitura de Empregos Varejo..." 
+                        />
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Prompt Base (Instruções para a IA)</label>
+                        <textarea 
+                            value={prompt} 
+                            onChange={e => setPrompt(e.target.value)} 
+                            style={{ ...textareaStyle, minHeight: 100 }} 
+                            placeholder="Descreva exatamente o que a IA deve procurar no arquivo e o formato esperado (JSON)." 
+                        />
+                    </div>
+                </div>
+                
+                {msg && (
+                    <div style={{ 
+                        marginTop: '1rem', padding: '0.75rem', borderRadius: 8, fontSize: '0.82rem',
+                        background: msg.includes('Erro') ? '#fef2f2' : '#f0fdf4', 
+                        color: msg.includes('Erro') ? '#dc2626' : '#166534',
+                        border: `1px solid ${msg.includes('Erro') ? '#fecaca' : '#bbf7d0'}`
+                    }}>
+                        {msg}
+                    </div>
+                )}
+
+                <div style={{ marginTop: '1.5rem' }}>
+                    <button style={btnSecondary} onClick={saveSettings} disabled={saving}>
+                        <Save style={{ width: 14, height: 14 }} /> {saving ? 'Salvando...' : 'Salvar no Banco de Dados'}
+                    </button>
+                    <p style={hintStyle}>
+                        A chave da API fica protegida no banco de dados para uso na leitura de imagens ao cadastrar vagas.
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── Componente principal ──
 export default function ConfiguracoesPage() {
     const [secaoAtiva, setSecaoAtiva] = useState('portal')
@@ -550,6 +677,7 @@ export default function ConfiguracoesPage() {
             case 'notificacoes': return <SecaoNotificacoes />
             case 'seo': return <SecaoSEO />
             case 'termos': return <SecaoTermos />
+            case 'openai': return <SecaoOpenAI />
             default: return <SecaoPortal />
         }
     }

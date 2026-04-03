@@ -4,13 +4,20 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, Briefcase, MapPin, Building2,
-    DollarSign, FileText, Mail, ExternalLink, Star
+    DollarSign, FileText, Mail, ExternalLink, Star, Bot
 } from 'lucide-react'
 import { cadastrarVaga, type VagaFormData } from '@/actions/vagas'
+import { extrairDadosVagaDeImagem } from '@/actions/openai'
 
 export default function CadastrarVagaPage() {
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
+
+    // ── Estado do Modal IA ──
+    const [showAIModal, setShowAIModal] = useState(false)
+    const [aiFile, setAiFile] = useState<File | null>(null)
+    const [aiLoading, setAiLoading] = useState(false)
+    const [aiError, setAiError] = useState('')
 
     const [form, setForm] = useState({
         titulo: '',
@@ -82,6 +89,38 @@ export default function CadastrarVagaPage() {
         }
     }
 
+    const submitAI = async () => {
+        if (!aiFile) return
+        setAiLoading(true)
+        setAiError('')
+
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+            const base64Image = reader.result as string
+
+            try {
+                const response = await extrairDadosVagaDeImagem(base64Image)
+
+                if (!response.success) {
+                    throw new Error(response.error || 'Erro ao processar imagem.')
+                }
+
+                if (response.data) {
+                    if (response.data.titulo) updateField('titulo', response.data.titulo)
+                    if (response.data.descricao) updateField('descricao', response.data.descricao)
+                }
+                
+                setShowAIModal(false)
+                setAiFile(null)
+            } catch (err: any) {
+                setAiError(err.message)
+            } finally {
+                setAiLoading(false)
+            }
+        }
+        reader.readAsDataURL(aiFile)
+    }
+
     // ── Estilo ─────────
     const inputStyle: React.CSSProperties = {
         width: '100%', padding: '0.7rem 0.85rem', borderRadius: 10,
@@ -119,6 +158,20 @@ export default function CadastrarVagaPage() {
                         <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Preencha os dados da nova vaga</p>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    onClick={() => setShowAIModal(true)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        padding: '0.6rem 1.1rem', borderRadius: 10,
+                        background: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0',
+                        fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                        boxShadow: '0 2px 8px rgba(22, 101, 52, 0.05)'
+                    }}
+                >
+                    <Bot style={{ width: 16, height: 16 }} />
+                    <span className="hidden sm:inline">Preencher com Imagem (IA)</span>
+                </button>
             </div>
 
             {/* Erro */}
@@ -129,6 +182,77 @@ export default function CadastrarVagaPage() {
                     fontSize: '0.85rem', color: '#dc2626', fontWeight: 500,
                 }}>
                     {erro}
+                </div>
+            )}
+
+            {/* Modal IA */}
+            {showAIModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: 16, padding: '2rem',
+                        width: '100%', maxWidth: 450, boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#09355F', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Bot style={{ width: 22, height: 22, color: '#10a37f' }} />
+                                Ler de Imagem
+                            </h2>
+                            <button onClick={() => { setShowAIModal(false); setAiError(''); setAiFile(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                <X style={{ width: 20, height: 20, color: '#64748b' }} />
+                            </button>
+                        </div>
+
+                        {aiError && (
+                            <div style={{ padding: '0.75rem', borderRadius: 8, background: '#fef2f2', color: '#dc2626', fontSize: '0.85rem', marginBottom: '1rem', border: '1px solid #fecaca' }}>
+                                {aiError}
+                            </div>
+                        )}
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ ...labelStyle, marginBottom: '0.5rem' }}>Anexo do Anúncio (Imagem)</label>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={e => setAiFile(e.target.files?.[0] || null)}
+                                style={{
+                                    width: '100%', padding: '0.5rem', border: '1.5px dashed #cbd5e1', 
+                                    borderRadius: 10, background: '#f8fafc', color: '#475569', fontSize: '0.85rem'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button 
+                                type="button" 
+                                onClick={() => { setShowAIModal(false); setAiError(''); setAiFile(null); }}
+                                style={{ padding: '0.6rem 1.2rem', borderRadius: 8, background: '#f1f5f9', color: '#475569', border: 'none', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={submitAI}
+                                disabled={!aiFile || aiLoading}
+                                style={{ 
+                                    padding: '0.6rem 1.2rem', borderRadius: 8, 
+                                    background: aiLoading || !aiFile ? '#94a3b8' : '#10a37f', 
+                                    color: '#fff', border: 'none', fontWeight: 600, cursor: (aiLoading || !aiFile) ? 'not-allowed' : 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                }}
+                            >
+                                {aiLoading ? (
+                                    <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                ) : (
+                                    <Bot style={{ width: 14, height: 14 }} />
+                                )}
+                                {aiLoading ? 'Lendo imagem...' : 'Extrair Informações'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
