@@ -7,13 +7,14 @@ import {
 
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { buscarVaga } from '@/actions/vagas'
-import { buscarEmpresa } from '@/actions/empresas'
+import { buscarVagaPublica } from '@/actions/vagas'
+import { buscarEmpresaPublica } from '@/actions/empresas'
 
 export const dynamic = 'force-dynamic'
 
-function formatSalario(min: number | null, max: number | null, mostrar: boolean) {
+function formatSalario(min: number | null, max: number | null, mostrar: boolean, a_combinar?: boolean) {
     if (!mostrar) return 'A combinar'
+    if (a_combinar) return 'Salário a combinar'
     if (!min && !max) return 'A combinar'
     const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
     if (min && max) return `${fmt(min)} – ${fmt(max)}`
@@ -48,7 +49,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
         )
     }
 
-    const vaga = await buscarVaga(vagaId)
+    const vaga = await buscarVagaPublica(vagaId)
 
     if (!vaga) {
         return (
@@ -66,13 +67,13 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
         )
     }
 
-    const empresaPerfil = vaga.empresa_id ? await buscarEmpresa(vaga.empresa_id) : null;
+    const empresaPerfil = vaga.empresa_id ? await buscarEmpresaPublica(vaga.empresa_id) : null;
 
     const modalidade = vaga.modalidade.charAt(0).toUpperCase() + vaga.modalidade.slice(1)
     const regime = (vaga.tipo_contrato || 'CLT').toUpperCase()
     const nivel = vaga.nivel ? vaga.nivel.charAt(0).toUpperCase() + vaga.nivel.slice(1) : ''
     const horario = vaga.modalidade === 'remoto' ? 'Horário Flexível' : 'Horário Comercial'
-    const salario = formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario)
+    const salario = formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f7fa' }}>

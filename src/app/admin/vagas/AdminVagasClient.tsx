@@ -153,6 +153,26 @@ export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
                                 }}>
                                     <Eye style={{ width: 12, height: 12 }} /> Ver
                                 </Link>
+
+                                <Link href={`/admin/vagas/editar/${v.id}`} style={{
+                                    background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
+                                    padding: '0.3rem 0.65rem', cursor: 'pointer',
+                                    fontSize: '0.72rem', fontWeight: 600, color: '#FE8341',
+                                    display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                    textDecoration: 'none',
+                                }}>
+                                    <Briefcase style={{ width: 12, height: 12 }} /> Editar
+                                </Link>
+
+                                <Link href={`/admin/vagas/cadastrar?clone=${v.id}`} style={{
+                                    background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
+                                    padding: '0.3rem 0.65rem', cursor: 'pointer',
+                                    fontSize: '0.72rem', fontWeight: 600, color: '#09355F',
+                                    display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                    textDecoration: 'none',
+                                }}>
+                                    <Plus style={{ width: 12, height: 12 }} /> Clonar
+                                </Link>
                             </div>
                         </div>
                     )

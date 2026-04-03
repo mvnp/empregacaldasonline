@@ -16,6 +16,7 @@ export interface VagaFormData {
     salario_min: string
     salario_max: string
     mostrar_salario: boolean
+    salario_a_combinar: boolean
     email_contato: string
     telefone_contato: string
     whatsapp_contato: string
@@ -61,6 +62,33 @@ export async function cadastrarVaga(formData: VagaFormData) {
     if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
     if (!formData.modalidade) return { success: false, error: 'Modalidade é obrigatória.' }
 
+    // Verifica se já existe uma empresa com esse nome para esse usuário
+    let empresa_id = null;
+    const { data: dbEmpresa } = await (admin.from('empresas') as any)
+        .select('id')
+        .eq('nome_fantasia', formData.empresa.trim())
+        .limit(1)
+        .single();
+    
+    if (dbEmpresa) {
+        empresa_id = dbEmpresa.id;
+    } else {
+        // Criar empresa
+        const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
+            user_id: user.id,
+            nome_fantasia: formData.empresa.trim(),
+            local: formData.local?.trim() || null,
+            email_contato: formData.email_contato?.trim() || null,
+            telefone: formData.telefone_contato?.trim() || null,
+            whatsapp: formData.whatsapp_contato?.trim() || null,
+            status: 'ativa'
+        }).select('id').single();
+
+        if (novaEmpresa) {
+            empresa_id = novaEmpresa.id;
+        }
+    }
+
     // 1. Inserir vaga
     const { data: vaga, error: vagaError } = await admin.from('vagas').insert({
         titulo: formData.titulo.trim(),
@@ -73,6 +101,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
         salario_min: formData.salario_min ? parseFloat(formData.salario_min) : null,
         salario_max: formData.salario_max ? parseFloat(formData.salario_max) : null,
         mostrar_salario: formData.mostrar_salario,
+        salario_a_combinar: formData.salario_a_combinar || false,
         email_contato: formData.email_contato?.trim() || null,
         telefone: formData.telefone_contato?.trim() || null,
         whatsapp: formData.whatsapp_contato?.trim() || null,
@@ -81,6 +110,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
         destaque: formData.destaque || false,
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         criado_por: user.id,
+        empresa_id: empresa_id
     } as any).select('id').single() as { data: any; error: any }
 
     if (vagaError || !vaga) {
@@ -90,6 +120,106 @@ export async function cadastrarVaga(formData: VagaFormData) {
     const vagaId = vaga.id
 
     // 2. Inserir itens auxiliares
+    const inserirItens = async (tabela: string, itens: string[]) => {
+        const dados = itens
+            .filter(t => t.trim())
+            .map((texto, idx) => ({ vaga_id: vagaId, texto: texto.trim(), ordem: idx }))
+        if (dados.length > 0) {
+            await admin.from(tabela).insert(dados as any)
+        }
+    }
+
+    await Promise.all([
+        inserirItens('vaga_responsabilidades', formData.responsabilidades || []),
+        inserirItens('vaga_requisitos', formData.requisitos || []),
+        inserirItens('vaga_diferenciais', formData.diferenciais || []),
+        inserirItens('vaga_beneficios', formData.beneficios || []),
+    ])
+
+    return { success: true, vagaId }
+}
+
+// ── Editar Vaga ──
+export async function editarVaga(vagaId: number, formData: VagaFormData) {
+    const supabase = await createServerSupabaseClient()
+
+    // Verificar se está logado
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) {
+        return { success: false, error: 'Você precisa estar logado.' }
+    }
+
+    const admin = createAdminClient()
+    const { data: user } = await admin
+        .from('users')
+        .select('id, tipo')
+        .eq('auth_id', authUser.id)
+        .single() as { data: any; error: any }
+
+    if (!user || !['admin', 'empregador'].includes(user.tipo)) {
+        return { success: false, error: 'Sem permissão.' }
+    }
+
+    // Validações
+    if (!formData.titulo?.trim()) return { success: false, error: 'Título é obrigatório.' }
+    if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
+
+    let empresa_id = null;
+    const { data: dbEmpresa } = await (admin.from('empresas') as any)
+        .select('id')
+        .eq('nome_fantasia', formData.empresa.trim())
+        .limit(1)
+        .single();
+    
+    if (dbEmpresa) {
+        empresa_id = dbEmpresa.id;
+    } else {
+        const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
+            user_id: user.id,
+            nome_fantasia: formData.empresa.trim(),
+            local: formData.local?.trim() || null,
+            email_contato: formData.email_contato?.trim() || null,
+            telefone: formData.telefone_contato?.trim() || null,
+            whatsapp: formData.whatsapp_contato?.trim() || null,
+            status: 'ativa'
+        }).select('id').single();
+        if (novaEmpresa) empresa_id = novaEmpresa.id;
+    }
+
+    // 1. Atualizar vaga
+    const { error: vagaError } = await admin.from('vagas').update({
+        titulo: formData.titulo.trim(),
+        descricao: formData.descricao?.trim() || null,
+        empresa: formData.empresa.trim(),
+        local: formData.local?.trim() || null,
+        modalidade: formData.modalidade,
+        tipo_contrato: formData.tipo_contrato || null,
+        nivel: formData.nivel || null,
+        salario_min: formData.salario_min ? parseFloat(formData.salario_min) : null,
+        salario_max: formData.salario_max ? parseFloat(formData.salario_max) : null,
+        mostrar_salario: formData.mostrar_salario,
+        salario_a_combinar: formData.salario_a_combinar || false,
+        email_contato: formData.email_contato?.trim() || null,
+        telefone: formData.telefone_contato?.trim() || null,
+        whatsapp: formData.whatsapp_contato?.trim() || null,
+        link_externo: formData.link_externo?.trim() || null,
+        status: formData.status || 'ativa',
+        destaque: formData.destaque || false,
+        json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
+        empresa_id: empresa_id,
+        updated_at: new Date().toISOString()
+    } as any).eq('id', vagaId);
+
+    if (vagaError) return { success: false, error: 'Erro ao atualizar vaga.' }
+
+    // 2. Recriar itens auxiliares (apaga tudo e recria pra ficar simples)
+    await Promise.all([
+        admin.from('vaga_responsabilidades').delete().eq('vaga_id', vagaId),
+        admin.from('vaga_requisitos').delete().eq('vaga_id', vagaId),
+        admin.from('vaga_diferenciais').delete().eq('vaga_id', vagaId),
+        admin.from('vaga_beneficios').delete().eq('vaga_id', vagaId),
+    ]);
+
     const inserirItens = async (tabela: string, itens: string[]) => {
         const dados = itens
             .filter(t => t.trim())
@@ -149,6 +279,7 @@ export interface VagaPublica {
     salario_min: number | null
     salario_max: number | null
     mostrar_salario: boolean
+    salario_a_combinar: boolean
     destaque: boolean
     created_at: string
 }
@@ -178,10 +309,9 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
     // Build query para dados
     let dataQuery = admin
         .from('vagas')
-        .select('id, titulo, empresa, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, destaque, created_at')
+        .select('id, titulo, empresa, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, created_at')
         .eq('status', 'ativa')
-        .order('destaque', { ascending: false })
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .range(from, to)
 
     // Filtros opcionais
@@ -237,6 +367,27 @@ export async function buscarVaga(id: number) {
 
     const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
         admin.from('vagas').select('*, candidaturas(*, candidato:candidatos(*))').eq('id', id).single(),
+        admin.from('vaga_responsabilidades').select('*').eq('vaga_id', id).order('ordem'),
+        admin.from('vaga_requisitos').select('*').eq('vaga_id', id).order('ordem'),
+        admin.from('vaga_diferenciais').select('*').eq('vaga_id', id).order('ordem'),
+        admin.from('vaga_beneficios').select('*').eq('vaga_id', id).order('ordem'),
+    ]) as any[]
+
+    if (vagaRes.error || !vagaRes.data) return null
+
+    return {
+        ...vagaRes.data,
+        responsabilidades: (respRes.data || []).map((r: any) => r.texto),
+        requisitos: (reqRes.data || []).map((r: any) => r.texto),
+        diferenciais: (difRes.data || []).map((r: any) => r.texto),
+        beneficios: (benRes.data || []).map((r: any) => r.texto),
+    }
+}
+
+export async function buscarVagaPublica(id: number) {
+    const admin = createAdminClient();
+    const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
+        admin.from('vagas').select('*').eq('id', id).eq('status', 'ativa').single(),
         admin.from('vaga_responsabilidades').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_requisitos').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_diferenciais').select('*').eq('vaga_id', id).order('ordem'),

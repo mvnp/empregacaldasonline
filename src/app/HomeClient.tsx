@@ -12,7 +12,7 @@ import VagaCardDB from '@/components/VagaCardDB'
 import { listarVagasPublicas, VagaPublica, ListagemVagasResult } from '@/actions/vagas'
 import { FILTROS_INICIAL, FiltrosState } from '@/data/vagas'
 
-const PER_PAGE = 15
+const PER_PAGE = 5
 
 // ── Mapa de normalização (UI → banco) ────────────────────────
 const MODALIDADE_MAP: Record<string, string> = {

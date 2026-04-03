@@ -58,8 +58,9 @@ function formatNivel(n: string | null): string {
 }
 
 /** Formata salário a partir de min/max numéricos */
-function formatSalario(min: number | null, max: number | null, mostrar: boolean): string {
+function formatSalario(min: number | null, max: number | null, mostrar: boolean, a_combinar?: boolean): string {
     if (!mostrar) return 'A combinar'
+    if (a_combinar) return 'Salário a combinar'
     if (!min && !max) return 'A combinar'
     const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
     if (min && max) return `${fmt(min)} – ${fmt(max)}`
@@ -147,7 +148,7 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                             <span className="badge badge-level">{formatNivel(vaga.nivel)}</span>
                         )}
                         <span className="badge badge-salary">
-                            {formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario)}
+                            {formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)}
                         </span>
                     </div>
 

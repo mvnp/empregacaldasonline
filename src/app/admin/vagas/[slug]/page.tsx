@@ -60,7 +60,7 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
         requisitos: vagaDb.requisitos || [],
         diferenciais: vagaDb.diferenciais || [],
         beneficios: vagaDb.beneficios || [],
-        salario: vagaDb.salario_min ? `R$ ${vagaDb.salario_min}` : 'A combinar',
+        salario: vagaDb.salario_a_combinar ? 'Salário a combinar' : (vagaDb.salario_min ? `R$ ${vagaDb.salario_min}` : 'A combinar'),
         regime: vagaDb.tipo_contrato || 'CLT',
         horario: vagaDb.modalidade === 'remoto' ? 'Flexível' : 'Horário Comercial',
         telefone: vagaDb.telefone || null,

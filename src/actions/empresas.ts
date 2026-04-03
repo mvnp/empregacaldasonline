@@ -48,3 +48,14 @@ export async function buscarEmpresa(id: number) {
     if (error || !data) return null
     return data
 }
+
+export async function buscarEmpresaPublica(id: number) {
+    const admin = createAdminClient()
+    const { data } = await admin
+        .from('empresas')
+        .select(`*, vagas(id, status)`)
+        .eq('id', id)
+        .eq('status', 'ativa')
+        .single() as { data: any }
+    return data || null
+}
