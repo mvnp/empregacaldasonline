@@ -90,7 +90,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
     if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
     if (!formData.modalidade) return { success: false, error: 'Modalidade é obrigatória.' }
 
-    const empresa_id = await encontrarEmpresaExistente(
+    let empresa_id = await encontrarEmpresaExistente(
         admin, 
         formData.empresa, 
         formData.telefone_contato, 
@@ -98,6 +98,24 @@ export async function cadastrarVaga(formData: VagaFormData) {
         formData.email_contato,
         formData.link_externo
     );
+
+    if (!empresa_id) {
+        // Criar empresa se não detectou nenhuma existente
+        const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
+            user_id: user.id,
+            nome_fantasia: formData.empresa.trim(),
+            local: formData.local?.trim() || null,
+            email_contato: formData.email_contato?.trim() || null,
+            telefone: formData.telefone_contato?.trim() || null,
+            whatsapp: formData.whatsapp_contato?.trim() || null,
+            website: formData.link_externo?.trim() || null,
+            status: 'ativa'
+        }).select('id').single();
+
+        if (novaEmpresa) {
+            empresa_id = novaEmpresa.id;
+        }
+    }
 
     // 1. Inserir vaga
     const { data: vaga, error: vagaError } = await admin.from('vagas').insert({
@@ -174,7 +192,7 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
     if (!formData.titulo?.trim()) return { success: false, error: 'Título é obrigatório.' }
     if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
 
-    const empresa_id = await encontrarEmpresaExistente(
+    let empresa_id = await encontrarEmpresaExistente(
         admin, 
         formData.empresa, 
         formData.telefone_contato, 
@@ -182,6 +200,24 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
         formData.email_contato,
         formData.link_externo
     );
+
+    if (!empresa_id) {
+        // Criar empresa se não detectou nenhuma existente
+        const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
+            user_id: user.id,
+            nome_fantasia: formData.empresa.trim(),
+            local: formData.local?.trim() || null,
+            email_contato: formData.email_contato?.trim() || null,
+            telefone: formData.telefone_contato?.trim() || null,
+            whatsapp: formData.whatsapp_contato?.trim() || null,
+            website: formData.link_externo?.trim() || null,
+            status: 'ativa'
+        }).select('id').single();
+
+        if (novaEmpresa) {
+            empresa_id = novaEmpresa.id;
+        }
+    }
 
     // 1. Atualizar vaga
     const { error: vagaError } = await (admin.from('vagas') as any).update({
