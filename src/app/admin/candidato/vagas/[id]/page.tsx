@@ -65,6 +65,11 @@ export default async function DetalheVagaCandidatoPage({ params }: { params: Pro
     const salario = formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
 
     const jaCandidatado = await verificarCandidatura(vaga.id)
+    
+    // Fetch curriculos for selection
+    const { buscarMeuUserId, listarMeusCurriculos } = await import('@/actions/candidatos')
+    const userId = await buscarMeuUserId()
+    const curriculos = userId ? await listarMeusCurriculos(userId) : []
 
     return (
         <div>
@@ -121,7 +126,7 @@ export default async function DetalheVagaCandidatoPage({ params }: { params: Pro
                     regime={regime}
                     horario={horario}
                     actionButton={
-                        <CandidatarBotao vagaId={vaga.id} jaCandidatado={jaCandidatado} />
+                        <CandidatarBotao vagaId={vaga.id} jaCandidatado={jaCandidatado} curriculos={curriculos} />
                     }
                 />
             </div>

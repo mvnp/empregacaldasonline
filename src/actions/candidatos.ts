@@ -173,6 +173,83 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
     return { success: true, candidatoId: candId }
 }
 
+export async function atualizarCandidato(id: number, userId: number, formData: CandidatoFormData) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return { success: false, error: 'Você precisa estar logado.' }
+
+    const admin = createAdminClient()
+    
+    // Check ownership
+    const { data: currentCand } = await admin.from('candidatos').select('user_id').eq('id', id).single() as any
+    if (!currentCand || currentCand.user_id !== userId) {
+        return { success: false, error: 'Você não tem permissão para editar este currículo.' }
+    }
+
+    // 1. Atualizar candidato
+    const { error: candError } = await admin.from('candidatos').update({
+        nome_completo: formData.nome_completo.trim(),
+        cargo_desejado: formData.cargo_desejado?.trim() || null,
+        resumo: formData.resumo?.trim() || null,
+        local: formData.local?.trim() || null,
+        data_nascimento: formData.data_nascimento || null,
+        email: formData.email.trim(),
+        telefone: formData.telefone?.trim() || null,
+        whatsapp: formData.whatsapp?.trim() || null,
+        linkedin: formData.linkedin?.trim() || null,
+        portfolio: formData.portfolio?.trim() || null,
+        github: formData.github?.trim() || null,
+        disponivel: formData.disponivel,
+        pretensao_min: formData.pretensao_min ? parseFloat(formData.pretensao_min) : null,
+        pretensao_max: formData.pretensao_max ? parseFloat(formData.pretensao_max) : null,
+        updated_at: new Date().toISOString()
+    } as any).eq('id', id)
+
+    if (candError) return { success: false, error: 'Erro ao atualizar informações principais.' }
+
+    // Função auxiliar para recriar relações
+    const recreateRelations = async (table: string, tableRows: any[]) => {
+        await (admin.from(table) as any).delete().eq('candidato_id', id)
+        if (tableRows.length > 0) {
+            await (admin.from(table) as any).insert(tableRows)
+        }
+    }
+
+    // 2. Recriar experiências
+    const exps = (formData.experiencias || []).filter(e => e.cargo.trim() && e.empresa.trim()).map((e, idx) => ({
+        candidato_id: id, cargo: e.cargo.trim(), empresa: e.empresa.trim(), descricao: e.descricao?.trim() || null,
+        data_inicio: e.data_inicio || null, data_fim: e.em_andamento ? null : (e.data_fim || null),
+        em_andamento: e.em_andamento, ordem: idx,
+    }))
+    await recreateRelations('candidato_experiencias', exps)
+
+    // 3. Recriar formações
+    const forms = (formData.formacoes || []).filter(f => f.curso.trim() && f.instituicao.trim()).map((f, idx) => ({
+        candidato_id: id, curso: f.curso.trim(), instituicao: f.instituicao.trim(), grau: f.grau?.trim() || null,
+        data_inicio: f.data_inicio || null, data_fim: f.em_andamento ? null : (f.data_fim || null),
+        em_andamento: f.em_andamento, ordem: idx,
+    }))
+    await recreateRelations('candidato_formacoes', forms)
+
+    // 4. Recriar habilidades
+    const habs = (formData.habilidades || []).filter(h => h.trim()).map((h, idx) => ({ candidato_id: id, texto: h.trim(), ordem: idx }))
+    await recreateRelations('candidato_habilidades', habs)
+
+    // 5. Recriar idiomas
+    const idiomas = (formData.idiomas || []).filter(i => i.idioma.trim()).map((i, idx) => ({
+        candidato_id: id, idioma: i.idioma.trim(), nivel: i.nivel || null, ordem: idx,
+    }))
+    await recreateRelations('candidato_idiomas', idiomas)
+
+    // 6. Recriar documentos
+    const docs = (formData.documentos || []).filter(d => d.titulo.trim()).map((d, idx) => ({
+        candidato_id: id, titulo: d.titulo.trim(), tipo: d.tipo?.trim() || null, url: d.url?.trim() || null, ordem: idx,
+    }))
+    await recreateRelations('candidato_documentos', docs)
+
+    return { success: true }
+}
+
 export async function buscarCandidato(id: number) {
     // SECURITY PATCH: Requer autenticação para ver PII de candidatos
     let admin;
@@ -252,4 +329,18 @@ export async function buscarMeuUserId() {
     } catch {
         return null;
     }
+}
+
+export async function listarMeusCurriculos(userId: number) {
+    const admin = createAdminClient()
+    const { data } = await admin
+        .from('candidatos')
+        .select(`
+            id, cargo_desejado, nome_completo, created_at,
+            experiencias:candidato_experiencias(cargo)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false }) as any
+
+    return data || []
 }

@@ -2,6 +2,8 @@
 
 Este documento descreve as tecnologias e as funcionalidades principais deste projeto. Ele deve ser consultado antes de planejar, implementar ou refatorar qualquer nova funcionalidade para manter a consistência da arquitetura.
 
+> **⚠️ OBRIGATÓRIO:** Antes de interagir com o banco de dados ou escrever prompt de código (actions, services, ou páginas web que realizam CRUD), o agente ou desenvolvedor **DEVE LER** o arquivo `.agent/workflows/estrutura-db.md` para compreender o mapeamento relacional exato!
+
 ## Stack Tecnológico (Tech Stack)
 
 ### Frontend
