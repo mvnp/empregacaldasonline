@@ -61,7 +61,7 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
                 <h1
                     className="anim-fade-up d-100"
                     style={{
-                        fontSize: 'clamp(2.4rem, 5vw, 4.5rem)',
+                        fontSize: 'clamp(2.4rem, 5vw, 4.25rem)',
                         fontWeight: 900, color: '#fff',
                         lineHeight: 1.1, maxWidth: 700,
                         marginBottom: '1.25rem',
