@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
     MapPin, Building2, Briefcase, Eye, Calendar,
-    Users, Filter, Plus
+    Users, Filter, Plus, Trash2
 } from 'lucide-react'
 import { VagaAdmin, getStatusColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -12,6 +12,7 @@ import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSelect from '@/components/admin/FilterSelect'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
+import { removerVaga } from '@/actions/vagas'
 
 const POR_PAGINA = 18
 
@@ -20,6 +21,7 @@ interface AdminVagasClientProps {
 }
 
 export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
+    const [listaVagas, setListaVagas] = useState(vagas)
     const [busca, setBusca] = useState('')
     const [filtroStatus, setFiltroStatus] = useState('')
     const [filtroModalidade, setFiltroModalidade] = useState('')
@@ -28,14 +30,14 @@ export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
     const [carregando, setCarregando] = useState(false)
 
     const vagasFiltradas = useMemo(() => {
-        return vagas.filter(v => {
+        return listaVagas.filter(v => {
             if (busca && !v.titulo.toLowerCase().includes(busca.toLowerCase()) && !v.empresa.toLowerCase().includes(busca.toLowerCase())) return false
             if (filtroStatus && v.status !== filtroStatus) return false
             if (filtroModalidade && v.modalidade.toLowerCase() !== filtroModalidade.toLowerCase()) return false
             if (filtroCidade && v.local !== filtroCidade) return false
             return true
         })
-    }, [vagas, busca, filtroStatus, filtroModalidade, filtroCidade])
+    }, [listaVagas, busca, filtroStatus, filtroModalidade, filtroCidade])
 
     const vagasVisiveis = vagasFiltradas.slice(0, exibidos)
 
@@ -47,7 +49,21 @@ export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
         }, 600)
     }
 
-    const cidadesOpcoes = [...new Set(vagas.map(v => v.local).filter(Boolean))].map(c => ({ value: c, label: c }))
+    async function handleRemover(id: number) {
+        if (!window.confirm('Tem certeza que deseja apagar esta vaga e TODAS as suas tabelas relacionadas em cascata? Esta ação não tem volta.')) return
+        
+        // Optimistic update
+        setListaVagas(prev => prev.filter(v => v.id !== id))
+        
+        const res = await removerVaga(id)
+        if (!res.success) {
+            alert('Erro ao apagar vaga: ' + res.error)
+            // Revert on error could be implemented but simple reload works too
+            window.location.reload()
+        }
+    }
+
+    const cidadesOpcoes = [...new Set(listaVagas.map(v => v.local).filter(Boolean))].map(c => ({ value: c, label: c }))
 
     return (
         <div>
@@ -173,6 +189,15 @@ export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
                                 }}>
                                     <Plus style={{ width: 12, height: 12 }} /> Clonar
                                 </Link>
+
+                                <button onClick={() => handleRemover(v.id)} style={{
+                                    background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 8,
+                                    padding: '0.35rem 0.65rem', cursor: 'pointer',
+                                    fontSize: '0.72rem', fontWeight: 600, color: '#dc2626',
+                                    display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                }}>
+                                    <Trash2 style={{ width: 12, height: 12 }} /> Excluir
+                                </button>
                             </div>
                         </div>
                     )

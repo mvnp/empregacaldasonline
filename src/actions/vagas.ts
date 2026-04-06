@@ -437,3 +437,30 @@ export async function buscarVagaPublica(id: number) {
         beneficios: (benRes.data || []).map((r: any) => r.texto),
     }
 }
+
+export async function removerVaga(vagaId: number) {
+    const supabase = await createServerSupabaseClient()
+
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) {
+        return { success: false, error: 'Você precisa estar logado.' }
+    }
+
+    const admin = createAdminClient()
+    const { data: user } = await (admin.from('users') as any)
+        .select('id, tipo')
+        .eq('auth_id', authUser.id)
+        .single()
+
+    if (!user || !['admin', 'empregador'].includes(user.tipo)) {
+        return { success: false, error: 'Sem permissão.' }
+    }
+
+    const { error } = await (admin.from('vagas') as any).delete().eq('id', vagaId)
+    
+    if (error) {
+        return { success: false, error: 'Erro ao excluir vaga. ' + error.message }
+    }
+
+    return { success: true }
+}
