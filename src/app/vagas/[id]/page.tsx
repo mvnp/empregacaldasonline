@@ -31,6 +31,52 @@ function diasAtras(created_at: string): string {
     return `${diff} dias atrás`
 }
 
+import type { Metadata, ResolvingMetadata } from 'next'
+
+export async function generateMetadata(
+    { params }: { params: Promise<{ id: string }> },
+    parent: ResolvingMetadata
+): Promise<Metadata> {
+    const { id } = await params
+    const vagaId = parseInt(id, 10)
+
+    if (isNaN(vagaId)) {
+        return { title: 'Vaga não encontrada | Emprega Caldas' }
+    }
+
+    const vaga = await buscarVagaPublica(vagaId)
+
+    if (!vaga) {
+        return { title: 'Vaga não encontrada | Emprega Caldas' }
+    }
+
+    const descricaoSeo = vaga.descricao ? vaga.descricao.substring(0, 160) + '...' : `Vaga para ${vaga.titulo} em Caldas Novas e região. Confira os detalhes e candidate-se agora!`
+
+    return {
+        title: `${vaga.titulo} | Emprega Caldas Online`,
+        description: descricaoSeo,
+        openGraph: {
+            title: vaga.titulo,
+            description: descricaoSeo,
+            images: [
+                {
+                    url: '/portal-jobs-caldas-novas.png',
+                    width: 1200,
+                    height: 630,
+                    alt: `Vaga para ${vaga.titulo} - Emprega Caldas`,
+                },
+            ],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: vaga.titulo,
+            description: descricaoSeo,
+            images: ['/portal-jobs-caldas-novas.png'],
+        },
+    }
+}
+
 export default async function VagaPublicaPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const vagaId = parseInt(id, 10)
