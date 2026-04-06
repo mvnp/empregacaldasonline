@@ -111,6 +111,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                     placeholder="Permissão"
                     opcoes={[
                         { value: 'admin', label: 'Admin' },
+                        { value: 'empregador', label: 'Empregador' },
                         { value: 'candidato', label: 'Candidato' }
                     ]}
                 />
@@ -134,16 +135,20 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                     }}>
                         <div style={{
                             width: 44, height: 44, borderRadius: 12,
-                            background: u.tipo === 'admin' ? '#fef2f2' : '#f0fdf4',
+                            background: u.tipo === 'admin' ? '#fef2f2' : (u.tipo === 'empregador' ? '#e0f2fe' : '#f0fdf4'),
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: u.tipo === 'admin' ? '#ef4444' : '#22c55e'
+                            color: u.tipo === 'admin' ? '#ef4444' : (u.tipo === 'empregador' ? '#0ea5e9' : '#22c55e')
                         }}>
-                            {u.tipo === 'admin' ? <Shield size={20} /> : <User size={20} />}
+                            {u.tipo === 'admin' ? <Shield size={20} /> : (u.tipo === 'empregador' ? <Briefcase size={20} /> : <User size={20} />)}
                         </div>
                         
                         <div style={{ flex: 1, minWidth: 200 }}>
                             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#09355F', margin: '0 0 0.2rem' }}>
-                                {u.nome} {u.sobrenome}
+                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 
+                                    ? (u as any).empresas[0].nome_fantasia || (u as any).empresas[0].razao_social || `${u.nome} ${u.sobrenome}`
+                                    : `${u.nome} ${u.sobrenome}`
+                                }
+                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 400, marginLeft: 8}}>(Empresa Vinculada)</span>}
                             </h3>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#64748b' }}>
                                 <Mail size={14} /> {u.email}
@@ -161,6 +166,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                 }}
                             >
                                 <option value="admin">Admin</option>
+                                <option value="empregador">Empregador</option>
                                 <option value="candidato">Candidato</option>
                             </select>
 

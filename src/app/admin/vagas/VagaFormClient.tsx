@@ -130,7 +130,13 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     if (json.descricao) updateField('descricao', json.descricao)
                     if (json.telefone || json.telefone_contato) updateField('telefone_contato', json.telefone || json.telefone_contato)
                     if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', json.whatsapp || json.whatsapp_contato)
-                    if (json.email_contato || json.email) updateField('email_contato', json.email_contato || json.email)
+                    if (json.email_contato || json.email) {
+                        updateField('email_contato', json.email_contato || json.email)
+                    } else if (json.empresa) {
+                        const nomeClean = json.empresa.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+                        const hash = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+                        updateField('email_contato', `${nomeClean}${hash}@empregacaldas.online`);
+                    }
                     if (json.link_externo || json.website) updateField('link_externo', json.link_externo || json.website)
 
                     // ─── Mapeamentos (Upper Case p/ keys seguras) ───

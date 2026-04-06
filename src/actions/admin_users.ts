@@ -13,8 +13,14 @@ export async function listarUsuarios() {
     }
     
     const { data, error } = await (admin.from('users') as any)
-        .select('*')
-        .neq('tipo', 'empregador')
+        .select(`
+            *,
+            empresas (
+                id,
+                nome_fantasia,
+                razao_social
+            )
+        `)
         .order('created_at', { ascending: false })
     
     if (error) return []

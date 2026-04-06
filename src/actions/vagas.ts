@@ -523,3 +523,60 @@ export async function removerVaga(vagaId: number) {
 
     return { success: true }
 }
+
+export async function criarContaEmpresaVaga(vagaId: number) {
+    const admin = await requireAdmin();
+
+    const { data: vaga } = await (admin.from('vagas') as any).select('empresa_id, email_contato, empresa').eq('id', vagaId).single();
+    if (!vaga || !vaga.empresa_id) return { success: false, error: 'Vaga ou empresa não encontrada.' };
+
+    const { data: empresaDb } = await (admin.from('empresas') as any).select('id, user_id, nome_fantasia, email_contato').eq('id', vaga.empresa_id).single();
+    if (!empresaDb) return { success: false, error: 'Empresa não encontrada no banco.' };
+
+    // Verificar se o usuário já existe e é do tipo empregador
+    if (empresaDb.user_id) {
+        const { data: userDb } = await (admin.from('users') as any).select('id, tipo').eq('id', empresaDb.user_id).single();
+        if (userDb && userDb.tipo === 'empregador') {
+            return { success: false, error: 'Já existe uma conta de Empregador vinculada a esta empresa.' };
+        }
+    }
+
+    // Criar o usuário empregador no Supabase Auth usando o e-mail da vaga ou da empresa
+    let emailContato = empresaDb.email_contato || vaga.email_contato;
+    if (!emailContato) {
+        const nomeClean = (empresaDb.nome_fantasia || vaga.empresa).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+        const hash = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+        emailContato = `${nomeClean}${hash}@empregacaldas.online`;
+    }
+
+    const { data: novoAuthUser, error: authErr } = await admin.auth.admin.createUser({
+        email: emailContato,
+        password: 'Mudar@123',
+        email_confirm: true,
+        user_metadata: { name: empresaDb.nome_fantasia || vaga.empresa }
+    });
+
+    if (authErr && !novoAuthUser) {
+        return { success: false, error: 'Erro ao gerar auth do usuário. Já tem uma conta com esse e-mail.' };
+    }
+
+    let newUserId = null;
+    if (novoAuthUser && novoAuthUser.user) {
+        const { data: newUserDb } = await (admin.from('users') as any).insert({
+            auth_id: novoAuthUser.user.id,
+            tipo: 'empregador',
+            nome: empresaDb.nome_fantasia || vaga.empresa,
+            sobrenome: '(Empresa)',
+            email: emailContato
+        }).select('id').single();
+
+        if (newUserDb) {
+            newUserId = newUserDb.id;
+            
+            // Atualizar a empresa vinculando o novo usuario
+            await (admin.from('empresas') as any).update({ user_id: newUserId }).eq('id', empresaDb.id);
+        }
+    }
+
+    return { success: true, email: emailContato };
+}
