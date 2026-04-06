@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send } from 'lucide-react'
 import { VagaPublica } from '@/actions/vagas'
 
@@ -13,7 +14,7 @@ interface VagaDetailDisplayProps {
 export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton }: VagaDetailDisplayProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-detail-grid">
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Descrição */}
                 <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #e8edf5' }}>
@@ -93,8 +94,17 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         }}>
                             <Building2 style={{ width: 24, height: 24 }} />
                         </div>
-                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#09355F', margin: '0 0 0.25rem' }}>{empresaPerfil.nome_fantasia}</h3>
-                        <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 1.25rem' }}>{empresaPerfil.setor || 'Setor não informado'} · {empresaPerfil.local || vaga.local}</p>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#09355F', margin: '0 0 0.25rem' }}>
+                            {vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? (
+                                <span>
+                                    <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                                    <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>login</Link>
+                                </span>
+                            ) : (
+                                empresaPerfil.nome_fantasia
+                            )}
+                        </h3>
+                        <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 1.25rem' }}>{empresaPerfil.setor || 'Central'} · {empresaPerfil.local || vaga.local}</p>
 
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', marginBottom: '0', borderTop: '1px solid #f0f4f8', paddingTop: '1rem' }}>
                             <div style={{ textAlign: 'center' }}>

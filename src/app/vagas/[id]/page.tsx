@@ -111,7 +111,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                                     {vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? (
                                         <span>
                                             <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
-                                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Login</Link>
+                                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>login</Link>
                                         </span>
                                     ) : (
                                         vaga.empresa
