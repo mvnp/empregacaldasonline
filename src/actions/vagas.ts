@@ -32,21 +32,21 @@ export interface VagaFormData {
 
 // ── Funções Auxiliares ──
 async function encontrarEmpresaExistente(
-    admin: any, 
-    nome: string, 
-    telefone?: string, 
+    admin: any,
+    nome: string,
+    telefone?: string,
     whatsapp?: string,
     email?: string,
     website?: string
 ) {
     const conditions = []
-    
+
     if (nome?.trim()) conditions.push(`nome_fantasia.ilike.${nome.trim()}`)
     if (telefone?.trim()) conditions.push(`telefone.eq.${telefone.trim()}`)
     if (whatsapp?.trim()) conditions.push(`whatsapp.eq.${whatsapp.trim()}`)
     if (email?.trim()) conditions.push(`email_contato.ilike.${email.trim()}`)
     if (website?.trim()) conditions.push(`website.ilike.${website.trim()}`)
-    
+
     if (conditions.length === 0) return null
 
     const { data } = await admin.from('empresas')
@@ -54,7 +54,7 @@ async function encontrarEmpresaExistente(
         .or(conditions.join(','))
         .limit(1)
         .maybeSingle()
-        
+
     return data ? data.id : null
 }
 
@@ -91,9 +91,9 @@ export async function cadastrarVaga(formData: VagaFormData) {
     if (!formData.modalidade) return { success: false, error: 'Modalidade é obrigatória.' }
 
     let empresa_id = await encontrarEmpresaExistente(
-        admin, 
-        formData.empresa, 
-        formData.telefone_contato, 
+        admin,
+        formData.empresa,
+        formData.telefone_contato,
         formData.whatsapp_contato,
         formData.email_contato,
         formData.link_externo
@@ -193,9 +193,9 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
     if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
 
     let empresa_id = await encontrarEmpresaExistente(
-        admin, 
-        formData.empresa, 
-        formData.telefone_contato, 
+        admin,
+        formData.empresa,
+        formData.telefone_contato,
         formData.whatsapp_contato,
         formData.email_contato,
         formData.link_externo
@@ -327,6 +327,9 @@ export interface ListagemVagasResult {
 
 export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promise<ListagemVagasResult> {
     const admin = createAdminClient()
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const isLogged = !!authUser
 
     const page = Math.max(1, filtros.page ?? 1)
     const perPage = filtros.perPage ?? 5
@@ -376,7 +379,14 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
     ])
 
     const total = count ?? 0
-    const vagas: VagaPublica[] = data ?? []
+    let vagas: VagaPublica[] = data ?? []
+
+    if (!isLogged) {
+        vagas = vagas.map(v => ({
+            ...v,
+            empresa: 'Empresa: Cadastre-se ou faça login'
+        }))
+    }
 
     return {
         vagas,
@@ -419,6 +429,10 @@ export async function buscarVaga(id: number) {
 
 export async function buscarVagaPublica(id: number) {
     const admin = createAdminClient();
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const isLogged = !!authUser
+
     const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
         admin.from('vagas').select('*').eq('id', id).eq('status', 'ativa').single(),
         admin.from('vaga_responsabilidades').select('*').eq('vaga_id', id).order('ordem'),
@@ -429,13 +443,25 @@ export async function buscarVagaPublica(id: number) {
 
     if (vagaRes.error || !vagaRes.data) return null
 
-    return {
+    const vaga = {
         ...vagaRes.data,
         responsabilidades: (respRes.data || []).map((r: any) => r.texto),
         requisitos: (reqRes.data || []).map((r: any) => r.texto),
         diferenciais: (difRes.data || []).map((r: any) => r.texto),
         beneficios: (benRes.data || []).map((r: any) => r.texto),
     }
+
+    if (!isLogged) {
+        vaga.empresa = 'Empresa: Cadastre-se ou faça login'
+        if (vaga.telefone_contato) vaga.telefone_contato = '(64) *****-*****'
+        if (vaga.whatsapp_contato) vaga.whatsapp_contato = '(64) *****-*****'
+        if (vaga.email_contato) vaga.email_contato = '**********@ecn.online'
+        // Let the frontend handle the salary format using the specific string, or override it here:
+        // By changing `mostrar_salario` it makes it simpler, but if we want the actual string, UI might be easier
+        // I will just override the boolean so the UI reacts to `empresa` field.
+    }
+
+    return vaga
 }
 
 export async function removerVaga(vagaId: number) {
@@ -457,7 +483,7 @@ export async function removerVaga(vagaId: number) {
     }
 
     const { error } = await (admin.from('vagas') as any).delete().eq('id', vagaId)
-    
+
     if (error) {
         return { success: false, error: 'Erro ao excluir vaga. ' + error.message }
     }

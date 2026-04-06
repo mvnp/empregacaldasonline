@@ -74,7 +74,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
     const regime = (vaga.tipo_contrato || 'CLT').toUpperCase()
     const nivel = vaga.nivel ? vaga.nivel.charAt(0).toUpperCase() + vaga.nivel.slice(1) : ''
     const horario = vaga.modalidade === 'remoto' ? 'Horário Flexível' : 'Horário Comercial'
-    const salario = formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
+    const salario = vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? 'R$ **,***.**' : formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f7fa' }}>
@@ -107,7 +107,15 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                             </h1>
                             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                    <Building2 style={{ width: 14, height: 14 }} /> {vaga.empresa}
+                                    <Building2 style={{ width: 14, height: 14 }} />
+                                    {vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? (
+                                        <span>
+                                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Login</Link>
+                                        </span>
+                                    ) : (
+                                        vaga.empresa
+                                    )}
                                 </span>
                                 {vaga.local && (
                                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>

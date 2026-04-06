@@ -58,7 +58,8 @@ function formatNivel(n: string | null): string {
 }
 
 /** Formata salário a partir de min/max numéricos */
-function formatSalario(min: number | null, max: number | null, mostrar: boolean, a_combinar?: boolean): string {
+function formatSalario(min: number | null, max: number | null, mostrar: boolean, a_combinar?: boolean, empresa?: string): string {
+    if (empresa === 'Empresa: Cadastre-se ou faça login') return 'R$ **,***.**'
     if (!mostrar) return 'A combinar'
     if (a_combinar) return 'Salário a combinar'
     if (!min && !max) return 'A combinar'
@@ -116,22 +117,34 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                         )}
                     </div>
 
-                    {/* Empresa + localização */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>
-                            <Building2 style={{ width: 13, height: 13, color: '#2AB9C0' }} />
-                            {vaga.empresa}
-                        </span>
-                        {vaga.local && (
-                            <>
-                                <span style={{ color: '#cbd5e1' }}>·</span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: '#64748b' }}>
-                                    <MapPin style={{ width: 13, height: 13, color: '#94a3b8' }} />
-                                    {vaga.local}
-                                </span>
-                            </>
-                        )}
-                    </div>
+                    {/* Empresa + localização ou BLOQUEADO */}
+                    {vaga.empresa !== 'Empresa: Cadastre-se ou faça login' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>
+                                <Building2 style={{ width: 13, height: 13, color: '#2AB9C0' }} />
+                                {vaga.empresa}
+                            </span>
+                            {vaga.local && (
+                                <>
+                                    <span style={{ color: '#cbd5e1' }}>·</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', color: '#64748b' }}>
+                                        <MapPin style={{ width: 13, height: 13, color: '#94a3b8' }} />
+                                        {vaga.local}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{ background: '#f8fafc', border: '1.4px dashed #cbd5e1', borderRadius: 10, padding: '0.75rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            <div>
+                                <strong style={{ color: '#09355F' }}>Empresa:</strong>{' '}
+                                <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                                <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Login</Link>
+                            </div>
+                            <div><strong style={{ color: '#09355F' }}>Telefone/WhatsApp:</strong> (64) *****-*****</div>
+                            <div><strong style={{ color: '#09355F' }}>E-mail:</strong> **********@ecn.online</div>
+                        </div>
+                    )}
 
                     {/* Badges */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1rem' }}>
@@ -148,7 +161,7 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                             <span className="badge badge-level">{formatNivel(vaga.nivel)}</span>
                         )}
                         <span className="badge badge-salary">
-                            {formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)}
+                            {formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar, vaga.empresa)}
                         </span>
                     </div>
 

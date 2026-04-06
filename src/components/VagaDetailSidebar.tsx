@@ -59,7 +59,16 @@ export default function VagaDetailSidebar({ vaga }: VagaDetailSidebarProps) {
                             {vaga.empresa[0]}
                         </div>
                         <div>
-                            <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3 }}>{vaga.empresa}</p>
+                            <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3 }}>
+                                {vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? (
+                                    <span>
+                                        <Link href="/login" style={{ color: '#FBBF53', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                                        <Link href="/login" style={{ color: '#FBBF53', textDecoration: 'none', outline: 'none' }}>Login</Link>
+                                    </span>
+                                ) : (
+                                    vaga.empresa
+                                )}
+                            </p>
                             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.78rem' }}>{vaga.setorEmpresa}</p>
                         </div>
                     </div>
