@@ -55,6 +55,16 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         setForm(prev => ({ ...prev, [field]: value }))
     }
 
+    function formatPhoneInput(value: string) {
+        if (!value) return ''
+        let v = value.replace(/\D/g, '')
+        if (v.length > 11) v = v.slice(0, 11)
+        if (v.length <= 2) return v ? `(${v}` : ''
+        if (v.length <= 6) return `(${v.slice(0, 2)}) ${v.slice(2)}`
+        if (v.length <= 10) return `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`
+        return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
+    }
+
     function addItem(setter: React.Dispatch<React.SetStateAction<string[]>>) {
         setter(prev => [...prev, ''])
     }
@@ -128,8 +138,8 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     if (json.empresa) updateField('empresa', json.empresa)
                     if (json.local) updateField('local', json.local)
                     if (json.descricao) updateField('descricao', json.descricao)
-                    if (json.telefone || json.telefone_contato) updateField('telefone_contato', json.telefone || json.telefone_contato)
-                    if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', json.whatsapp || json.whatsapp_contato)
+                    if (json.telefone || json.telefone_contato) updateField('telefone_contato', formatPhoneInput(json.telefone || json.telefone_contato))
+                    if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', formatPhoneInput(json.whatsapp || json.whatsapp_contato))
                     if (json.email_contato || json.email) {
                         updateField('email_contato', json.email_contato || json.email)
                     } else if (json.empresa) {
@@ -465,14 +475,14 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             <label style={labelStyle}>Telefone Comercial</label>
                             <input
                                 type="tel" style={inputStyle} placeholder="(00) 0000-0000"
-                                value={form.telefone_contato} onChange={e => updateField('telefone_contato', e.target.value)}
+                                value={form.telefone_contato} onChange={e => updateField('telefone_contato', formatPhoneInput(e.target.value))}
                             />
                         </div>
                         <div>
                             <label style={labelStyle}>WhatsApp</label>
                             <input
                                 type="tel" style={inputStyle} placeholder="(00) 90000-0000"
-                                value={form.whatsapp_contato} onChange={e => updateField('whatsapp_contato', e.target.value)}
+                                value={form.whatsapp_contato} onChange={e => updateField('whatsapp_contato', formatPhoneInput(e.target.value))}
                             />
                         </div>
                     </div>
