@@ -27,6 +27,7 @@ export interface VagaAdmin {
     dataPublicacao: string
     salario?: string
     nivel?: string
+    temUsuario?: boolean
 }
 
 export interface UsuarioAdmin {

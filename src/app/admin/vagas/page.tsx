@@ -24,7 +24,8 @@ export default async function AdminVagasPage() {
             status: v.status as 'ativa' | 'pausada' | 'expirada',
             dataPublicacao: `${ano}-${mes}-${dia}`,
             salario: v.salario_min ? `R$ ${v.salario_min}` : 'A combinar',
-            nivel: v.nivel
+            nivel: v.nivel,
+            temUsuario: !!v.empresas?.user?.tipo && v.empresas.user.tipo === 'empregador'
         }
     })
 

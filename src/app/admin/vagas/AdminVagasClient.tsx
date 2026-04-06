@@ -181,21 +181,29 @@ export default function AdminVagasClient({ vagas }: AdminVagasClientProps) {
                                 </Link>
 
                                 <button onClick={async () => {
+                                    if (v.temUsuario) return;
                                     if (!window.confirm('Tem certeza que deseja criar uma conta de acesso para a empresa dessa vaga? (Se já existir, o sistema barrará).')) return;
                                     const { criarContaEmpresaVaga } = await import('@/actions/vagas');
                                     const res = await criarContaEmpresaVaga(v.id);
                                     if (res.success) {
                                         alert('Usuário da empresa criado com sucesso! Email de acesso: ' + res.email + ' / Senha: Mudar@123');
+                                        window.location.reload();
                                     } else {
                                         alert(res.error || 'Erro ao sincronizar.');
                                     }
-                                }} style={{
-                                    background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
-                                    padding: '0.3rem 0.65rem', cursor: 'pointer',
-                                    fontSize: '0.72rem', fontWeight: 600, color: '#6a1b9a',
+                                }} 
+                                disabled={v.temUsuario}
+                                style={{
+                                    background: v.temUsuario ? '#f1f5f9' : 'none', 
+                                    border: '1.5px solid #e8edf5', borderRadius: 8,
+                                    padding: '0.3rem 0.65rem', 
+                                    cursor: v.temUsuario ? 'not-allowed' : 'pointer',
+                                    fontSize: '0.72rem', fontWeight: 600, 
+                                    color: v.temUsuario ? '#94a3b8' : '#6a1b9a',
                                     display: 'flex', alignItems: 'center', gap: '0.2rem',
                                 }}>
-                                    <Users style={{ width: 12, height: 12 }} /> Criar Usuário
+                                    <Users style={{ width: 12, height: 12 }} /> 
+                                    {v.temUsuario ? 'Tem Conta' : 'Criar Usuário'}
                                 </button>
 
                                 <Link href={`/admin/vagas/cadastrar?clone=${v.id}`} style={{

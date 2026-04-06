@@ -316,7 +316,7 @@ export async function listarVagas() {
 
     const { data, error } = await admin
         .from('vagas')
-        .select('*, candidaturas(id)')
+        .select('*, candidaturas(id), empresas(id, user_id, user:user_id(id, tipo))')
         .order('created_at', { ascending: false }) as { data: any; error: any }
 
     if (error) return []
