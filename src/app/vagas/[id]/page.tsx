@@ -60,10 +60,10 @@ export async function generateMetadata(
             description: descricaoSeo,
             images: [
                 {
-                    url: '/portal-jobs-caldas-novas.png',
+                    url: 'https://empregacaldas.online/portal-jobs-caldas-novas.png',
+                    alt: `Vaga para ${vaga.titulo} - Emprega Caldas`,
                     width: 1200,
                     height: 630,
-                    alt: `Vaga para ${vaga.titulo} - Emprega Caldas`,
                 },
             ],
             type: 'website',
@@ -72,7 +72,7 @@ export async function generateMetadata(
             card: 'summary_large_image',
             title: vaga.titulo,
             description: descricaoSeo,
-            images: ['/portal-jobs-caldas-novas.png'],
+            images: ['https://empregacaldas.online/portal-jobs-caldas-novas.png'],
         },
     }
 }
