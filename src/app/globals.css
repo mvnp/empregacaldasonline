@@ -1040,3 +1040,12 @@ body {
 .input-filter:focus {
   border-color: #2AB9C0;
 }
+/* Fix card layout for mobile requested by user */
+@media (max-width: 640px) {
+  .vaga-card-layout-wrapper {
+    display: block !important;
+  }
+  .vaga-card-layout-wrapper > div:first-child {
+    margin-bottom: 0.85rem;
+  }
+}
