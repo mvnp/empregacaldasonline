@@ -88,32 +88,32 @@ export async function salvarPostBlog(formData: FormData) {
         }
 
         if (isNew) {
-            const { data, error } = await admin.from('blog_posts').insert({
+            const { data, error } = await (admin.from('blog_posts') as any).insert({
                 ...postPayload,
                 published_at: new Date().toISOString()
-            } as any).select('id').single() as any
+            }).select('id').single() as any
 
             if (error) throw error
             postId = data.id
         } else {
-            const { error } = await admin.from('blog_posts').update(postPayload as any).eq('id', postId as string)
+            const { error } = await (admin.from('blog_posts') as any).update(postPayload).eq('id', postId as string)
             if (error) throw error
         }
 
         // 4. Salvar Relacionamento Categoria (Limpa a antiga e substitui)
         if (postId && categoryId) {
-            await admin.from('blog_post_categories').delete().eq('post_id', postId as string)
-            await admin.from('blog_post_categories').insert({ post_id: postId, category_id: categoryId } as any)
+            await (admin.from('blog_post_categories') as any).delete().eq('post_id', postId as string)
+            await (admin.from('blog_post_categories') as any).insert({ post_id: postId, category_id: categoryId })
         }
 
         // 5. Salvar / Atualizar Imagem
         if (postId && imageUrl) {
             // Verifica se a imagem já existe no banco
-            const { data: bpi } = await admin.from('blog_post_images').select('id').eq('post_id', postId as string).single() as any
+            const { data: bpi } = await (admin.from('blog_post_images') as any).select('id').eq('post_id', postId as string).single() as any
             if (bpi) {
-                await admin.from('blog_post_images').update({ url: imageUrl } as any).eq('id', bpi.id)
+                await (admin.from('blog_post_images') as any).update({ url: imageUrl }).eq('id', bpi.id)
             } else {
-                await admin.from('blog_post_images').insert({ post_id: postId, url: imageUrl, featured: true } as any)
+                await (admin.from('blog_post_images') as any).insert({ post_id: postId, url: imageUrl, featured: true })
             }
         }
 

@@ -2,6 +2,7 @@
 
 import { requireAdmin, requireAuth } from '@/lib/server-auth'
 import { revalidatePath } from 'next/cache'
+import { createAdminClient } from '@/lib/supabase'
 
 export async function salvarConfiguracaoOpenAI(data: { openai_token: string, model: string, title: string, prompt: string }) {
     try {
@@ -96,6 +97,24 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
         
         try {
             const parsed = JSON.parse(content)
+
+            if (parsed.empresa && typeof parsed.empresa === 'string') {
+                const adminClient = createAdminClient()
+                const { data: dbEmpresa } = await (adminClient.from('empresas') as any)
+                    .select('id, local, email_contato, telefone, whatsapp, website')
+                    .ilike('nome_fantasia', `%${parsed.empresa.trim()}%`)
+                    .limit(1)
+                    .maybeSingle()
+                
+                if (dbEmpresa) {
+                    if (!parsed.local && dbEmpresa.local) parsed.local = dbEmpresa.local
+                    if (!parsed.email_contato && dbEmpresa.email_contato) parsed.email_contato = dbEmpresa.email_contato
+                    if (!parsed.telefone_contato && dbEmpresa.telefone) parsed.telefone_contato = dbEmpresa.telefone
+                    if (!parsed.whatsapp_contato && dbEmpresa.whatsapp) parsed.whatsapp_contato = dbEmpresa.whatsapp
+                    if (!parsed.link_externo && dbEmpresa.website) parsed.link_externo = dbEmpresa.website
+                }
+            }
+
             return { success: true, data: parsed }
         } catch {
             return { success: false, error: 'Falha ao interpretar o retorno da IA.' }
