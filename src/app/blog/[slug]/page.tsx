@@ -36,7 +36,7 @@ const parseImageUrl = (raw: string | undefined | null) => {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
     const supabase = createAdminClient()
-    const { data: post } = await supabase.from('blog_posts').select('title, excerpt').eq('slug', slug).single()
+    const { data: post } = await (supabase as any).from('blog_posts').select('title, excerpt').eq('slug', slug).single() as any
     if (!post) return { title: 'Artigo não encontrado' }
     return {
         title: `${post.title} — Blog PortalJobs`,
@@ -85,7 +85,7 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
             blog_post_categories(blog_categories(id, name))
         `)
         .eq('slug', slug)
-        .single()
+        .single() as any
         
     if (!rawPost) notFound()
 
@@ -113,15 +113,15 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
     const corCategoria = getCategoriaColor(post.categoria)
 
     // Busca dados da sidebar (categorias + recentes)
-    const { data: catData } = await supabase.from('blog_categories').select(`name, blog_post_categories(count)`)
+    const { data: catData } = await (supabase as any).from('blog_categories').select(`name, blog_post_categories(count)`) as any
     const { data: recData } = await supabase
         .from('blog_posts')
         .select(`id, slug, title, published_at, reading_time, blog_post_images(url)`)
         .order('published_at', { ascending: false })
-        .limit(4)
+        .limit(4) as any
 
     // Posts relacionados da mesma categoria
-    let relatedPostsRaw = [];
+    let relatedPostsRaw: any[] = [];
     if (catId) {
         const { data: relData } = await supabase
             .from('blog_posts')
@@ -129,7 +129,7 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
             .eq('blog_post_categories.category_id', catId)
             .neq('slug', slug) // Exclui o próprio post atual
             .order('published_at', { ascending: false })
-            .limit(2)
+            .limit(2) as any
         relatedPostsRaw = relData || []
     }
 
@@ -344,7 +344,7 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
                                     <div style={{ flex: 1, height: 1, background: '#e8edf5' }} />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-                                    {postsRelacionados.map(p => (
+                                    {postsRelacionados.map((p: any) => (
                                         <BlogCard key={p.id} post={p} />
                                     ))}
                                 </div>

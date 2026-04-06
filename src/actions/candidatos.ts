@@ -187,7 +187,7 @@ export async function atualizarCandidato(id: number, userId: number, formData: C
     }
 
     // 1. Atualizar candidato
-    const { error: candError } = await admin.from('candidatos').update({
+    const { error: candError } = await (admin.from('candidatos') as any).update({
         nome_completo: formData.nome_completo.trim(),
         cargo_desejado: formData.cargo_desejado?.trim() || null,
         resumo: formData.resumo?.trim() || null,
