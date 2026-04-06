@@ -12,8 +12,18 @@ export async function listarUsuarios() {
         return [];
     }
     
-    // Explicitly excluding rows if needed, or join with other data
-    const { data, error } = await admin.from('users').select('*').order('created_at', { ascending: false })
+    // Explicitly fetching relations to enrich the users list
+    const { data, error } = await (admin.from('users') as any)
+        .select(`
+            *,
+            empresas (
+                id,
+                nome_fantasia,
+                razao_social
+            )
+        `)
+        .order('created_at', { ascending: false })
+    
     if (error) return []
     return data || []
 }
