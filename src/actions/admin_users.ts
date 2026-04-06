@@ -12,16 +12,9 @@ export async function listarUsuarios() {
         return [];
     }
     
-    // Explicitly fetching relations to enrich the users list
     const { data, error } = await (admin.from('users') as any)
-        .select(`
-            *,
-            empresas (
-                id,
-                nome_fantasia,
-                razao_social
-            )
-        `)
+        .select('*')
+        .neq('tipo', 'empregador')
         .order('created_at', { ascending: false })
     
     if (error) return []

@@ -90,6 +90,13 @@ export async function cadastrarVaga(formData: VagaFormData) {
     if (!formData.empresa?.trim()) return { success: false, error: 'Empresa é obrigatória.' }
     if (!formData.modalidade) return { success: false, error: 'Modalidade é obrigatória.' }
 
+    // Se o email de contato estiver vazio, iremos preencher com um email fake
+    if (!formData.email_contato || !formData.email_contato.trim()) {
+        const nomeClean = formData.empresa.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+        const hash = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+        formData.email_contato = `${nomeClean}${hash}@empregacaldas.online`;
+    }
+
     let empresa_id = await encontrarEmpresaExistente(
         admin,
         formData.empresa,
@@ -100,10 +107,36 @@ export async function cadastrarVaga(formData: VagaFormData) {
     );
 
     if (!empresa_id) {
-        // Criar empresa se não detectou nenhuma existente
+        // Criar usuário para este empregador no supabase auth
+        const { data: novoAuthUser, error: authErr } = await admin.auth.admin.createUser({
+            email: formData.email_contato.trim(),
+            password: 'Mudar@123',
+            email_confirm: true,
+            user_metadata: { name: formData.empresa.trim() }
+        });
+
+        let newUserId = user.id; //Fallback para o criador admin
+
+        if (novoAuthUser && novoAuthUser.user) {
+            // Criar usuario na tabela users vinculada ao auth_id recem criado
+            const { data: newUserDb } = await (admin.from('users') as any).insert({
+                auth_id: novoAuthUser.user.id,
+                tipo: 'empregador',
+                nome: formData.empresa.trim(),
+                sobrenome: '(Empresa)',
+                email: formData.email_contato.trim()
+            }).select('id').single();
+
+            if (newUserDb) {
+                newUserId = newUserDb.id;
+            }
+        }
+
+        // Criar empresa vinculada
         const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
-            user_id: user.id,
+            user_id: newUserId,
             nome_fantasia: formData.empresa.trim(),
+            razao_social: formData.empresa.trim(),
             local: formData.local?.trim() || null,
             email_contato: formData.email_contato?.trim() || null,
             telefone: formData.telefone_contato?.trim() || null,
