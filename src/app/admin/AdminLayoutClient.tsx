@@ -18,6 +18,7 @@ const ADMIN_MENU = [
     { label: 'Candidatos', href: '/admin/candidatos', icon: Users },
     { label: 'Empresas', href: '/admin/empresas', icon: Building2 },
     { label: 'Lista de Empresas', href: '/admin/lista-empresas', icon: List },
+    { label: 'Usuários', href: '/admin/usuarios', icon: User },
     { label: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
     { label: 'Configurações', href: '/admin/configuracoes', icon: Settings },
 ]
