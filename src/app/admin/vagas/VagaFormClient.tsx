@@ -479,7 +479,18 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             />
                         </div>
                         <div>
-                            <label style={labelStyle}>WhatsApp</label>
+                            <label style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                WhatsApp
+                                {form.whatsapp_contato && form.whatsapp_contato.replace(/\D/g, '').length >= 10 && (
+                                    <a 
+                                        href={`https://wa.me/55${form.whatsapp_contato.replace(/\D/g, '')}`} 
+                                        target="_blank" rel="noreferrer" 
+                                        style={{ fontSize: '0.7rem', color: '#25D366', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                                    >
+                                        <ExternalLink size={12} /> Chat
+                                    </a>
+                                )}
+                            </label>
                             <input
                                 type="tel" style={inputStyle} placeholder="(00) 90000-0000"
                                 value={form.whatsapp_contato} onChange={e => updateField('whatsapp_contato', formatPhoneInput(e.target.value))}

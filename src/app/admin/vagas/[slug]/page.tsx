@@ -258,7 +258,22 @@ export default async function VagaDetalhePage({ params }: { params: Promise<{ sl
                             <DetailMiniInfo icon={Clock} label="Horário" value={vaga.horario} />
                             <DetailMiniInfo icon={MapPin} label="Modalidade" value={vaga.modalidade} />
                             {vaga.telefone && <DetailMiniInfo icon={MapPin} label="Telefone" value={vaga.telefone} />}
-                            {vaga.whatsapp && <DetailMiniInfo icon={MapPin} label="WhatsApp" value={vaga.whatsapp} />}
+                            {vaga.whatsapp && (
+                                <DetailMiniInfo
+                                    icon={MapPin}
+                                    label="WhatsApp"
+                                    value={
+                                        <a
+                                            href={`https://wa.me/55${vaga.whatsapp.replace(/\D/g, '')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{ color: '#25D366', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                        >
+                                            {vaga.whatsapp} <ExternalLink size={12} />
+                                        </a>
+                                    }
+                                />
+                            )}
                             <DetailMiniInfo icon={Calendar} label="Publicada em" value={vaga.dataPublicacao} />
                             <DetailMiniInfo icon={Users} label="Candidaturas" value={String(vaga.candidaturas)} />
                         </div>

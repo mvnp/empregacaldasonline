@@ -3,7 +3,7 @@ import React from 'react'
 interface DetailMiniInfoProps {
     icon: React.ElementType
     label: string
-    value: string
+    value: React.ReactNode
 }
 
 /**
