@@ -124,3 +124,46 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
         return { success: false, error: e.message || 'Erro inesperado na IA.' }
     }
 }
+
+export async function gerarDescricaoComIA(titulo: string) {
+    if (!titulo || !titulo.trim()) {
+        return { success: false, error: 'O título da vaga é obrigatório para gerar a descrição.' }
+    }
+
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada no banco de dados. Acesse as Configurações.' }
+    }
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Escreva uma breve e atrativa descrição de vaga de emprego baseada no título "${titulo}". Descreva a visão geral, cultura típica e oportunidades que a vaga pode oferecer. Retorne apenas o texto descritivo simples e direto, sem formatação Markdown e sem blocos complexos, em um único parágrafo bem redigido.`
+                    }
+                ],
+                max_tokens: 350,
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            return { success: false, error: err.error?.message || 'Erro ao gerar descrição na OpenAI.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0].message.content
+
+        return { success: true, data: content }
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Erro inesperado na IA ao gerar descrição.' }
+    }
+}

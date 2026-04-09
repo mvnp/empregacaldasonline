@@ -24,6 +24,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [aiFile, setAiFile] = useState<File | null>(null)
     const [aiLoading, setAiLoading] = useState(false)
     const [aiError, setAiError] = useState('')
+    const [aiGerandoDescricao, setAiGerandoDescricao] = useState(false)
 
     const [sugestoesEmpresas, setSugestoesEmpresas] = useState<string[]>([])
     const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
@@ -470,7 +471,40 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             </select>
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={labelStyle}>Descrição</label>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                <label style={{ ...labelStyle, marginBottom: 0 }}>Descrição</label>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        if (!form.titulo.trim()) { setErro('Preencha o Título da Vaga para gerar a descrição.'); return; }
+                                        setAiGerandoDescricao(true);
+                                        setErro('');
+                                        const { gerarDescricaoComIA } = await import('@/actions/openai');
+                                        const res = await gerarDescricaoComIA(form.titulo);
+                                        setAiGerandoDescricao(false);
+                                        if (res.success && res.data) {
+                                            updateField('descricao', form.descricao ? form.descricao + '\n\n' + res.data : res.data);
+                                        } else {
+                                            setErro(res.error || 'Erro ao gerar descrição.');
+                                        }
+                                    }}
+                                    disabled={aiGerandoDescricao || !form.titulo.trim()}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                        padding: '0.3rem 0.6rem', borderRadius: 6,
+                                        background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0',
+                                        fontSize: '0.75rem', fontWeight: 700, cursor: (aiGerandoDescricao || !form.titulo.trim()) ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                                        opacity: (!form.titulo.trim() && !aiGerandoDescricao) ? 0.6 : 1
+                                    }}
+                                >
+                                    {aiGerandoDescricao ? (
+                                        <div style={{ width: 12, height: 12, border: '2px solid rgba(22, 101, 52, 0.3)', borderTopColor: '#166534', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                    ) : (
+                                        <Bot style={{ width: 12, height: 12 }} />
+                                    )}
+                                    {aiGerandoDescricao ? 'Gerando...' : 'Gerar com IA'}
+                                </button>
+                            </div>
                             <textarea
                                 style={{ ...inputStyle, minHeight: 120, resize: 'vertical' }}
                                 placeholder="Descreva a vaga, cultura da empresa, oportunidades..."
