@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, Briefcase, MapPin, Building2,
@@ -24,6 +24,15 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [aiFile, setAiFile] = useState<File | null>(null)
     const [aiLoading, setAiLoading] = useState(false)
     const [aiError, setAiError] = useState('')
+
+    const [sugestoesEmpresas, setSugestoesEmpresas] = useState<string[]>([])
+    const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
+
+    useEffect(() => {
+        import('@/actions/empresas').then(({ buscarTodasEmpresasNomes }) => {
+            buscarTodasEmpresasNomes().then(res => setSugestoesEmpresas(res as string[]))
+        })
+    }, [])
 
     const [form, setForm] = useState({
         titulo: initialData?.titulo || '',
@@ -369,10 +378,57 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                     </a>
                                 )}
                             </div>
-                            <input
-                                style={inputStyle} placeholder="Nome da empresa"
-                                value={form.empresa} onChange={e => updateField('empresa', e.target.value)}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    style={inputStyle} placeholder="Nome da empresa"
+                                    value={form.empresa} 
+                                    onChange={e => {
+                                        updateField('empresa', e.target.value)
+                                        setMostrarSugestoes(true)
+                                    }}
+                                    onFocus={() => setMostrarSugestoes(true)}
+                                    onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
+                                />
+                                {mostrarSugestoes && form.empresa.trim().length > 0 && (
+                                    (() => {
+                                        const search = form.empresa.toLowerCase()
+                                        const filtradas = sugestoesEmpresas.filter(e => e.toLowerCase().includes(search) && e.toLowerCase() !== search).slice(0, 5)
+                                        
+                                        if (filtradas.length === 0) return null;
+                                        
+                                        return (
+                                            <ul style={{
+                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                background: '#fff', border: '1.5px solid #e8edf5',
+                                                borderRadius: '0 0 10px 10px', marginTop: '-4px',
+                                                boxShadow: '0 4px 12px rgba(9,53,95,0.06)',
+                                                maxHeight: 200, overflowY: 'auto',
+                                                listStyle: 'none', padding: 0, margin: 0, zIndex: 10
+                                            }}>
+                                                {filtradas.map((empresaString, i) => (
+                                                    <li
+                                                        key={i}
+                                                        onClick={() => {
+                                                            updateField('empresa', empresaString)
+                                                            setMostrarSugestoes(false)
+                                                        }}
+                                                        style={{
+                                                            padding: '0.65rem 0.85rem', cursor: 'pointer',
+                                                            fontSize: '0.85rem', color: '#374151',
+                                                            borderBottom: i < filtradas.length - 1 ? '1px solid #f1f5f9' : 'none',
+                                                            background: '#fff', transition: 'background 0.1s'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+                                                    >
+                                                        {empresaString}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )
+                                    })()
+                                )}
+                            </div>
                         </div>
                         <div>
                             <label style={labelStyle}>Local</label>

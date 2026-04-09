@@ -1,7 +1,24 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/server-auth'
+import { requireAdmin, requireAdminOrEmpregador } from '@/lib/server-auth'
+
+export async function buscarTodasEmpresasNomes() {
+    let admin;
+    try {
+        const auth = await requireAdminOrEmpregador();
+        admin = auth.adminClient;
+    } catch {
+        return [];
+    }
+    const { data } = await admin
+        .from('empresas')
+        .select('nome_fantasia')
+        .order('nome_fantasia', { ascending: true });
+        
+    if (!data) return [];
+    return Array.from(new Set(data.map((e: any) => e.nome_fantasia))).filter(Boolean);
+}
 
 export async function listarEmpresas() {
     let admin;
