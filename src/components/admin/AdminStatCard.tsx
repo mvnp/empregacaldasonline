@@ -24,16 +24,18 @@ export default function AdminStatCard({ stat, icon: Icon, color }: AdminStatCard
                 }}>
                     <Icon style={{ width: 20, height: 20, color }} />
                 </div>
-                <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
-                    fontSize: '0.72rem', fontWeight: 700,
-                    color: stat.positivo ? '#16a34a' : '#dc2626',
-                    background: stat.positivo ? '#f0fdf4' : '#fef2f2',
-                    padding: '2px 7px', borderRadius: 9999,
-                }}>
-                    {stat.positivo ? <TrendingUp style={{ width: 11, height: 11 }} /> : <TrendingDown style={{ width: 11, height: 11 }} />}
-                    {stat.variacao}
-                </span>
+                {stat.variacao ? (
+                    <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+                        fontSize: '0.72rem', fontWeight: 700,
+                        color: stat.positivo ? '#16a34a' : '#dc2626',
+                        background: stat.positivo ? '#f0fdf4' : '#fef2f2',
+                        padding: '2px 7px', borderRadius: 9999,
+                    }}>
+                        {stat.positivo ? <TrendingUp style={{ width: 11, height: 11 }} /> : <TrendingDown style={{ width: 11, height: 11 }} />}
+                        {stat.variacao}
+                    </span>
+                ) : <span />}
             </div>
             <p style={{ fontSize: '1.65rem', fontWeight: 900, color: '#09355F', lineHeight: 1, marginBottom: '0.2rem' }}>{stat.valor}</p>
             <p style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500 }}>{stat.label}</p>
