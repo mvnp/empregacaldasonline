@@ -166,7 +166,7 @@ export default function AdminDashboardClient({ initialData }: Props) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                         <thead>
                             <tr style={{ background: '#fafbfd' }}>
-                                {['Vaga', 'Empresa', 'Local', 'Candidaturas', 'Status', 'Data'].map(h => (
+                                {['Vaga', 'Local', 'Candidaturas', 'Status', 'Data'].map(h => (
                                     <th key={h} style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #e8edf5' }}>
                                         {h}
                                     </th>
@@ -179,9 +179,9 @@ export default function AdminDashboardClient({ initialData }: Props) {
                                 return (
                                     <tr key={v.id} style={{ borderBottom: i < data.vagas.length - 1 ? '1px solid #f0f4f8' : 'none' }}>
                                         <td style={{ padding: '0.875rem 1.5rem' }}>
-                                            <Link href={`/admin/vagas/${v.id}`} style={{ fontWeight: 700, color: '#09355F', textDecoration: 'none' }}>{v.titulo}</Link>
+                                            <Link href={`/admin/vagas/${v.id}`} style={{ fontWeight: 700, color: '#09355F', textDecoration: 'none', display: 'block', lineHeight: 1.3 }}>{v.titulo}</Link>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{v.empresa}</span>
                                         </td>
-                                        <td style={{ padding: '0.875rem 1.5rem', color: '#475569' }}>{v.empresa}</td>
                                         <td style={{ padding: '0.875rem 1.5rem', color: '#64748b' }}>{v.local || '—'}</td>
                                         <td style={{ padding: '0.875rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -263,7 +263,7 @@ export default function AdminDashboardClient({ initialData }: Props) {
                                             <span style={{ fontWeight: 700, color: '#09355F' }}>{u.nome} {u.sobrenome || ''}</span>
                                         </div>
                                     </td>
-                                    <td style={{ padding: '0.875rem 1.5rem', color: '#64748b' }}>{u.email}</td>
+                                    <td style={{ padding: '0.875rem 1.5rem', color: '#64748b' }}>{u.email.replace('@empregacaldas.online', '@eco.com.br')}</td>
                                     <td style={{ padding: '0.875rem 1.5rem' }}>
                                         <span style={{
                                             padding: '2px 8px', borderRadius: 9999,
