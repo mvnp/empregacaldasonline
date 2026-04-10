@@ -147,6 +147,22 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                     </div>
                 )}
 
+                {/* Descrição resumida */}
+                {vaga.descricao && vaga.empresa !== 'Empresa: Cadastre-se ou faça login' && (
+                    <p style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        fontSize: '0.82rem',
+                        color: '#64748b',
+                        lineHeight: 1.55,
+                        margin: '0 0 0.75rem',
+                    }}>
+                        {vaga.descricao}
+                    </p>
+                )}
+
                 {/* Badges */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1rem' }}>
                     {vaga.tipo_contrato && (

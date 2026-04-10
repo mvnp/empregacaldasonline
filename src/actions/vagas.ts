@@ -338,6 +338,7 @@ export interface VagaPublica {
     id: number
     titulo: string
     empresa: string
+    descricao: string | null
     local: string | null
     modalidade: string
     tipo_contrato: string | null
@@ -378,7 +379,7 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
     // Build query para dados
     let dataQuery = admin
         .from('vagas')
-        .select('id, titulo, empresa, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, created_at')
+        .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, created_at')
         .eq('status', 'ativa')
         .order('id', { ascending: false })
         .range(from, to)
