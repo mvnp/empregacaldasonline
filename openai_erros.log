@@ -1,0 +1,122 @@
+[2026-04-11T23:06:39.633Z] Falha ao interpretar JSON
+DETALHES: Unexpected end of JSON input
+RETORNO BRUTO: N/A
+------------------------------------------
+
+[2026-04-11T23:08:33.726Z] Falha ao interpretar JSON
+DETALHES: Unexpected end of JSON input
+RETORNO BRUTO: {
+  "id": "chatcmpl-DTbjBzr9JV2evsolJ78CVkgFQbEDq",
+  "object": "chat.completion",
+  "created": 1775948909,
+  "model": "gpt-5-nano-2025-08-07",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "refusal": null,
+        "annotations": []
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2026,
+    "completion_tokens": 1000,
+    "total_tokens": 3026,
+    "prompt_tokens_details": {
+      "cached_tokens": 1536,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1000,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": null
+}
+------------------------------------------
+
+[2026-04-11T23:08:49.541Z] Retorno de Conteúdo Vazio
+DETALHES: A IA não gerou nenhum texto.
+RETORNO BRUTO: {
+  "id": "chatcmpl-DTbjPsKfK0YWNu30xQubaansrLFfK",
+  "object": "chat.completion",
+  "created": 1775948923,
+  "model": "gpt-5-nano-2025-08-07",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "refusal": null,
+        "annotations": []
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2026,
+    "completion_tokens": 1000,
+    "total_tokens": 3026,
+    "prompt_tokens_details": {
+      "cached_tokens": 1536,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1000,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": null
+}
+------------------------------------------
+
+[2026-04-11T23:09:04.812Z] Retorno de Conteúdo Vazio
+DETALHES: A IA não gerou nenhum texto.
+RETORNO BRUTO: {
+  "id": "chatcmpl-DTbjfj1zX1Epvd3FFv7HcqZ72JYfz",
+  "object": "chat.completion",
+  "created": 1775948939,
+  "model": "gpt-5-nano-2025-08-07",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "refusal": null,
+        "annotations": []
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 2026,
+    "completion_tokens": 1000,
+    "total_tokens": 3026,
+    "prompt_tokens_details": {
+      "cached_tokens": 1536,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1000,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": null
+}
+------------------------------------------
+

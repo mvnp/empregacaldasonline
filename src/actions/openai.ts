@@ -3,6 +3,19 @@
 import { requireAdmin, requireAuth } from '@/lib/server-auth'
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase'
+import fs from 'fs/promises'
+import path from 'path'
+
+async function gravarLog(contexto: string, detalhes: any, retornoBruto?: any) {
+    try {
+        const logPath = path.join(process.cwd(), 'openai_erros.log');
+        const entry = `[${new Date().toISOString()}] ${contexto}\nDETALHES: ${typeof detalhes === 'object' ? JSON.stringify(detalhes, null, 2) : detalhes}\nRETORNO BRUTO: ${retornoBruto ? (typeof retornoBruto === 'string' ? retornoBruto : JSON.stringify(retornoBruto, null, 2)) : 'N/A'}\n------------------------------------------\n\n`;
+        await fs.appendFile(logPath, entry, 'utf-8');
+        console.error(`[OpenAI LOG] ${contexto}`, detalhes);
+    } catch (e) {
+        console.error('Falha ao escrever log de erro', e);
+    }
+}
 
 export async function salvarConfiguracaoOpenAI(data: { openai_token: string, model: string, title: string, prompt: string }) {
     try {
@@ -82,21 +95,35 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
                         ]
                     }
                 ],
-                max_tokens: 1000,
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 15000 } : { max_tokens: 1000 } ),
                 response_format: { type: 'json_object' }
             })
         })
 
         if (!response.ok) {
             const err = await response.json()
+            await gravarLog('Falha HTTP da API OpenAI', err, response.statusText);
             return { success: false, error: err.error?.message || 'Erro ao processar imagem na OpenAI.' }
         }
 
         const data = await response.json()
-        const content = data.choices[0].message.content
+        const content = data.choices?.[0]?.message?.content
         
+        if (!content) {
+            const refusal = data.choices?.[0]?.message?.refusal;
+            if (refusal) {
+                await gravarLog('Requisição recusada pela IA', refusal, data);
+                return { success: false, error: 'A IA recusou o processamento da imagem por questões de segurança técnica.' };
+            }
+            await gravarLog('Retorno de Conteúdo Vazio', 'A IA não gerou nenhum texto.', data);
+            return { success: false, error: 'A IA retornou um documento vazio. Tente novamente.' };
+        }
+
         try {
-            const parsed = JSON.parse(content)
+            // Corrige possíveis formatações markdown do retorno
+            let rawStr = content || '';
+            rawStr = rawStr.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+            const parsed = JSON.parse(rawStr)
 
             if (parsed.empresa && typeof parsed.empresa === 'string') {
                 const adminClient = createAdminClient()
@@ -116,11 +143,13 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
             }
 
             return { success: true, data: parsed }
-        } catch {
-            return { success: false, error: 'Falha ao interpretar o retorno da IA.' }
+        } catch (parseError: any) {
+            await gravarLog('Falha ao interpretar JSON', parseError.message, data);
+            return { success: false, error: 'Falha ao interpretar o retorno da IA. Detalhes salvos no log.' }
         }
         
     } catch (e: any) {
+        await gravarLog('Erro inesperado no Try/Catch externo', e.message);
         return { success: false, error: e.message || 'Erro inesperado na IA.' }
     }
 }
@@ -150,12 +179,13 @@ export async function gerarDescricaoComIA(titulo: string) {
                         content: `Escreva uma breve e atrativa descrição de vaga de emprego baseada no título "${titulo}". Descreva a visão geral, cultura típica e oportunidades que a vaga pode oferecer. Retorne apenas o texto descritivo simples e direto, sem formatação Markdown e sem blocos complexos, em um único parágrafo bem redigido.`
                     }
                 ],
-                max_tokens: 350,
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 350 } ),
             })
         })
 
         if (!response.ok) {
             const err = await response.json()
+            await gravarLog('Falha HTTP da API OpenAI (Geração)', err, response.statusText);
             return { success: false, error: err.error?.message || 'Erro ao gerar descrição na OpenAI.' }
         }
 
@@ -164,6 +194,7 @@ export async function gerarDescricaoComIA(titulo: string) {
 
         return { success: true, data: content }
     } catch (e: any) {
+        await gravarLog('Erro inesperado no Try/Catch externo (Geração)', e.message);
         return { success: false, error: e.message || 'Erro inesperado na IA ao gerar descrição.' }
     }
 }

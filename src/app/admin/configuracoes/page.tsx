@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
     Building2, Mail, CreditCard, Shield, ClipboardCheck, Bell,
     Globe, FileText, Save, Eye, EyeOff, Plus, Trash2, ToggleLeft,
-    ToggleRight, Upload, AlertTriangle, Check, ChevronRight, Cpu
+    ToggleRight, Upload, AlertTriangle, Check, ChevronRight, Cpu, ChevronDown
 } from 'lucide-react'
 
 // ── Seções do menu ──
@@ -536,6 +536,148 @@ function SecaoTermos() {
     )
 }
 
+const AI_MODELS = [
+    { id: 'gpt-5-nano', name: 'GPT-5 nano', desc: 'Mais barato de todos os modelos', tier: 'Budget', in: 0.05, out: 0.40, vision: true },
+    { id: 'gpt-4.1-nano', name: 'GPT-4.1 nano', desc: 'Classificação e extração em alta escala', tier: 'Budget', in: 0.10, out: 0.40, vision: true },
+    { id: 'gpt-4o-mini', name: 'GPT-4o mini', desc: 'Rápido e acessível para tarefas leves', tier: 'Budget', in: 0.15, out: 0.60, vision: true },
+    { id: 'gpt-5.4-nano', name: 'GPT-5.4 Nano', desc: 'Mais barato da família 5.4', tier: 'Budget', in: 0.20, out: 1.25, vision: false },
+    { id: 'gpt-5-mini', name: 'GPT-5 mini', desc: 'Custo-eficiente da série 5', tier: 'Mid-range', in: 0.25, out: 2.00, vision: true },
+    { id: 'gpt-4.1-mini', name: 'GPT-4.1 mini', desc: 'Versão menor e mais rápida do 4.1', tier: 'Mid-range', in: 0.40, out: 1.60, vision: true },
+    { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini', desc: 'Mini da família 5.4', tier: 'Budget', in: 0.75, out: 4.50, vision: false },
+    { id: 'o3-mini', name: 'o3-mini', desc: 'Raciocínio com menor custo que o3', tier: 'Reasoning', in: 1.10, out: 4.40, vision: false },
+    { id: 'o4-mini', name: 'o4-mini', desc: 'Raciocínio compacto, forte em STEM', tier: 'Reasoning', in: 1.10, out: 4.40, vision: true },
+    { id: 'gpt-5.1', name: 'GPT-5.1', desc: 'Contexto de 400K tokens', tier: 'Premium', in: 1.25, out: 10.00, vision: true },
+    { id: 'gpt-5', name: 'GPT-5', desc: 'Flagship com contexto de 1M tokens', tier: 'Premium', in: 1.25, out: 10.00, vision: true },
+    { id: 'gpt-5.2', name: 'GPT-5.2', desc: 'Raciocínio avançado e multimodal', tier: 'Premium', in: 1.75, out: 14.00, vision: true },
+    { id: 'gpt-5.3', name: 'GPT-5.3', desc: 'Alta capacidade, melhorias em raciocínio', tier: 'Premium', in: 1.75, out: 14.00, vision: true },
+    { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Contexto de 1M token, forte em instruções', tier: 'Premium', in: 2.00, out: 8.00, vision: true },
+    { id: 'o3', name: 'o3', desc: 'Melhor modelo de raciocínio disponível', tier: 'Reasoning', in: 2.00, out: 8.00, vision: true },
+    { id: 'gpt-4o', name: 'GPT-4o', desc: 'Multimodal: texto, visão e áudio', tier: 'Premium', in: 2.50, out: 10.00, vision: true },
+    { id: 'gpt-5.4', name: 'GPT-5.4', desc: 'Mais capaz da família 5.4', tier: 'Premium', in: 2.50, out: 15.00, vision: true },
+    { id: 'gpt-5-pro', name: 'GPT-5 Pro', desc: 'Enterprise com raciocínio estendido', tier: 'Premium', in: 15.00, out: 120.00, vision: true },
+    { id: 'gpt-5.2-pro', name: 'GPT-5.2 Pro', desc: 'Enterprise com raciocínio estendido', tier: 'Premium', in: 21.00, out: 168.00, vision: true },
+    { id: 'gpt-5.4-pro', name: 'GPT-5.4 Pro', desc: 'Versão enterprise com raciocínio estendido', tier: 'Premium', in: 30.00, out: 180.00, vision: true },
+];
+
+const getTierStyles = (tier: string) => {
+    switch(tier) {
+        case 'Premium': return { bg: '#dbeafe', color: '#1d4ed8' };
+        case 'Reasoning': return { bg: '#f3e8ff', color: '#7e22ce' };
+        case 'Mid-range': return { bg: '#dcfce7', color: '#15803d' };
+        case 'Budget': 
+        default: return { bg: '#f1f5f9', color: '#475569' };
+    }
+}
+
+function ModelSelect({ value, onChange }: { value: string, onChange: (v: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const selected = AI_MODELS.find(m => m.id === value) || AI_MODELS[0];
+    const sTier = getTierStyles(selected.tier);
+
+    return (
+        <div style={{ position: 'relative', width: '100%', zIndex: open ? 50 : 1 }}>
+            <div 
+                onClick={() => setOpen(!open)}
+                style={{
+                    ...inputStyle, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                    cursor: 'pointer', background: '#fff',
+                    borderColor: open ? '#2AB9C0' : '#e8edf5',
+                    boxShadow: open ? '0 0 0 3px rgba(42, 185, 192, 0.15)' : 'none',
+                    userSelect: 'none'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontWeight: 800, color: '#09355F' }}>{selected.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: 8 }}>
+                        Input: <strong style={{ color: '#09355F' }}>${selected.in.toFixed(2)}</strong> <span style={{ color: '#cbd5e1', margin: '0 4px' }}>|</span> Output: <strong style={{ color: '#09355F' }}>${selected.out.toFixed(2)}</strong>
+                    </span>
+                    <span style={{ 
+                        padding: '0.2rem 0.6rem', borderRadius: 8, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                        background: sTier.bg, color: sTier.color
+                    }}>
+                        {selected.tier}
+                    </span>
+                </div>
+                <ChevronDown style={{ width: 18, height: 18, color: open ? '#2AB9C0' : '#94a3b8', transform: open ? 'rotate(180deg)' : 'none', transition: 'all 0.2s' }} />
+            </div>
+
+            {open && (
+                <>
+                    <div 
+                        style={{ position: 'fixed', inset: 0, zIndex: 9 }} 
+                        onClick={(e) => { e.stopPropagation(); setOpen(false); }} 
+                    />
+                    <div style={{
+                        position: 'absolute', top: 'calc(100% + 0.5rem)', left: 0, right: 0, 
+                        background: '#fff', borderRadius: 14, border: '1px solid #e8edf5', 
+                        boxShadow: '0 12px 32px rgba(9, 53, 95, 0.12)', zIndex: 10,
+                        maxHeight: '400px', overflowY: 'auto'
+                    }}>
+                        <div style={{ 
+                            display: 'grid', gridTemplateColumns: 'minmax(220px, 2.5fr) 100px 100px 100px 80px', 
+                            padding: '0.85rem 1.25rem', borderBottom: '2px solid #f1f5f9',
+                            fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em',
+                            position: 'sticky', top: 0, background: '#fdfdfe', zIndex: 2
+                        }}>
+                            <div>Modelo</div>
+                            <div>Tier</div>
+                            <div>Input /1M</div>
+                            <div>Output /1M</div>
+                            <div style={{ textAlign: 'center' }}>Visão</div>
+                        </div>
+
+                        {AI_MODELS.map(m => {
+                            const tStyles = getTierStyles(m.tier);
+                            return (
+                                <div 
+                                    key={m.id}
+                                    onClick={() => { onChange(m.id); setOpen(false); }}
+                                    style={{
+                                        display: 'grid', gridTemplateColumns: 'minmax(220px, 2.5fr) 100px 100px 100px 80px', alignItems: 'center',
+                                        padding: '1rem 1.25rem', borderBottom: '1px solid #f8fafc',
+                                        cursor: 'pointer', transition: 'all 0.15s',
+                                        background: value === m.id ? '#f0f9ff' : '#fff'
+                                    }}
+                                    onMouseEnter={e => {
+                                        if (value !== m.id) e.currentTarget.style.background = '#f8fafc'
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (value !== m.id) e.currentTarget.style.background = '#fff'
+                                    }}
+                                >
+                                    <div>
+                                        <div style={{ fontWeight: 800, color: '#09355F', fontSize: '0.9rem', marginBottom: '0.15rem' }}>{m.name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{m.desc}</div>
+                                    </div>
+                                    <div>
+                                        <span style={{ 
+                                            display: 'inline-block',
+                                            padding: '0.2rem 0.6rem', borderRadius: 8, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                            background: tStyles.bg, color: tStyles.color
+                                        }}>
+                                            {m.tier}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                                        ${m.in.toFixed(2)}
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                                        ${m.out.toFixed(2)}
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                        {m.vision ? <Check style={{ width: 16, height: 16, color: '#10b981' }} /> : <span style={{ color: '#cbd5e1', fontSize: '1rem', fontWeight: 700 }}>—</span>}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 // ── Seção: Open AI Setup ──
 function SecaoOpenAI() {
     const [apiKey, setApiKey] = useState('')
@@ -604,22 +746,7 @@ function SecaoOpenAI() {
                     </div>
                     <div>
                         <label style={labelStyle}>Modelo</label>
-                        <select 
-                            value={model} 
-                            onChange={e => setModel(e.target.value)} 
-                            style={inputStyle}
-                        >
-                            <option value="gpt-4o">GPT-4o (Visão) - ($2.50 IN / $10.00 OUT)</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini - ($0.15 IN / $0.60 OUT)</option>
-                            <option value="chatgpt-4o-latest">ChatGPT-4o Latest - ($5.00 IN / $15.00 OUT)</option>
-                            <option value="o1">o1 - ($15.00 IN / $60.00 OUT)</option>
-                            <option value="o1-preview">o1-Preview - ($15.00 IN / $60.00 OUT)</option>
-                            <option value="o1-mini">o1-Mini - ($3.00 IN / $12.00 OUT)</option>
-                            <option value="o3-mini">o3-Mini - ($1.10 IN / $4.40 OUT)</option>
-                            <option value="gpt-4.5-preview">GPT-4.5 Preview - ($75.00 IN / $150.00 OUT)</option>
-                            <option value="gpt-5">GPT-5 - ($100.00 IN / $300.00 OUT)</option>
-                            <option value="gpt-5-turbo">GPT-5 Turbo - ($30.00 IN / $90.00 OUT)</option>
-                        </select>
+                        <ModelSelect value={model} onChange={setModel} />
                     </div>
                 </div>
 
