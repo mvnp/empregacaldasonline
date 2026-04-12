@@ -299,13 +299,13 @@ async function debitarCreditoCandidato(userId: number, creditosAtuais: number) {
 }
 
 
-export async function gerarObjetivoComIA(cargo: string) {
+export async function gerarObjetivoComIA(cargo: string): Promise<{ success: true, data: string } | { success: false, error: string }> {
     if (!cargo || !cargo.trim()) {
         return { success: false, error: 'O Cargo Desejado precisa estar preenchido no formulário principal (atrás dessa janela) para a IA ter uma referência.' }
     }
 
     const check = await verificarCreditoCandidato()
-    if (!check.success) return check
+    if (!check.success) return { success: false, error: check.error || 'Saldo insuficiente' }
 
     const config = await lerConfiguracaoOpenAI()
     if (!config || !config.openai_token) {
@@ -354,9 +354,9 @@ export async function gerarObjetivoComIA(cargo: string) {
     }
 }
 
-export async function gerarDadosCurriculoComIA(payload: any) {
+export async function gerarDadosCurriculoComIA(payload: any): Promise<{ success: true, data: any } | { success: false, error: string }> {
     const check = await verificarCreditoCandidato()
-    if (!check.success) return check
+    if (!check.success) return { success: false, error: check.error || 'Saldo insuficiente' }
 
     const config = await lerConfiguracaoOpenAI()
     if (!config || !config.openai_token) {
