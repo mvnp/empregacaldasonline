@@ -392,7 +392,7 @@ export async function listarMeusCurriculos(userId: number) {
     const { data } = await admin
         .from('candidatos')
         .select(`
-            id, cargo_desejado, nome_completo, created_at,
+            id, cargo_desejado, nome_completo, created_at, share_token,
             experiencias:candidato_experiencias(cargo)
         `)
         .eq('user_id', userId)

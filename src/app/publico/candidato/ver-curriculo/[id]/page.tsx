@@ -16,13 +16,14 @@ function calcularTempoExperiencia(exps: any[]): number {
 }
 
 export default async function CurriculoPublicoPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id: slugId } = await params
-    const id = parseInt(slugId, 10)
+    const { id: token } = await params
 
-    if (isNaN(id)) {
+    // Validate UUID format to avoid unnecessary DB queries
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!token || !uuidRegex.test(token)) {
         return (
             <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '0.5rem' }}>Currículo inválido</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '0.5rem' }}>Link inválido</h2>
                 <Link href="/" className="btn-primary" style={{ padding: '0.65rem 1.25rem', borderRadius: 10, fontSize: '0.85rem' }}>
                     Ir para Home
                 </Link>
@@ -43,7 +44,7 @@ export default async function CurriculoPublicoPage({ params }: { params: Promise
             idiomas:candidato_idiomas(*),
             documentos:candidato_documentos(*)
         `)
-        .eq('id', id)
+        .eq('share_token', token)
         .single() as { data: any; error: any }
 
     if (error || !candidatoDb || candidatoDb.status !== 'ativo') {

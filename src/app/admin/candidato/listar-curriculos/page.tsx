@@ -107,7 +107,7 @@ export default async function ListarCurriculosCandidato() {
                                 }}>
                                     <Edit style={{ width: 16, height: 16 }} /> Editar
                                 </Link>
-                                <Link href={`/publico/candidato/ver-curriculo/${c.id}`} target="_blank" rel="noopener noreferrer" title="Ver currículo público em nova aba" style={{
+                                <Link href={`/publico/candidato/ver-curriculo/${c.share_token}`} target="_blank" rel="noopener noreferrer" title="Ver currículo público em nova aba" style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     width: 42, padding: '0.75rem', borderRadius: 10,
                                     background: '#eff6ff', color: '#2563eb',
