@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback } from 'react'
+import React, { useState, useTransition, useCallback } from 'react'
 import { Search, Filter, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
 import Navbar from '@/components/Navbar'
@@ -8,6 +8,7 @@ import HeroSection from '@/components/HeroSection'
 import FilterPanel from '@/components/FilterPanel'
 import Footer from '@/components/Footer'
 import VagaCardDB from '@/components/VagaCardDB'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 import { listarVagasPublicas, VagaPublica, ListagemVagasResult } from '@/actions/vagas'
 import { FILTROS_INICIAL, FiltrosState } from '@/data/vagas'
@@ -189,7 +190,11 @@ export default function HomeClient({ inicial }: Props) {
                 onBuscar={handleBuscarHero}
             />
 
-            <section id="vagas" style={{ padding: '4rem 2rem' }}>
+            <div style={{ maxWidth: 1280, margin: '2rem auto 0', padding: '0 2rem' }}>
+                <BannerSpace formato="leaderboard" className="ad-leaderboard-hero" />
+            </div>
+
+            <section id="vagas" style={{ padding: '2rem 2rem 4rem' }}>
                 <div style={{ maxWidth: 1280, margin: '0 auto' }}>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
@@ -272,8 +277,11 @@ export default function HomeClient({ inicial }: Props) {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {vagasFiltradas.map(vaga => (
-                                        <VagaCardDB key={vaga.id} vaga={vaga} />
+                                    {vagasFiltradas.map((vaga, i) => (
+                                        <React.Fragment key={vaga.id}>
+                                            <VagaCardDB vaga={vaga} />
+                                            {i === 2 && <BannerSpace formato="native" className="ad-native-inline" />}
+                                        </React.Fragment>
                                     ))}
 
                                     {resultado.totalPages > 1 && (
@@ -292,8 +300,9 @@ export default function HomeClient({ inicial }: Props) {
                             )}
                         </div>
 
-                        <aside>
+                        <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <FilterPanel {...filterPanelProps} />
+                            <BannerSpace formato="rectangle" className="ad-sidebar-rect" />
                         </aside>
                     </div>
                 </div>
@@ -323,6 +332,11 @@ export default function HomeClient({ inicial }: Props) {
                     </div>
                 )}
             </section>
+
+            <div style={{ maxWidth: 1280, margin: '0 auto 4rem', padding: '0 2rem' }}>
+                <BannerSpace formato="billboard" className="ad-billboard-footer" />
+            </div>
+
             <Footer />
         </div>
     )

@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import { buscarVagaPublica } from '@/actions/vagas'
 import { buscarEmpresaPublica } from '@/actions/empresas'
 import VagaDetailDisplay from '@/components/VagaDetailDisplay'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 export const dynamic = 'force-dynamic'
 
@@ -194,6 +195,11 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                     />
                 </div>
             </main>
+
+            {/* Banner H3 - Pré-Footer */}
+            <div style={{ maxWidth: 1280, margin: '0 auto 4rem', padding: '0 2rem', width: '100%' }}>
+                <BannerSpace formato="billboard" className="ad-billboard-vaga" />
+            </div>
 
             <Footer />
         </div>

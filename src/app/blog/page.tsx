@@ -1,9 +1,11 @@
+import React from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import BlogSidebar from '@/components/BlogSidebar'
 import BlogCard from '@/components/BlogCard'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 import { createAdminClient } from '@/lib/supabase'
 import { getCategoriaColor } from '@/data/blog'
 
@@ -176,10 +178,16 @@ export default async function BlogListPage({ searchParams }: { searchParams: Pro
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {demaisPosts.map((post: any) => (
-                                <BlogCard key={post.id} post={post} />
+                            {demaisPosts.map((post: any, i: number) => (
+                                <React.Fragment key={post.id}>
+                                    <BlogCard post={post} />
+                                    {i === 1 && <BannerSpace formato="native" className="ad-native-blog" />}
+                                </React.Fragment>
                             ))}
                         </div>
+
+                        {/* Banner Leaderboard acima da paginação */}
+                        <BannerSpace formato="leaderboard" style={{ margin: '2rem 0 0' }} />
 
                         {/* Paginação */}
                         {totalPages > 1 && (

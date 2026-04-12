@@ -11,6 +11,7 @@ import {
 } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminStatCard from '@/components/admin/AdminStatCard'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 const STAT_ICONS = [Briefcase, Users, Eye, BarChart3]
 const STAT_COLORS = ['#2AB9C0', '#FBBF53', '#FE8341', '#09355F']
@@ -39,6 +40,11 @@ export default function EmpregadorDashboard() {
                 {EMPREGADOR_STATS.map((stat, i) => (
                     <AdminStatCard key={stat.label} stat={stat} icon={STAT_ICONS[i]} color={STAT_COLORS[i]} />
                 ))}
+            </div>
+
+            {/* Banner B1 - Embaixo dos Analytics */}
+            <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'center' }}>
+                <BannerSpace formato="leaderboard" />
             </div>
 
             {/* ── Grid: Gráfico + Atividades ── */}
@@ -71,6 +77,7 @@ export default function EmpregadorDashboard() {
                     </div>
                 </div>
 
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {/* Candidaturas recentes */}
                 <div style={{ background: '#fff', borderRadius: 14, border: '1.5px solid #e8edf5', overflow: 'hidden' }}>
                     <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1.5px solid #e8edf5' }}>
@@ -105,6 +112,10 @@ export default function EmpregadorDashboard() {
                             )
                         })}
                     </div>
+                </div>
+
+                {/* Banner B2 - Abaixo de Candidaturas Recentes */}
+                <BannerSpace formato="rectangle" />
                 </div>
             </div>
 

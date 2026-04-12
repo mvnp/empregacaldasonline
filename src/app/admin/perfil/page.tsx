@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import { getMeuPerfilCompleto, salvarPerfil } from '@/actions/auth'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 const formatTextCpf = (val: string) => {
     let v = String(val || '').replace(/\D/g, '')
@@ -395,6 +396,11 @@ export default function PerfilPage() {
                 </div>
             </div>
 
+            {/* Banner F1 - Entre Contato e Endereço */}
+            <div style={{ marginBottom: '1.25rem' }}>
+                <BannerSpace formato="leaderboard" />
+            </div>
+
             {/* ── Endereço ── */}
             <div style={sectionStyle}>
                 <div style={sectionHeaderStyle}>
@@ -445,6 +451,11 @@ export default function PerfilPage() {
                 </div>
             </div>
 
+            {/* Banner F2 - Entre Endereço e Redes Sociais */}
+            <div style={{ marginBottom: '1.25rem' }}>
+                <BannerSpace formato="leaderboard" />
+            </div>
+
             {/* ── Redes Sociais ── */}
             <div style={sectionStyle}>
                 <div style={sectionHeaderStyle}>
@@ -482,6 +493,11 @@ export default function PerfilPage() {
                     <Save style={{ width: 16, height: 16 }} />
                     {salvando ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
+            </div>
+
+            {/* Banner F3 - Abaixo de Salvar Alterações */}
+            <div style={{ margin: '0 auto 2rem' }}>
+                <BannerSpace formato="billboard" />
             </div>
         </div>
     )

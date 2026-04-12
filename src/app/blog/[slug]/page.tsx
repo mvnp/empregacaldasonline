@@ -11,6 +11,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import BlogSidebar from '@/components/BlogSidebar'
 import BlogCard from '@/components/BlogCard'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 import { createAdminClient } from '@/lib/supabase'
 import { formatarDataBlog, getCategoriaColor } from '@/data/blog'
@@ -277,7 +278,23 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
                                 .blog-dynamic-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
                                 .blog-dynamic-content blockquote { border-left: 4px solid #e8edf5; padding-left: 1rem; color: #64748b; font-style: italic; margin-left: 0; margin-bottom: 1.1rem; }
                             `}</style>
-                            <div className="blog-dynamic-content" dangerouslySetInnerHTML={{ __html: post.conteudo }} />
+                            {post.conteudo.includes('</p>') ? (
+                                <>
+                                    <div className="blog-dynamic-content" dangerouslySetInnerHTML={{ 
+                                        __html: post.conteudo.split('</p>').slice(0, 3).join('</p>') + (post.conteudo.split('</p>').length > 3 ? '</p>' : '') 
+                                    }} />
+                                    {post.conteudo.split('</p>').length > 3 && (
+                                        <>
+                                            <BannerSpace formato="leaderboard" style={{ margin: '2.5rem 0' }} className="ad-in-read-blog" />
+                                            <div className="blog-dynamic-content" dangerouslySetInnerHTML={{ 
+                                                __html: post.conteudo.split('</p>').slice(3).join('</p>') 
+                                            }} />
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="blog-dynamic-content" dangerouslySetInnerHTML={{ __html: post.conteudo }} />
+                            )}
                         </article>
 
                         {/* Tags */}
@@ -339,6 +356,9 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
                         {/* ── Posts relacionados ── */}
                         {postsRelacionados.length > 0 && (
                             <div style={{ marginBottom: '2rem' }}>
+                                {/* J3: Leaderboard above Continue Lendo */}
+                                <BannerSpace formato="leaderboard" style={{ margin: '1rem 0 2rem' }} className="ad-continue-reading-blog" />
+
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
                                     <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#09355F', whiteSpace: 'nowrap' }}>Continue lendo</h2>
                                     <div style={{ flex: 1, height: 1, background: '#e8edf5' }} />

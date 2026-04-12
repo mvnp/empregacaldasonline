@@ -4,6 +4,7 @@ import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import { buscarMeuUsuarioCompleto, buscarUsuariosCandidato, listarMeusCurriculos } from '@/actions/candidatos'
 import { createAdminClient } from '@/lib/supabase'
 import CurriculoDeleteBtn from './CurriculoDeleteBtn'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,8 +44,9 @@ export default async function ListarCurriculosCandidato() {
             />
 
             {curriculos.length === 0 ? (
-                <div style={{ background: '#fff', padding: '3rem', borderRadius: 16, textAlign: 'center', border: '1px solid #e8edf5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                    <div style={{ width: 64, height: 64, background: '#f8fafc', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <>
+                    <div style={{ background: '#fff', padding: '3rem', borderRadius: 16, textAlign: 'center', border: '1px solid #e8edf5', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                        <div style={{ width: 64, height: 64, background: '#f8fafc', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                         <FileText style={{ width: 32, height: 32, color: '#94a3b8' }} />
                     </div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '0.5rem' }}>Nenhum currículo cadastrado</h3>
@@ -55,11 +57,20 @@ export default async function ListarCurriculosCandidato() {
                         display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                         padding: '0.85rem 1.75rem', borderRadius: 12,
                         background: '#09355F', color: '#fff', fontSize: '0.9rem', fontWeight: 700,
-                        textDecoration: 'none', boxShadow: '0 4px 15px rgba(9,53,95,0.2)'
+                        textDecoration: 'none', boxShadow: '0 4px 15px rgba(9,53,95,0.2)', marginBottom: '1.5rem'
                     }}>
                         <Plus style={{ width: 16, height: 16 }} /> Criar Meu Primeiro Currículo
                     </Link>
+
+                    {/* Banner A2 - Dentro do card */}
+                    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+                        <BannerSpace formato="rectangle" />
+                    </div>
                 </div>
+
+                {/* Banner A1 - Abaixo do card */}
+                <BannerSpace formato="leaderboard" style={{ margin: '2rem auto 0' }} />
+            </>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
                     {curriculos.map((c: any) => (

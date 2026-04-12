@@ -1,6 +1,7 @@
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import { buscarMeuUsuarioCompleto } from '@/actions/candidatos'
 import { Sparkles } from 'lucide-react'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,8 +41,16 @@ export default async function CandidatoDashboard() {
                 </div>
             </div>
 
+            {/* Banner C3 - Logo abaixo dos cards */}
+            <BannerSpace formato="rectangle" style={{ marginBottom: '2rem' }} />
+
             <div style={{ background: '#fff', padding: '2rem', borderRadius: 14, border: '1.5px solid #e8edf5', textAlign: 'center', color: '#64748b' }}>
-                Em breve você poderá ver suas candidaturas e recomendações de vagas aqui.
+                <p style={{ marginBottom: '2rem' }}>Em breve você poderá ver suas candidaturas e recomendações de vagas aqui.</p>
+                
+                {/* Banner C1 - Substituindo espaço ocioso */}
+                <div style={{ maxWidth: 728, margin: '0 auto' }}>
+                    <BannerSpace formato="leaderboard" />
+                </div>
             </div>
         </div>
     )

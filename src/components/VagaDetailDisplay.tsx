@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send } from 'lucide-react'
 import { VagaPublica } from '@/actions/vagas'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 
 interface VagaDetailDisplayProps {
     vaga: any
@@ -27,6 +28,9 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         ))}
                     </div>
                 </div>
+
+                {/* Banner H2 / G2 - Abaixo da Descrição */}
+                <BannerSpace formato="leaderboard" className="ad-detail-vaga" />
 
                 {/* Responsabilidades */}
                 {vaga.responsabilidades && vaga.responsabilidades.length > 0 && (
@@ -170,6 +174,9 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         </ul>
                     </div>
                 )}
+
+                {/* Banner H1 / G1 = Fim da Sidebar */}
+                <BannerSpace formato="rectangle" className="ad-detail-vaga-sidebar" />
             </div>
 
             <style suppressHydrationWarning>{`
