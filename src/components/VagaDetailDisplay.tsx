@@ -79,6 +79,9 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         </ul>
                     </div>
                 )}
+
+                {/* Banner 728x90 abaixo dos requisitos/diferenciais */}
+                <BannerSpace formato="leaderboard" className="ad-vaga-detail-bottom" style={{ margin: 0 }} />
             </div>
 
             {/* Sidebar Direita */}
