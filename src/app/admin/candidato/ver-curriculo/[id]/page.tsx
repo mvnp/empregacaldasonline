@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
     Mail, Phone, MapPin, Calendar, Clock, Briefcase,
     GraduationCap, FileText, Download, Globe, Linkedin, Github,
-    Shield, Languages, DollarSign, User
+    Shield, Languages, DollarSign, User, Edit
 } from 'lucide-react'
 import { getStatusCandidaturaColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -149,7 +149,20 @@ export default async function CandidatoDetalhePage({ params }: { params: Promise
             <AdminPageHeader
                 titulo={candidato.nome}
                 subtitulo={`${candidato.cargo} · Visualizar Currículo`}
-                acao={<BackButton href="/admin/candidato/listar-curriculos" />}
+                acao={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Link href={`/admin/candidato/editar-curriculo/${candidato.id}`} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                            padding: '0.6rem 1.2rem', borderRadius: 10,
+                            background: 'rgba(42,185,192,0.1)', color: '#2AB9C0',
+                            fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
+                            border: '1.5px solid rgba(42,185,192,0.25)',
+                        }}>
+                            <Edit style={{ width: 15, height: 15 }} /> Editar
+                        </Link>
+                        <BackButton href="/admin/candidato/listar-curriculos" />
+                    </div>
+                }
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem', alignItems: 'start' }} className="admin-main-grid">

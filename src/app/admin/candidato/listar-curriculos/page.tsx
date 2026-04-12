@@ -107,6 +107,15 @@ export default async function ListarCurriculosCandidato() {
                                 }}>
                                     <Edit style={{ width: 16, height: 16 }} /> Editar
                                 </Link>
+                                <Link href={`/publico/candidato/ver-curriculo/${c.id}`} target="_blank" rel="noopener noreferrer" title="Ver currículo público em nova aba" style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 42, padding: '0.75rem', borderRadius: 10,
+                                    background: '#eff6ff', color: '#2563eb',
+                                    textDecoration: 'none', transition: 'background 0.2s', flexShrink: 0,
+                                    border: '1px solid #bfdbfe',
+                                }}>
+                                    <Eye style={{ width: 17, height: 17 }} />
+                                </Link>
                                 {userId && <CurriculoDeleteBtn curriculoId={c.id} userId={userId} />}
                             </div>
                         </div>
