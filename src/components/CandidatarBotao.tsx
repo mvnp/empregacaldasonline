@@ -21,7 +21,7 @@ export default function CandidatarBotao({ vagaId, jaCandidatado, curriculos = []
     const handleCandidatar = () => {
         if (candidatado || isPending) return
         if (curriculos.length === 0) {
-            router.push('/admin/candidato/cadastrar-curriculos')
+            router.push('/admin/candidatos/cadastrar/ia')
             return
         }
 
@@ -45,7 +45,7 @@ export default function CandidatarBotao({ vagaId, jaCandidatado, curriculos = []
     if (curriculos.length === 0) {
         return (
             <button 
-                onClick={() => router.push('/admin/candidato/cadastrar-curriculos')}
+                onClick={() => router.push('/admin/candidatos/cadastrar/ia')}
                 style={{ 
                     width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: 12, 
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
