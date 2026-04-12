@@ -213,6 +213,23 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                     }
                                     return null;
                                 })()}
+                                {u.tipo === 'empregador' && ((): any => {
+                                    const emp = (u as any).empresas?.[0];
+                                    const rawVal = emp?.whatsapp || emp?.telefone;
+                                    const clearNum = rawVal ? rawVal.replace(/\D/g, '') : '';
+                                    if(clearNum) {
+                                        return (
+                                            <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                padding: '2px 8px', borderRadius: 8, background: '#dcfce7', color: '#16a34a',
+                                                fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', border: '1px solid #bbf7d0'
+                                            }}>
+                                                <MessageCircle size={12} /> Chat
+                                            </a>
+                                        )
+                                    }
+                                    return null;
+                                })()}
                             </h3>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#64748b' }}>
                                 <Mail size={14} /> {u.email}

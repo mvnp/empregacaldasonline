@@ -18,7 +18,9 @@ export async function listarUsuarios() {
             empresas (
                 id,
                 nome_fantasia,
-                razao_social
+                razao_social,
+                whatsapp,
+                telefone
             )
         `)
         .order('created_at', { ascending: false })
