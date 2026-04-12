@@ -136,24 +136,18 @@ export async function sincronizarCandidatosOrfaos() {
         return { success: false, error: 'Sem permissão', criados: 0 };
     }
 
-    // Busca todos users do tipo candidato que NÃO têm registro em candidatos
-    const { data: orfaos, error } = await (admin.from('users') as any)
-        .select('id, nome, sobrenome, email, telefone, area_interesse, created_at')
-        .eq('tipo', 'candidato')
-        .is('candidatos.id', null)
-        // left join via not in
-    
-    if (error) return { success: false, error: error.message, criados: 0 }
-
-    // Alternativa mais confiável: buscar ids dos users que já existem em candidatos
+    // Passo 1: pega todos os user_ids que já têm registro em candidatos
     const { data: jaExistem } = await (admin.from('candidatos') as any)
         .select('user_id')
 
     const idsComRegistro = new Set((jaExistem || []).map((c: any) => c.user_id))
 
-    const { data: todosCandidatoUsers } = await (admin.from('users') as any)
-        .select('id, nome, sobrenome, email, telefone, area_interesse')
+    // Passo 2: busca todos users candidatos sem registro
+    const { data: todosCandidatoUsers, error } = await (admin.from('users') as any)
+        .select('id, nome, sobrenome, email, telefone, area_interesse, data_nascimento, status')
         .eq('tipo', 'candidato')
+
+    if (error) return { success: false, error: error.message, criados: 0 }
 
     const semRegistro = (todosCandidatoUsers || []).filter((u: any) => !idsComRegistro.has(u.id))
 
