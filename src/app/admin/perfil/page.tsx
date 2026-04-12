@@ -8,6 +8,25 @@ import {
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import { getMeuPerfilCompleto } from '@/actions/auth'
 
+const formatTextCpf = (val: string) => {
+    let v = String(val || '').replace(/\D/g, '')
+    if (v.length > 11) v = v.slice(0, 11)
+    if (v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+    if (v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+    if (v.length > 3) return v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
+    return v
+}
+
+const formatTextTelefone = (val: string) => {
+    let v = String(val || '').replace(/\D/g, '')
+    if (v.length > 11) v = v.slice(0, 11)
+    if (v.length === 11) return v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3')
+    if (v.length === 10) return v.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3')
+    if (v.length > 6) return v.replace(/^(\d{2})(\d{4,5})(\d+)$/, '($1) $2-$3')
+    if (v.length > 2) return v.replace(/^(\d{2})(\d+)$/, '($1) $2')
+    return v
+}
+
 // Dados mock do usuário
 const MOCK_USER = {
     nome: 'Administrador',
@@ -49,10 +68,10 @@ export default function PerfilPage() {
                     nome: res.nome || '',
                     sobrenome: res.sobrenome || '',
                     email: res.email || '',
-                    telefone: res.telefone || '',
-                    celular: c.whatsapp || '',
+                    telefone: formatTextTelefone(res.telefone),
+                    celular: formatTextTelefone(c.whatsapp),
                     dataNascimento: res.data_nascimento || c.data_nascimento || '',
-                    cpf: '',
+                    cpf: formatTextCpf(res.cpf || c.cpf || ''),
                     cargo: res.tipo === 'admin' ? 'ADMIN' : (res.tipo === 'empregador' ? 'EMPREGADOR' : (c.cargo_desejado || 'CANDIDATO')),
                     bio: c.resumo || '',
                     foto: res.avatar_url || '',
@@ -76,19 +95,11 @@ export default function PerfilPage() {
     }
 
     function handleCpfChange(val: string) {
-        let v = val.replace(/\D/g, '')
-        if (v.length > 11) v = v.slice(0, 11)
-        
-        let formatted = v
-        if (v.length > 9) {
-            formatted = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
-        } else if (v.length > 6) {
-            formatted = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
-        } else if (v.length > 3) {
-            formatted = v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
-        }
-        
-        setDados((prev: any) => ({ ...prev, cpf: formatted }))
+        setDados((prev: any) => ({ ...prev, cpf: formatTextCpf(val) }))
+    }
+
+    function handleTelefoneChange(campo: 'telefone' | 'celular', val: string) {
+        setDados((prev: any) => ({ ...prev, [campo]: formatTextTelefone(val) }))
     }
 
     async function handleCepChange(val: string) {
@@ -347,11 +358,11 @@ export default function PerfilPage() {
                 <div style={gridStyle}>
                     <div>
                         <label style={labelStyle}><Phone style={{ width: 12, height: 12 }} /> Telefone</label>
-                        <input style={inputStyle} value={dados.telefone} onChange={e => handleChange('telefone', e.target.value)} />
+                        <input style={inputStyle} value={dados.telefone} onChange={e => handleTelefoneChange('telefone', e.target.value)} placeholder="(00) 0000-0000" maxLength={15} />
                     </div>
                     <div>
                         <label style={labelStyle}><Phone style={{ width: 12, height: 12 }} /> Celular</label>
-                        <input style={inputStyle} value={dados.celular} onChange={e => handleChange('celular', e.target.value)} />
+                        <input style={inputStyle} value={dados.celular} onChange={e => handleTelefoneChange('celular', e.target.value)} placeholder="(00) 00000-0000" maxLength={15} />
                     </div>
                 </div>
             </div>
@@ -381,25 +392,27 @@ export default function PerfilPage() {
                             <input style={inputStyle} value={dados.complemento} onChange={e => handleChange('complemento', e.target.value)} />
                         </div>
                     </div>
-                    <div>
-                        <label style={labelStyle}>Bairro</label>
-                        <input style={inputStyle} value={dados.bairro} onChange={e => handleChange('bairro', e.target.value)} />
-                    </div>
-                    <div>
-                        <label style={labelStyle}><Building2 style={{ width: 12, height: 12 }} /> Cidade</label>
-                        <input style={inputStyle} value={dados.cidade} onChange={e => handleChange('cidade', e.target.value)} />
-                    </div>
-                    <div>
-                        <label style={labelStyle}>Estado</label>
-                        <select
-                            value={dados.estado}
-                            onChange={e => handleChange('estado', e.target.value)}
-                            style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
-                        >
-                            {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
-                                <option key={uf} value={uf}>{uf}</option>
-                            ))}
-                        </select>
+                    <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={labelStyle}>Bairro</label>
+                            <input style={inputStyle} value={dados.bairro} onChange={e => handleChange('bairro', e.target.value)} />
+                        </div>
+                        <div>
+                            <label style={labelStyle}><Building2 style={{ width: 12, height: 12 }} /> Cidade</label>
+                            <input style={inputStyle} value={dados.cidade} onChange={e => handleChange('cidade', e.target.value)} />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Estado</label>
+                            <select
+                                value={dados.estado}
+                                onChange={e => handleChange('estado', e.target.value)}
+                                style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}
+                            >
+                                {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                                    <option key={uf} value={uf}>{uf}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
