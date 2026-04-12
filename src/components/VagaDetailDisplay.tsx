@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send } from 'lucide-react'
 import { VagaPublica } from '@/actions/vagas'
 import BannerSpace from '@/components/publicidade/BannerSpace'
+import VagaCardDB from '@/components/VagaCardDB'
 
 interface VagaDetailDisplayProps {
     vaga: any
@@ -10,9 +11,10 @@ interface VagaDetailDisplayProps {
     regime: string
     horario: string
     actionButton?: React.ReactNode
+    vagasRelacionadas?: any[]
 }
 
-export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton }: VagaDetailDisplayProps) {
+export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton, vagasRelacionadas }: VagaDetailDisplayProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-detail-grid">
 
@@ -80,8 +82,21 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     </div>
                 )}
 
-                {/* Banner 728x90 abaixo dos requisitos/diferenciais */}
-                <BannerSpace formato="leaderboard" className="ad-vaga-detail-bottom" style={{ margin: 0 }} />
+
+
+                {/* Vagas Relacionadas (alocadas aqui conforme pedido) */}
+                {vagasRelacionadas && vagasRelacionadas.length > 0 && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '1.25rem' }}>
+                            Vagas Relacionadas
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                            {vagasRelacionadas.map(v => (
+                                <VagaCardDB key={v.id} vaga={v} />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Sidebar Direita */}

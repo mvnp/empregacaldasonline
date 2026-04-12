@@ -7,7 +7,7 @@ import {
 
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { buscarVagaPublica } from '@/actions/vagas'
+import { buscarVagaPublica, listarVagasPublicas } from '@/actions/vagas'
 import { buscarEmpresaPublica } from '@/actions/empresas'
 import VagaDetailDisplay from '@/components/VagaDetailDisplay'
 import BannerSpace from '@/components/publicidade/BannerSpace'
@@ -117,6 +117,11 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
 
     const empresaPerfil = vaga.empresa_id ? await buscarEmpresaPublica(vaga.empresa_id) : null;
 
+    // Fetch related jobs (using the same area/title or just recent ones)
+    // Here we'll just fetch latest active jobs and exclude the current one to show 2.
+    const resRelacionadas = await listarVagasPublicas({ perPage: 3 });
+    const vagasRelacionadas = resRelacionadas.vagas.filter(v => v.id !== vaga.id).slice(0, 2);
+
     const modalidade = vaga.modalidade.charAt(0).toUpperCase() + vaga.modalidade.slice(1)
     const regime = (vaga.tipo_contrato || 'CLT').toUpperCase()
     const nivel = vaga.nivel ? vaga.nivel.charAt(0).toUpperCase() + vaga.nivel.slice(1) : ''
@@ -197,10 +202,10 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                         salario={salario}
                         regime={regime}
                         horario={horario}
+                        vagasRelacionadas={vagasRelacionadas}
                     />
                 </div>
             </main>
-
             {/* Banner H3 - Pré-Footer */}
             <div style={{ maxWidth: 1280, margin: '0 auto 4rem', padding: '0 2rem', width: '100%' }}>
                 <BannerSpace formato="billboard" className="ad-billboard-vaga" />
