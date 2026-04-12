@@ -288,7 +288,7 @@ async function verificarCreditoCandidato() {
 async function debitarCreditoCandidato(userId: number, creditosAtuais: number) {
     try {
         const adminClient = createAdminClient()
-        await adminClient.from('ia_creditos').upsert({ 
+        await (adminClient.from('ia_creditos') as any).upsert({ 
             user_id: userId, 
             creditos: creditosAtuais - 1,
             updated_at: new Date().toISOString()

@@ -1,24 +1,64 @@
-import { listarVagasPublicas } from '@/actions/vagas'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { listarVagasPublicas, type VagaPublica } from '@/actions/vagas'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import Link from 'next/link'
-import { Briefcase, MapPin, DollarSign, Clock, Building2, Eye, ArrowRight } from 'lucide-react'
+import { Briefcase, MapPin, DollarSign, Building2, ArrowRight } from 'lucide-react'
 
-export const dynamic = 'force-dynamic'
+export default function VagasCandidatoPage() {
+    const [vagas, setVagas] = useState<VagaPublica[]>([])
+    const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
 
-export default async function VagasCandidatoPage() {
-    const data = await listarVagasPublicas()
-    const vagas = data.vagas
+    useEffect(() => {
+        carregarVagas(1)
+    }, [])
+
+    async function carregarVagas(pageNumber: number) {
+        if (pageNumber === 1) setLoading(true)
+        else setLoadingMore(true)
+        
+        try {
+            const data = await listarVagasPublicas({ page: pageNumber, perPage: 25 })
+            
+            if (pageNumber === 1) {
+                setVagas(data.vagas)
+            } else {
+                setVagas(prev => [...prev, ...data.vagas])
+            }
+            
+            setHasMore(data.page < data.totalPages)
+        } catch (e) {
+            console.error('Erro ao carregar vagas', e)
+        } finally {
+            setLoading(false)
+            setLoadingMore(false)
+        }
+    }
+
+    function handleLoadMore() {
+        if (!hasMore || loadingMore) return
+        const nextPage = page + 1
+        setPage(nextPage)
+        carregarVagas(nextPage)
+    }
 
     return (
         <div>
             <AdminPageHeader titulo="Vagas Disponíveis" subtitulo="Encontre a oportunidade ideal para sua carreira" />
 
-            {vagas.length === 0 ? (
+            {loading ? (
+                <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#64748b' }}>Carregando vagas...</div>
+            ) : vagas.length === 0 ? (
                 <div style={{ background: '#fff', padding: '3rem', borderRadius: 14, textAlign: 'center', color: '#64748b' }}>
                     <Briefcase style={{ width: 48, height: 48, margin: '0 auto 1rem', opacity: 0.5 }} />
                     <p style={{ fontSize: '1rem', fontWeight: 600 }}>Nenhuma vaga disponível no momento.</p>
                 </div>
             ) : (
+                <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
                     {vagas.map((v) => (
                         <div key={v.id} style={{
@@ -70,6 +110,25 @@ export default async function VagasCandidatoPage() {
                         </div>
                     ))}
                 </div>
+                
+                {hasMore && (
+                    <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                        <button onClick={handleLoadMore} disabled={loadingMore} style={{
+                            padding: '0.75rem 1.75rem',
+                            borderRadius: '8px',
+                            background: '#fff',
+                            border: '1.5px solid #cbd5e1',
+                            color: '#475569',
+                            fontWeight: 700,
+                            cursor: loadingMore ? 'not-allowed' : 'pointer',
+                            fontSize: '0.9rem',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+                        }}>
+                            {loadingMore ? 'Carregando Mágica...' : 'Carregar mais vagas'}
+                        </button>
+                    </div>
+                )}
+                </>
             )}
         </div>
     )

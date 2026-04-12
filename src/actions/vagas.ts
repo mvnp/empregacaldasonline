@@ -381,7 +381,7 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
         .from('vagas')
         .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, created_at')
         .eq('status', 'ativa')
-        .order('id', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(from, to)
 
     // Filtros opcionais
