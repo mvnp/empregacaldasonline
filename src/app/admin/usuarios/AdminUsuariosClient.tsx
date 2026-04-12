@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, FileEdit, Trash2, Key, Filter, CheckCircle, Slash } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, FileEdit, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -155,12 +155,32 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         </div>
                         
                         <div style={{ flex: 1, minWidth: 200 }}>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#09355F', margin: '0 0 0.2rem' }}>
+                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#09355F', margin: '0 0 0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span>
                                 {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 
                                     ? (u as any).empresas[0].nome_fantasia || (u as any).empresas[0].razao_social || `${u.nome} ${u.sobrenome}`
                                     : `${u.nome} ${u.sobrenome}`
                                 }
-                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 400, marginLeft: 8}}>(Empresa Vinculada)</span>}
+                                </span>
+                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 400}}>(Empresa Vinculada)</span>}
+
+                                {u.tipo === 'candidato' && ((): any => {
+                                    const candObj = Array.isArray((u as any).candidatos) ? (u as any).candidatos[0] : (u as any).candidatos;
+                                    const rawVal = candObj?.whatsapp || candObj?.telefone;
+                                    const clearNum = rawVal ? rawVal.replace(/\D/g, '') : '';
+                                    if(clearNum) {
+                                        return (
+                                            <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                padding: '2px 8px', borderRadius: 8, background: '#dcfce7', color: '#16a34a',
+                                                fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', border: '1px solid #bbf7d0'
+                                            }}>
+                                                <MessageCircle size={12} /> Chat
+                                            </a>
+                                        )
+                                    }
+                                    return null;
+                                })()}
                             </h3>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#64748b' }}>
                                 <Mail size={14} /> {u.email}

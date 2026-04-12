@@ -19,6 +19,10 @@ export async function listarUsuarios() {
                 id,
                 nome_fantasia,
                 razao_social
+            ),
+            candidatos (
+                whatsapp,
+                telefone
             )
         `)
         .order('created_at', { ascending: false })
