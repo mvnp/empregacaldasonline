@@ -75,6 +75,36 @@ export default function PerfilPage() {
         setDados((prev: any) => ({ ...prev, [campo]: valor }))
     }
 
+    async function handleCepChange(val: string) {
+        let cepStr = val.replace(/\D/g, '')
+        if (cepStr.length > 8) cepStr = cepStr.slice(0, 8)
+        
+        let formattedCep = cepStr
+        if (cepStr.length > 5) {
+            formattedCep = `${cepStr.slice(0, 5)}-${cepStr.slice(5)}`
+        }
+
+        setDados((prev: any) => ({ ...prev, cep: formattedCep }))
+
+        if (cepStr.length === 8) {
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${cepStr}/json/`)
+                const dt = await res.json()
+                if (!dt.erro) {
+                    setDados((prev: any) => ({
+                        ...prev,
+                        logradouro: dt.logradouro || prev.logradouro,
+                        bairro: dt.bairro || prev.bairro,
+                        cidade: dt.localidade || prev.cidade,
+                        estado: dt.uf || prev.estado,
+                    }))
+                }
+            } catch (e) {
+                console.error("Erro ao buscar CEP", e)
+            }
+        }
+    }
+
     function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
         if (file) {
@@ -319,7 +349,7 @@ export default function PerfilPage() {
                 <div style={gridStyle}>
                     <div>
                         <label style={labelStyle}><MapPin style={{ width: 12, height: 12 }} /> CEP</label>
-                        <input style={inputStyle} value={dados.cep} onChange={e => handleChange('cep', e.target.value)} />
+                        <input style={inputStyle} value={dados.cep} onChange={e => handleCepChange(e.target.value)} maxLength={9} placeholder="00000-000" />
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
                         <label style={labelStyle}><MapPin style={{ width: 12, height: 12 }} /> Logradouro</label>
