@@ -2,13 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, RefreshCw } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import FilterSelect from '@/components/admin/FilterSelect'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
-import { atualizarStatusUsuario, atualizarTipoUsuario, excluirUsuario, atualizarSenhaUsuario, sincronizarCandidatosOrfaos } from '@/actions/admin_users'
+import { atualizarStatusUsuario, atualizarTipoUsuario, excluirUsuario, atualizarSenhaUsuario } from '@/actions/admin_users'
 import { iniciarImpersonacao } from '@/actions/auth'
 import type { User as UserType } from '@/types/user'
 
@@ -131,43 +131,11 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
         }
     }
 
-    const [sincLoading, setSincLoading] = useState(false)
-    async function handleSincronizar() {
-        if (!window.confirm('Isso vai criar perfis na tabela candidatos para todos os usuários que ainda não têm. Continuar?')) return
-        setSincLoading(true)
-        const res = await sincronizarCandidatosOrfaos()
-        setSincLoading(false)
-        if (res.success) {
-            if (res.criados === 0) alert((res as any).mensagem || 'Nenhum orfão encontrado!')
-            else alert(`✅ ${res.criados} perfil(is) criado(s) na tabela candidatos com sucesso!`)
-            window.location.reload()
-        } else {
-            alert('Erro: ' + res.error)
-        }
-    }
-
     return (
         <div>
             <AdminPageHeader
                 titulo="Gestão de Usuários"
                 subtitulo={`${filtrados.length} usuários cadastrados`}
-                acao={
-                    <button
-                        onClick={handleSincronizar}
-                        disabled={sincLoading}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '0.4rem',
-                            padding: '0.5rem 1rem', borderRadius: 10,
-                            background: '#f0fdf4', border: '1.5px solid #bbf7d0',
-                            color: '#16a34a', fontSize: '0.8rem', fontWeight: 700,
-                            cursor: sincLoading ? 'not-allowed' : 'pointer', opacity: sincLoading ? 0.7 : 1
-                        }}
-                        title="Criar perfis na tabela candidatos para usuários que ainda não têm"
-                    >
-                        <RefreshCw size={14} style={{ animation: sincLoading ? 'spin 1s linear infinite' : 'none' }} />
-                        {sincLoading ? 'Sincronizando...' : 'Sincronizar Candidatos'}
-                    </button>
-                }
             />
 
             <AdminFilterBar 
