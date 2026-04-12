@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { User, Shield, Briefcase, Mail, FileEdit, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -20,7 +20,30 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
     const [filtroTipo, setFiltroTipo] = useState('')
     const [filtroStatus, setFiltroStatus] = useState('')
     const [exibidos, setExibidos] = useState(POR_PAGINA)
-    
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+        const savedBusca = localStorage.getItem('usuarios_busca')
+        const savedTipo = localStorage.getItem('usuarios_filtroTipo')
+        const savedStatus = localStorage.getItem('usuarios_filtroStatus')
+        if (savedBusca) setBusca(savedBusca)
+        if (savedTipo) setFiltroTipo(savedTipo)
+        if (savedStatus) setFiltroStatus(savedStatus)
+    }, [])
+
+    useEffect(() => {
+        if (!isMounted) return
+        if (busca) localStorage.setItem('usuarios_busca', busca)
+        else localStorage.removeItem('usuarios_busca')
+        
+        if (filtroTipo) localStorage.setItem('usuarios_filtroTipo', filtroTipo)
+        else localStorage.removeItem('usuarios_filtroTipo')
+        
+        if (filtroStatus) localStorage.setItem('usuarios_filtroStatus', filtroStatus)
+        else localStorage.removeItem('usuarios_filtroStatus')
+    }, [busca, filtroTipo, filtroStatus, isMounted])
+
     const [modalSenha, setModalSenha] = useState<number | null>(null)
     const [novaSenha, setNovaSenha] = useState('')
     const [confirmaSenha, setConfirmaSenha] = useState('')
@@ -115,7 +138,16 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                 subtitulo={`${filtrados.length} usuários cadastrados`}
             />
 
-            <AdminFilterBar onBuscar={() => setExibidos(POR_PAGINA)}>
+            <AdminFilterBar 
+                onBuscar={() => setExibidos(POR_PAGINA)}
+                temFiltroAtivo={!!(busca || filtroTipo || filtroStatus)}
+                onLimpar={() => {
+                    setBusca('')
+                    setFiltroTipo('')
+                    setFiltroStatus('')
+                    setExibidos(POR_PAGINA)
+                }}
+            >
                 <FilterSearchInput value={busca} onChange={setBusca} placeholder="Buscar por nome ou e-mail..." />
                 <FilterSelect
                     icon={Shield} value={filtroTipo}
