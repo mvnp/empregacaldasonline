@@ -6,7 +6,7 @@ import {
     Save, FileText, Linkedin, Github, Calendar, Shield
 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-import { getMeuPerfilCompleto } from '@/actions/auth'
+import { getMeuPerfilCompleto, salvarPerfil } from '@/actions/auth'
 
 const formatTextCpf = (val: string) => {
     let v = String(val || '').replace(/\D/g, '')
@@ -24,6 +24,12 @@ const formatTextTelefone = (val: string) => {
     if (v.length === 10) return v.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3')
     if (v.length > 6) return v.replace(/^(\d{2})(\d{4,5})(\d+)$/, '($1) $2-$3')
     if (v.length > 2) return v.replace(/^(\d{2})(\d+)$/, '($1) $2')
+    return v
+}
+
+const formatTextCep = (val: string) => {
+    let v = String(val || '').replace(/\D/g, '').slice(0, 8)
+    if (v.length > 5) return `${v.slice(0, 5)}-${v.slice(5)}`
     return v
 }
 
@@ -64,24 +70,25 @@ export default function PerfilPage() {
         getMeuPerfilCompleto().then((res) => {
             if (res) {
                 const c = (res as any).candidato_perfil || {}
+                const end = (res as any).endereco || {}
                 setDados({
                     nome: res.nome || '',
                     sobrenome: res.sobrenome || '',
                     email: res.email || '',
-                    telefone: formatTextTelefone(res.telefone),
-                    celular: formatTextTelefone(c.whatsapp),
-                    dataNascimento: res.data_nascimento || c.data_nascimento || '',
-                    cpf: formatTextCpf(res.cpf || c.cpf || ''),
-                    cargo: res.tipo === 'admin' ? 'ADMIN' : (res.tipo === 'empregador' ? 'EMPREGADOR' : (c.cargo_desejado || 'CANDIDATO')),
+                    telefone: formatTextTelefone((res as any).telefone),
+                    celular: formatTextTelefone((res as any).celular || c.whatsapp || ''),
+                    dataNascimento: (res as any).data_nascimento || c.data_nascimento || '',
+                    cpf: formatTextCpf((res as any).cpf || ''),
+                    cargo: (res as any).tipo === 'admin' ? 'ADMIN' : ((res as any).tipo === 'empregador' ? 'EMPREGADOR' : (c.cargo_desejado || 'CANDIDATO')),
                     bio: c.resumo || '',
-                    foto: res.avatar_url || '',
-                    cep: '',
-                    logradouro: '',
-                    numero: '',
-                    complemento: '',
-                    bairro: '',
-                    cidade: c.local || '',
-                    estado: '',
+                    foto: (res as any).avatar_url || '',
+                    cep: formatTextCep(end.cep || ''),
+                    logradouro: end.logradouro || '',
+                    numero: end.numero || '',
+                    complemento: end.complemento || '',
+                    bairro: end.bairro || '',
+                    cidade: end.cidade || c.local?.split(' - ')[0] || '',
+                    estado: end.estado || '',
                     linkedin: c.linkedin || '',
                     github: c.github || '',
                     website: c.portfolio || '',
@@ -143,13 +150,34 @@ export default function PerfilPage() {
         }
     }
 
-    function handleSalvar() {
+    async function handleSalvar() {
         setSalvando(true)
-        setTimeout(() => {
-            setSalvando(false)
+        const res = await salvarPerfil({
+            nome: dados.nome,
+            sobrenome: dados.sobrenome,
+            telefone: dados.telefone,
+            celular: dados.celular,
+            cpf: dados.cpf,
+            data_nascimento: dados.dataNascimento,
+            bio: dados.bio,
+            linkedin: dados.linkedin,
+            github: dados.github,
+            website: dados.website,
+            cep: dados.cep,
+            logradouro: dados.logradouro,
+            numero: dados.numero,
+            complemento: dados.complemento,
+            bairro: dados.bairro,
+            cidade: dados.cidade,
+            estado: dados.estado,
+        })
+        setSalvando(false)
+        if (res.success) {
             setSalvou(true)
             setTimeout(() => setSalvou(false), 3000)
-        }, 1000)
+        } else {
+            alert(res.error || 'Erro ao salvar. Tente novamente.')
+        }
     }
 
     const inputStyle: React.CSSProperties = {

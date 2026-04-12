@@ -215,12 +215,92 @@ export async function getMeuPerfilCompleto() {
     if (!user) return null
 
     const admin = createAdminClient()
-    if (user.tipo === 'candidato') {
+    const { data: endereco } = await (admin.from('user_enderecos') as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+    if ((user as any).tipo === 'candidato') {
         const { data: candidato } = await admin.from('candidatos').select('*').eq('user_id', user.id).single() as { data: any }
-        return { ...user, candidato_perfil: candidato || null }
+        return { ...user, candidato_perfil: candidato || null, endereco: endereco || null }
     }
     
-    return { ...user }
+    return { ...user, endereco: endereco || null }
+}
+
+// ── Salvar Perfil ──
+export async function salvarPerfil(dados: {
+    nome: string
+    sobrenome: string
+    telefone: string
+    celular: string
+    cpf: string
+    data_nascimento: string
+    bio: string
+    linkedin: string
+    github: string
+    website: string
+    // endereço
+    cep: string
+    logradouro: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
+}) {
+    const user = await getUsuarioLogado()
+    if (!user) return { success: false, error: 'Não autenticado.' }
+
+    const admin = createAdminClient()
+
+    // 1. Atualizar dados pessoais na tabela users
+    const { error: userErr } = await (admin.from('users') as any).update({
+        nome: dados.nome,
+        sobrenome: dados.sobrenome,
+        telefone: dados.telefone || null,
+        celular: dados.celular || null,
+        cpf: dados.cpf || null,
+        data_nascimento: dados.data_nascimento || null,
+    }).eq('id', user.id)
+
+    if (userErr) return { success: false, error: 'Erro ao salvar dados pessoais.' }
+
+    // 2. Upsert endereço na tabela user_enderecos
+    const { error: endErr } = await (admin.from('user_enderecos') as any).upsert({
+        user_id: user.id,
+        cep: dados.cep || null,
+        logradouro: dados.logradouro || null,
+        numero: dados.numero || null,
+        complemento: dados.complemento || null,
+        bairro: dados.bairro || null,
+        cidade: dados.cidade || null,
+        estado: dados.estado || null,
+        updated_at: new Date().toISOString(),
+    })
+
+    if (endErr) return { success: false, error: 'Erro ao salvar endereço.' }
+
+    // 3. Se candidato, atualiza campos extras do perfil
+    if ((user as any).tipo === 'candidato') {
+        const { data: candidato } = await (admin.from('candidatos') as any)
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle()
+        
+        if (candidato) {
+            await (admin.from('candidatos') as any).update({
+                whatsapp: dados.celular || null,
+                local: dados.cidade ? `${dados.cidade}${dados.estado ? ' - ' + dados.estado : ''}` : null,
+                linkedin: dados.linkedin || null,
+                github: dados.github || null,
+                portfolio: dados.website || null,
+                resumo: dados.bio || null,
+            }).eq('id', candidato.id)
+        }
+    }
+
+    return { success: true }
 }
 
 // ── Verificar permissão (para uso em Server Components/Actions) ──
