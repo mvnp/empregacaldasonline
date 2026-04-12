@@ -61,7 +61,8 @@ export async function criarPublicidade(formData: FormData) {
         }
 
         // 1. Inserir a publicidade
-        const orcamento = Number(orcamentoStr.replace(/[^0-9.-]+/g, "")) || 0
+        const cleanOrcStr = orcamentoStr.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]+/g, "")
+        const orcamento = Number(cleanOrcStr) || 0
 
         const { data: pubData, error: pubError } = await (admin.from('empresa_pubs') as any)
             .insert({
@@ -118,6 +119,50 @@ export async function criarPublicidade(formData: FormData) {
         return { success: true }
     } catch (e: any) {
         console.error(e)
+        return { success: false, error: 'Erro inesperado no servidor.' }
+    }
+}
+
+export async function buscarPublicidade(id: number) {
+    const admin = await getAdminClient()
+    const { data, error } = await (admin.from('empresa_pubs') as any)
+        .select(`
+            *,
+            empresas (nome_fantasia, razao_social, cnpj)
+        `)
+        .eq('id', id)
+        .single()
+
+    if (error) return null
+    return data
+}
+
+export async function atualizarPublicidade(id: number, form: {
+    status: string
+    link_destino: string
+    data_inicio: string
+    data_fim: string
+    orcamento: number
+}) {
+    try {
+        const admin = await getAdminClient()
+        const { error } = await (admin.from('empresa_pubs') as any)
+            .update({
+                status: form.status,
+                link_destino: form.link_destino,
+                data_inicio: new Date(form.data_inicio).toISOString(),
+                data_fim: new Date(form.data_fim).toISOString(),
+                orcamento_real: form.orcamento,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+
+        if (error) {
+            console.error(error)
+            return { success: false, error: 'Erro ao atualizar a campanha.' }
+        }
+        return { success: true }
+    } catch (e: any) {
         return { success: false, error: 'Erro inesperado no servidor.' }
     }
 }

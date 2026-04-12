@@ -78,13 +78,24 @@ export default function PublicidadesClient({ publicidades }: { publicidades: any
                                     </div>
                                 </div>
                                 <div>
-                                    <span style={{ 
-                                        padding: '0.35rem 0.75rem', borderRadius: 9999, fontSize: '0.75rem', fontWeight: 700,
-                                        background: isAtiva ? '#dcfce7' : '#f1f5f9',
-                                        color: isAtiva ? '#16a34a' : '#64748b'
-                                    }}>
-                                        {isAtiva ? 'Rodando' : 'Inativa/Pausada'}
-                                    </span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem' }}>
+                                        <span style={{ 
+                                            padding: '0.35rem 0.75rem', borderRadius: 9999, fontSize: '0.75rem', fontWeight: 700,
+                                            background: isAtiva ? '#dcfce7' : '#f1f5f9',
+                                            color: isAtiva ? '#16a34a' : '#64748b'
+                                        }}>
+                                            {isAtiva ? 'Rodando' : 'Inativa/Pausada'}
+                                        </span>
+                                        <Link 
+                                            href={`/admin/publicidades/${pub.id}`}
+                                            style={{
+                                                fontSize: '0.75rem', fontWeight: 700, color: '#09355F', textDecoration: 'none',
+                                                padding: '0.35rem 0.75rem', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0'
+                                            }}
+                                        >
+                                            Editar Campanha
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         )

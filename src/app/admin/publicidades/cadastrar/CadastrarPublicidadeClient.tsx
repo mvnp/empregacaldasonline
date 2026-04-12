@@ -4,8 +4,38 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-import { ArrowLeft, Search, Building2, Link as LinkIcon, Calendar, DollarSign, UploadCloud, Save, Loader2 } from 'lucide-react'
+import BackButton from '@/components/admin/BackButton'
+import { Search, Building2, Link as LinkIcon, Calendar, DollarSign, UploadCloud, Save, Loader2, CheckCircle2 } from 'lucide-react'
 import { buscarEmpresasParaAutosuggest, criarPublicidade } from '@/actions/publicidade'
+
+const FormatoUpload = ({ label, id, dims }: { label: string, id: string, dims: string }) => {
+    const [fileName, setFileName] = useState<string>('')
+
+    return (
+        <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: 12, border: '1.5px dashed #cbd5e1' }}>
+            <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: '#09355F' }}>{label}</h4>
+            <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>Dimensão ideal: {dims} (JPG, PNG, WEBP)</span>
+            
+            <label htmlFor={`input_${id}`} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                background: '#fff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: 8,
+                cursor: 'pointer', color: fileName ? '#16a34a' : '#3b82f6', fontSize: '0.85rem', fontWeight: 600,
+                textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'
+            }}>
+                {fileName ? <CheckCircle2 size={16} /> : <UploadCloud size={16} />} 
+                {fileName ? fileName : 'Escolher Arquivo'}
+            </label>
+            <input 
+                id={`input_${id}`}
+                type="file" 
+                name={`imagem_${id}`} 
+                accept="image/jpeg,image/png,image/webp,image/gif" 
+                style={{ display: 'none' }} 
+                onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
+            />
+        </div>
+    )
+}
 
 export default function CadastrarPublicidadeClient() {
     const router = useRouter()
@@ -92,32 +122,14 @@ export default function CadastrarPublicidadeClient() {
         }
     }
 
-    const FormatoUpload = ({ label, id, dims }: { label: string, id: string, dims: string }) => (
-        <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: 12, border: '1.5px dashed #cbd5e1' }}>
-            <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.9rem', color: '#09355F' }}>{label}</h4>
-            <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>Dimensão ideal: {dims} (JPG, PNG, WEBP)</span>
-            
-            <label style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                background: '#fff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: 8,
-                cursor: 'pointer', color: '#3b82f6', fontSize: '0.85rem', fontWeight: 600
-            }}>
-                <UploadCloud size={16} /> Escolher Arquivo
-                <input type="file" name={`imagem_${id}`} accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} />
-            </label>
-        </div>
-    )
+
 
     return (
         <div style={{ width: '100%' }}>
             <AdminPageHeader
                 titulo="Cadastrar Publicidade"
                 subtitulo="Configure a campanha e envie os banners."
-                acao={
-                    <Link href="/admin/publicidades" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>
-                        <ArrowLeft size={16} /> Voltar
-                    </Link>
-                }
+                acao={<BackButton href="/admin/publicidades" />}
             />
 
             {error && (
