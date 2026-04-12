@@ -14,6 +14,7 @@ import { useUser } from '@/contexts/UserContext'
 // ─────────────────────────────────────────────────────────────
 const ADMIN_MENU = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { label: 'Artigos do Blog', href: '/admin/blog', icon: FileText },
     { label: 'Vagas', href: '/admin/vagas', icon: Briefcase },
     { label: 'Candidatos', href: '/admin/candidatos', icon: Users },
     { label: 'Empresas', href: '/admin/empresas', icon: Building2 },
@@ -148,7 +149,7 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
                 )}
 
                 {/* Menu */}
-                <nav style={{ flex: 1, padding: sidebarCollapsed ? '0.5rem 0.5rem' : '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <nav className="admin-sidebar-nav" style={{ flex: 1, padding: sidebarCollapsed ? '0.5rem 0.5rem' : '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                     {menu.map(({ label, href, icon: Icon }) => {
                         const isActive = pathname === href
                         return (

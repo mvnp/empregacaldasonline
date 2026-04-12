@@ -15,7 +15,7 @@ export async function GET(req: Request) {
         .eq('chave', 'publicidade_global')
         .single()
 
-    const isActiveGlobal = configData?.valor?.ativo !== false
+    const isActiveGlobal = (configData as any)?.valor?.ativo !== false
     if (!isActiveGlobal) return NextResponse.json({ active: false, debug: { error: 'Global inactive', configData } })
 
     // Fetch Active Ads matching the format
