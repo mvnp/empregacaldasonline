@@ -75,6 +75,22 @@ export default function PerfilPage() {
         setDados((prev: any) => ({ ...prev, [campo]: valor }))
     }
 
+    function handleCpfChange(val: string) {
+        let v = val.replace(/\D/g, '')
+        if (v.length > 11) v = v.slice(0, 11)
+        
+        let formatted = v
+        if (v.length > 9) {
+            formatted = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+        } else if (v.length > 6) {
+            formatted = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+        } else if (v.length > 3) {
+            formatted = v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
+        }
+        
+        setDados((prev: any) => ({ ...prev, cpf: formatted }))
+    }
+
     async function handleCepChange(val: string) {
         let cepStr = val.replace(/\D/g, '')
         if (cepStr.length > 8) cepStr = cepStr.slice(0, 8)
@@ -302,7 +318,7 @@ export default function PerfilPage() {
                     </div>
                     <div>
                         <label style={labelStyle}><FileText style={{ width: 12, height: 12 }} /> CPF</label>
-                        <input style={inputStyle} value={dados.cpf} onChange={e => handleChange('cpf', e.target.value)} />
+                        <input style={inputStyle} value={dados.cpf} onChange={e => handleCpfChange(e.target.value)} placeholder="000.000.000-00" maxLength={14} />
                     </div>
                     <div>
                         <label style={labelStyle}><Shield style={{ width: 12, height: 12 }} /> Cargo / Função</label>
@@ -351,17 +367,19 @@ export default function PerfilPage() {
                         <label style={labelStyle}><MapPin style={{ width: 12, height: 12 }} /> CEP</label>
                         <input style={inputStyle} value={dados.cep} onChange={e => handleCepChange(e.target.value)} maxLength={9} placeholder="00000-000" />
                     </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={labelStyle}><MapPin style={{ width: 12, height: 12 }} /> Logradouro</label>
-                        <input style={inputStyle} value={dados.logradouro} onChange={e => handleChange('logradouro', e.target.value)} />
-                    </div>
-                    <div>
-                        <label style={labelStyle}>Número</label>
-                        <input style={inputStyle} value={dados.numero} onChange={e => handleChange('numero', e.target.value)} />
-                    </div>
-                    <div>
-                        <label style={labelStyle}>Complemento</label>
-                        <input style={inputStyle} value={dados.complemento} onChange={e => handleChange('complemento', e.target.value)} />
+                    <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={labelStyle}><MapPin style={{ width: 12, height: 12 }} /> Logradouro</label>
+                            <input style={inputStyle} value={dados.logradouro} onChange={e => handleChange('logradouro', e.target.value)} />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Número</label>
+                            <input style={inputStyle} value={dados.numero} onChange={e => handleChange('numero', e.target.value)} />
+                        </div>
+                        <div>
+                            <label style={labelStyle}>Complemento</label>
+                            <input style={inputStyle} value={dados.complemento} onChange={e => handleChange('complemento', e.target.value)} />
+                        </div>
                     </div>
                     <div>
                         <label style={labelStyle}>Bairro</label>
