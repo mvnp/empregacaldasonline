@@ -17,6 +17,52 @@ async function gravarLog(contexto: string, detalhes: any, retornoBruto?: any) {
     }
 }
 
+// Mapa de preços (in/out por 1M tokens) para cálculo aproximado de custo
+const PRICING_MAP: Record<string, { in: number, out: number }> = {
+    'gpt-5-nano': { in: 0.05, out: 0.40 },
+    'gpt-4.1-nano': { in: 0.10, out: 0.40 },
+    'gpt-4o-mini': { in: 0.15, out: 0.60 },
+    'gpt-5.4-nano': { in: 0.20, out: 1.25 },
+    'gpt-5-mini': { in: 0.25, out: 2.00 },
+    'gpt-4.1-mini': { in: 0.40, out: 1.60 },
+    'gpt-5.4-mini': { in: 0.75, out: 4.50 },
+    'o3-mini': { in: 1.10, out: 4.40 },
+    'o4-mini': { in: 1.10, out: 4.40 },
+    'gpt-5.1': { in: 1.25, out: 10.00 },
+    'gpt-5': { in: 1.25, out: 10.00 },
+    'gpt-5.2': { in: 1.75, out: 14.00 },
+    'gpt-5.3': { in: 1.75, out: 14.00 },
+    'gpt-4.1': { in: 2.00, out: 8.00 },
+    'o3': { in: 2.00, out: 8.00 },
+    'gpt-4o': { in: 2.50, out: 10.00 },
+    'gpt-5.4': { in: 2.50, out: 15.00 },
+    'gpt-5-pro': { in: 15.00, out: 120.00 },
+    'gpt-5.2-pro': { in: 21.00, out: 168.00 },
+    'gpt-5.4-pro': { in: 30.00, out: 180.00 },
+};
+
+async function registrarConsumoToken(userId: string, model: string, promptTokens: number, completionTokens: number) {
+    try {
+        const adminClient = createAdminClient();
+        const baseModel = model.toLowerCase().replace(/-20\d{2}-\d{2}-\d{2}/, ''); // limpa datas ex: gpt-4o-2024-05-13 => gpt-4o
+        let matchModelId = Object.keys(PRICING_MAP).find(k => baseModel.includes(k)) || 'gpt-4o';
+        
+        const price = PRICING_MAP[matchModelId] || { in: 2.50, out: 10.00 };
+        const costUsd = ((promptTokens / 1_000_000) * price.in) + ((completionTokens / 1_000_000) * price.out);
+
+        await adminClient.from('openai_usage_logs').insert({
+            user_id: userId,
+            model: model,
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            total_tokens: promptTokens + completionTokens,
+            cost_usd: costUsd
+        });
+    } catch (e) {
+        console.error('Erro ao registrar consumo OpenAI', e);
+    }
+}
+
 export async function salvarConfiguracaoOpenAI(data: { openai_token: string, model: string, title: string, prompt: string }) {
     try {
         const adminClient = await requireAdmin()
@@ -60,7 +106,7 @@ export async function lerConfiguracaoOpenAI() {
             .single() as { data: any, error: any }
 
         if (error || !data) return null
-        return data as { openai_token: string, model: string, title?: string, prompt?: string }
+        return data as { user_id: string, openai_token: string, model: string, title?: string, prompt?: string }
     } catch {
         return null
     }
@@ -109,6 +155,10 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
         const data = await response.json()
         const content = data.choices?.[0]?.message?.content
         
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
+        }
+
         if (!content) {
             const refusal = data.choices?.[0]?.message?.refusal;
             if (refusal) {
@@ -191,6 +241,10 @@ export async function gerarDescricaoComIA(titulo: string) {
 
         const data = await response.json()
         const content = data.choices[0].message.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
+        }
 
         return { success: true, data: content }
     } catch (e: any) {

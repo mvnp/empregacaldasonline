@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import {
     Users, Briefcase, Building2, FileText,
-    Eye, ArrowUpRight, ChevronLeft, ChevronRight
+    Eye, ArrowUpRight, ChevronLeft, ChevronRight, Cpu
 } from 'lucide-react'
 import { buscarDadosDashboard, type DashboardData } from '@/actions/dashboard'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -83,6 +83,34 @@ export default function AdminDashboardClient({ initialData }: Props) {
                     <AdminStatCard key={stat.label} stat={stat} icon={STAT_ICONS[i]} color={STAT_COLORS[i]} />
                 ))}
             </div>
+
+            {/* ── OpenAI Consumo ── */}
+            {data.openaiStats && (
+                <div style={{ background: '#fff', borderRadius: 14, border: '1.5px solid #e8edf5', padding: '1.5rem', marginBottom: '1.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <Cpu style={{ width: 18, height: 18, color: '#10b981' }} />
+                        <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#09355F', margin: 0 }}>Consumo da Inteligência Artificial (OpenAI)</h2>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 10 }}>
+                            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.25rem 0', fontWeight: 600 }}>Input Tokens</p>
+                            <p style={{ fontSize: '1.1rem', color: '#0f172a', fontWeight: 800, margin: 0 }}>{formatNum(data.openaiStats.totalInput)}</p>
+                        </div>
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 10 }}>
+                            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.25rem 0', fontWeight: 600 }}>Output Tokens</p>
+                            <p style={{ fontSize: '1.1rem', color: '#0f172a', fontWeight: 800, margin: 0 }}>{formatNum(data.openaiStats.totalOutput)}</p>
+                        </div>
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 10 }}>
+                            <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.25rem 0', fontWeight: 600 }}>Tokens Totais Processados</p>
+                            <p style={{ fontSize: '1.1rem', color: '#0f172a', fontWeight: 800, margin: 0 }}>{formatNum(data.openaiStats.totalTokens)}</p>
+                        </div>
+                        <div style={{ background: '#e0fae9', padding: '1rem', borderRadius: 10 }}>
+                            <p style={{ fontSize: '0.75rem', color: '#059669', margin: '0 0 0.25rem 0', fontWeight: 600 }}>Custo Estimado (USD)</p>
+                            <p style={{ fontSize: '1.1rem', color: '#047857', fontWeight: 800, margin: 0 }}>${data.openaiStats.totalCostUsd.toFixed(4)}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Grid: Gráfico + Atividades ── */}
             <div className="admin-main-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.25rem', marginBottom: '1.75rem' }}>

@@ -10,6 +10,13 @@ export interface DashboardStats {
     candidaturasHoje: number
 }
 
+export interface OpenAIStats {
+    totalInput: number
+    totalOutput: number
+    totalTokens: number
+    totalCostUsd: number
+}
+
 export interface GraficoDia {
     dia: string
     valor: number
@@ -43,6 +50,7 @@ export interface DashboardData {
     vagasTotal: number
     usuarios: UsuarioDashboard[]
     usuariosTotal: number
+    openaiStats: OpenAIStats
 }
 
 const DIAS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -77,6 +85,7 @@ export async function buscarDadosDashboard(vagaPage = 1, userPage = 1): Promise<
         vagasTotal,
         usuariosData,
         usuariosTotal,
+        openaiLogsData,
     ] = await Promise.all([
         // Total de vagas ativas
         (admin.from('vagas') as any).select('id', { count: 'exact', head: true }),
@@ -117,6 +126,9 @@ export async function buscarDadosDashboard(vagaPage = 1, userPage = 1): Promise<
 
         // Total de usuários (para paginação)
         (admin.from('users') as any).select('id', { count: 'exact', head: true }),
+
+        // Logs da OpenAI
+        (admin.from('openai_usage_logs') as any).select('prompt_tokens, completion_tokens, total_tokens, cost_usd')
     ])
 
     // ── Montar gráfico por dia (últimos 7 dias) ──────
@@ -163,6 +175,15 @@ export async function buscarDadosDashboard(vagaPage = 1, userPage = 1): Promise<
         created_at: u.created_at,
     }))
 
+    // ── Somar dados OpenAI ───────────────────────────
+    const openaiStats: OpenAIStats = { totalInput: 0, totalOutput: 0, totalTokens: 0, totalCostUsd: 0 }
+    for (const log of (openaiLogsData.data || [])) {
+        openaiStats.totalInput += (log.prompt_tokens || 0)
+        openaiStats.totalOutput += (log.completion_tokens || 0)
+        openaiStats.totalTokens += (log.total_tokens || 0)
+        openaiStats.totalCostUsd += (log.cost_usd || 0)
+    }
+
     return {
         stats: {
             totalVagas: vagasCount.count ?? 0,
@@ -176,5 +197,6 @@ export async function buscarDadosDashboard(vagaPage = 1, userPage = 1): Promise<
         vagasTotal: vagasTotal.count ?? 0,
         usuarios,
         usuariosTotal: usuariosTotal.count ?? 0,
+        openaiStats,
     }
 }
