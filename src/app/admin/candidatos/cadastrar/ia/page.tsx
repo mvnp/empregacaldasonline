@@ -12,6 +12,8 @@ import {
     type ExperienciaItem, type FormacaoItem, type IdiomaItem, type DocumentoItem
 } from '@/actions/candidatos'
 import { gerarDadosCurriculoComIA, gerarObjetivoComIA } from '@/actions/openai'
+import { revalidarLayoutAdmin } from '@/actions/auth'
+import { useUser } from '@/contexts/UserContext'
 
 const NIVEL_IDIOMA = [
     { value: 'basico', label: 'Básico' },
@@ -51,6 +53,7 @@ const maskMMAAAA = (v: string) => {
 };
 
 export default function CadastrarCandidatoIAPage() {
+    const { tipoUsuario, onboarding } = useUser()
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
 
@@ -233,7 +236,13 @@ export default function CadastrarCandidatoIAPage() {
             }
 
             if (userTipo === 'candidato') {
-                window.location.href = '/admin/candidato/listar-curriculos'
+                // Se estava em onboarding (etapa 2), revalidar e ir para o dashboard
+                if (onboarding && !onboarding.temCurriculo) {
+                    await revalidarLayoutAdmin()
+                    window.location.href = '/admin/candidato'
+                } else {
+                    window.location.href = '/admin/candidato/listar-curriculos'
+                }
             } else {
                 window.location.href = '/admin/candidatos'
             }
@@ -277,6 +286,15 @@ export default function CadastrarCandidatoIAPage() {
 
     return (
         <div>
+            <style>{`
+                @keyframes pulse-ia {
+                    0%, 100% { box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+                    50%       { box-shadow: 0 4px 22px rgba(16,185,129,0.65); }
+                }
+                .btn-preencher-ia {
+                    animation: pulse-ia 2.4s ease-in-out infinite;
+                }
+            `}</style>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -310,7 +328,7 @@ export default function CadastrarCandidatoIAPage() {
                             <span>Créditos IA: <strong>{creditosIA}</strong></span>
                         </div>
                     )}
-                    <button type="button" onClick={() => setShowIaModal(true)} style={{
+                    <button type="button" onClick={() => setShowIaModal(true)} className="btn-preencher-ia" style={{
                         display: 'flex', alignItems: 'center', gap: '0.5rem',
                         padding: '0.7rem 1.75rem', borderRadius: 10,
                         background: 'linear-gradient(135deg, #10b981, #059669)',
@@ -319,7 +337,7 @@ export default function CadastrarCandidatoIAPage() {
                         boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
                     }}>
                         <Sparkles style={{ width: 16, height: 16 }} />
-                        Preencher com IA
+                        Preencher currículo com IA
                     </button>
                 </div>
             </div>

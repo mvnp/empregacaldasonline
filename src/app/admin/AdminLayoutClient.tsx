@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
     LayoutDashboard, Briefcase, Users, Building2, BarChart3,
-    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText, Megaphone
+    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText, Megaphone, Lock
 } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 
@@ -44,10 +44,35 @@ const CANDIDATO_MENU = [
 
 export default function AdminLayoutClient({ children, isImpersonating = false }: { children: React.ReactNode, isImpersonating?: boolean }) {
     const pathname = usePathname()
-    const { tipoUsuario } = useUser()
+    const router = useRouter()
+    const { tipoUsuario, onboarding } = useUser()
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [mobileSidebar, setMobileSidebar] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+
+    // ── Onboarding Gate para Candidatos ──
+    useEffect(() => {
+        if (tipoUsuario !== 'candidato' || !onboarding) return
+
+        const { perfilCompleto, temCurriculo } = onboarding
+
+        // Etapa 1: perfil incompleto — redirecionar para /admin/perfil
+        if (!perfilCompleto) {
+            if (pathname !== '/admin/perfil') {
+                router.replace('/admin/perfil')
+            }
+            return
+        }
+
+        // Etapa 2: sem currículo — redirecionar para cadastrar currículo via IA
+        if (!temCurriculo) {
+            if (pathname !== '/admin/candidatos/cadastrar/ia') {
+                router.replace('/admin/candidatos/cadastrar/ia')
+            }
+            return
+        }
+    }, [tipoUsuario, onboarding, pathname, router])
+
     useEffect(() => {
         setIsMounted(true)
         const stored = localStorage.getItem('sidebar_collapsed')
@@ -55,6 +80,12 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
             setSidebarCollapsed(true)
         }
     }, [])
+
+    // Determinar estado de bloqueio do onboarding para o menu
+    const candidatoEmOnboarding = tipoUsuario === 'candidato' && !!onboarding && (!onboarding.perfilCompleto || !onboarding.temCurriculo)
+    const candidatoSoPerfil = tipoUsuario === 'candidato' && !!onboarding && !onboarding.perfilCompleto
+    const candidatoSoCurriculo = tipoUsuario === 'candidato' && !!onboarding && onboarding.perfilCompleto && !onboarding.temCurriculo
+
 
     const toggleSidebar = () => {
         const newState = !sidebarCollapsed
@@ -80,6 +111,17 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
     } else if (tipoUsuario === 'admin') {
         menu = ADMIN_MENU
         titulo = 'Admin Portal'
+    }
+
+    // Injetar item de currículo IA no menu do candidato caso ainda não tenha (etapa 2 de onboarding)
+    if (isCandidatoMenu && candidatoSoCurriculo) {
+        const jaTemIA = menu.some(m => m.href === '/admin/candidatos/cadastrar/ia')
+        if (!jaTemIA) {
+            menu = [
+                ...menu,
+                { label: 'Criar Currículo com IA', href: '/admin/candidatos/cadastrar/ia', icon: FileText },
+            ]
+        }
     }
 
     return (
@@ -152,6 +194,48 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
                 <nav className="admin-sidebar-nav" style={{ flex: 1, padding: sidebarCollapsed ? '0.5rem 0.5rem' : '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                     {menu.map(({ label, href, icon: Icon }) => {
                         const isActive = pathname === href
+
+                        // Calcular se este item está bloqueado no onboarding
+                        let bloqueado = false
+                        if (candidatoSoPerfil) {
+                            // Só /admin/perfil é permitido
+                            bloqueado = href !== '/admin/perfil'
+                        } else if (candidatoSoCurriculo) {
+                            // Só /admin/candidatos/cadastrar/ia é permitido
+                            bloqueado = href !== '/admin/candidatos/cadastrar/ia'
+                        }
+
+                        if (bloqueado) {
+                            return (
+                                <div
+                                    key={href}
+                                    title={sidebarCollapsed ? `${label} (bloqueado)` : 'Complete o onboarding para acessar'}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: sidebarCollapsed ? '0.7rem' : '0.65rem 0.85rem',
+                                        borderRadius: 10,
+                                        fontSize: '0.875rem',
+                                        fontWeight: 500,
+                                        color: 'rgba(255,255,255,0.22)',
+                                        background: 'transparent',
+                                        cursor: 'not-allowed',
+                                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                                        userSelect: 'none',
+                                    }}
+                                >
+                                    <Icon style={{ width: 20, height: 20, flexShrink: 0 }} />
+                                    {!sidebarCollapsed && (
+                                        <span style={{ flex: 1 }}>{label}</span>
+                                    )}
+                                    {!sidebarCollapsed && (
+                                        <Lock style={{ width: 13, height: 13, opacity: 0.5 }} />
+                                    )}
+                                </div>
+                            )
+                        }
+
                         return (
                             <Link
                                 key={href}
@@ -339,6 +423,54 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
                         </Link>
                     </div>
                 </header>
+
+                {/* Onboarding Progress Banner */}
+                {candidatoEmOnboarding && (
+                    <div style={{
+                        background: '#fff3cd',
+                        color: '#664d03',
+                        borderBottom: '1px solid #ffecb5',
+                        padding: '0.7rem 2rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        flexWrap: 'wrap',
+                        position: 'sticky',
+                        top: 57,
+                        zIndex: 39,
+                    }}>
+                        {/* Ícone + Texto */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1 }}>
+                            <Lock style={{ width: 15, height: 15, flexShrink: 0, color: '#997404' }} />
+                            <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                                {candidatoSoPerfil
+                                    ? '📋 Etapa 1 de 2 — Complete seus Dados Pessoais e de Contato para continuar'
+                                    : '📄 Etapa 2 de 2 — Cadastre seu primeiro currículo com IA para liberar a plataforma'
+                                }
+                            </span>
+                        </div>
+
+                        {/* Progresso visual */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                            <div style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: '#997404',
+                            }} />
+                            <div style={{
+                                width: 28, height: 2,
+                                background: candidatoSoCurriculo ? '#997404' : '#ffda6a',
+                                borderRadius: 2,
+                            }} />
+                            <div style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: candidatoSoCurriculo ? '#997404' : '#ffda6a',
+                            }} />
+                            <span style={{ fontSize: '0.72rem', marginLeft: '0.3rem', color: '#997404', fontWeight: 700 }}>
+                                {candidatoSoPerfil ? '1 / 2' : '2 / 2'}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Page content */}
                 <main style={{ flex: 1, padding: '1.5rem 2rem 2.5rem' }}>

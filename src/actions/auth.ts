@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import type { TipoUsuario, User } from '@/types/user'
 import { getRotaInicial } from '@/types/user'
@@ -51,21 +52,8 @@ export async function cadastrarCandidato(formData: {
         return { success: false, error: 'Erro ao criar perfil. Tente novamente.' }
     }
 
-    // 3. Criar registro na tabela candidatos (espelho do perfil)
-    if (newUser?.id) {
-        await (admin.from('candidatos') as any).insert({
-            user_id: newUser.id,
-            nome_completo: `${formData.nome}${formData.sobrenome ? ' ' + formData.sobrenome : ''}`,
-            email: formData.email,
-            telefone: formData.telefone || null,
-            whatsapp: formData.telefone || null,
-            cargo_desejado: formData.area || null,
-            status: 'ativo',
-            disponivel: true,
-        })
-    }
 
-    // 4. Auto-login após cadastro
+    // 3. Auto-login após cadastro
     await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.senha,
@@ -351,6 +339,12 @@ export async function salvarPerfil(dados: {
     return { success: true }
 }
 
+// Revalidar layout após concluir etapa de onboarding
+export async function revalidarLayoutAdmin() {
+    revalidatePath('/admin', 'layout')
+    return { success: true }
+}
+
 // ── Verificar permissão (para uso em Server Components/Actions) ──
 export async function verificarPermissao(tiposPermitidos: TipoUsuario[]): Promise<User> {
     const user = await getUsuarioLogado()
@@ -364,4 +358,38 @@ export async function verificarPermissao(tiposPermitidos: TipoUsuario[]): Promis
     }
 
     return user
+}
+
+// ── Verificar status do onboarding do candidato ──
+export async function verificarOnboardingCandidato(): Promise<{
+    perfilCompleto: boolean
+    temCurriculo: boolean
+} | null> {
+    const user = await getUsuarioLogado()
+    if (!user || (user as any).tipo !== 'candidato') return null
+
+    const admin = createAdminClient()
+
+    // Checar campos obrigatórios de Dados Pessoais e Contato na tabela users
+    const { data: userData } = await (admin.from('users') as any)
+        .select('nome, sobrenome, cpf, data_nascimento, telefone, celular')
+        .eq('id', user.id)
+        .single()
+
+    const perfilCompleto = !!(userData?.nome?.trim()
+        && userData?.sobrenome?.trim()
+        && userData?.cpf?.trim()
+        && userData?.data_nascimento
+        && (userData?.telefone?.trim() || userData?.celular?.trim())
+    )
+
+    // Checar se já tem ao menos um currículo
+    const { count } = await admin
+        .from('candidatos')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id) as any
+
+    const temCurriculo = (count ?? 0) > 0
+
+    return { perfilCompleto, temCurriculo }
 }

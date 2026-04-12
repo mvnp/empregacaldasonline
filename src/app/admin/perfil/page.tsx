@@ -6,8 +6,10 @@ import {
     Save, FileText, Linkedin, Github, Calendar, Shield
 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-import { getMeuPerfilCompleto, salvarPerfil } from '@/actions/auth'
+import { getMeuPerfilCompleto, salvarPerfil, revalidarLayoutAdmin } from '@/actions/auth'
 import BannerSpace from '@/components/publicidade/BannerSpace'
+import { useUser } from '@/contexts/UserContext'
+import { useRouter } from 'next/navigation'
 
 const formatTextCpf = (val: string) => {
     let v = String(val || '').replace(/\D/g, '')
@@ -61,6 +63,8 @@ const MOCK_USER = {
 }
 
 export default function PerfilPage() {
+    const { tipoUsuario, onboarding } = useUser()
+    const router = useRouter()
     const [dados, setDados] = useState<any>(MOCK_USER)
     const [fotoPreview, setFotoPreview] = useState('')
     const [salvando, setSalvando] = useState(false)
@@ -175,6 +179,12 @@ export default function PerfilPage() {
         })
         setSalvando(false)
         if (res.success) {
+            // Se candidato em onboarding (etapa 1), avançar para etapa 2
+            if (tipoUsuario === 'candidato' && onboarding && !onboarding.perfilCompleto) {
+                await revalidarLayoutAdmin()
+                router.push('/admin/candidatos/cadastrar/ia')
+                return
+            }
             setSalvou(true)
             setTimeout(() => setSalvou(false), 3000)
         } else {
