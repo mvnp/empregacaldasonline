@@ -141,7 +141,7 @@ export default function CadastrarCandidatoIAPage() {
         setIaObjetivoLoading(true)
         try {
             const res = await gerarObjetivoComIA(form.cargo_desejado)
-            if (!res.success || !res.data) {
+            if (!res.success) {
                 setIaErro(res.error || 'Erro ao gerar detalhamento do objetivo. Tente novamente.')
             } else {
                 setIaObjetivo(res.data)
@@ -170,7 +170,7 @@ export default function CadastrarCandidatoIAPage() {
 
             const res = await gerarDadosCurriculoComIA(payload)
 
-            if (!res.success || !res.data) {
+            if (!res.success) {
                 setIaErro(res.error || 'Aconteceu um erro ao contatar a inteligência artificial.')
                 setIaLoading(false)
                 return
