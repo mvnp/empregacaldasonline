@@ -29,9 +29,6 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     </div>
                 </div>
 
-                {/* Banner H2 / G2 - Abaixo da Descrição */}
-                <BannerSpace formato="leaderboard" className="ad-detail-vaga" />
-
                 {/* Responsabilidades */}
                 {vaga.responsabilidades && vaga.responsabilidades.length > 0 && (
                     <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #e8edf5' }}>
@@ -128,6 +125,9 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     </div>
                 )}
 
+                {/* Banner H1 / G1 = Segunda posição na sidebar */}
+                <BannerSpace formato="rectangle" className="ad-detail-vaga-sidebar" style={{ marginLeft: 0, marginRight: 0, padding: 0, width: '100%', maxWidth: '100%' }} />
+
                 {/* Cartão de Resumo e Ação */}
                 <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #2AB9C0' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
@@ -174,9 +174,6 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         </ul>
                     </div>
                 )}
-
-                {/* Banner H1 / G1 = Fim da Sidebar */}
-                <BannerSpace formato="rectangle" className="ad-detail-vaga-sidebar" />
             </div>
 
             <style suppressHydrationWarning>{`

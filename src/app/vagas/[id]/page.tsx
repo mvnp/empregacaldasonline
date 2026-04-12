@@ -186,6 +186,11 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
             {/* Layout principal */}
             <main style={{ flex: 1, padding: '2.5rem 2rem 5rem' }}>
                 <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+                    
+                    {/* Banner H2 / G2 - Topo centralizado */}
+                    <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+                        <BannerSpace formato="leaderboard" className="ad-detail-vaga-top" />
+                    </div>
                     <VagaDetailDisplay
                         vaga={vaga}
                         empresaPerfil={empresaPerfil}

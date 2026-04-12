@@ -49,6 +49,33 @@ export default function BlogSidebar({ slugAtual, categorias, recentes }: BlogSid
                 </div>
             </div>
 
+            {/* ── Anuncie Aqui (Slot Publicidade) ── */}
+            <BannerSpace 
+                formato="rectangle"
+                slotFallback={
+                    <div style={{ borderRadius: 14, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #FE8341, #FBBF53)', padding: '1.75rem 1.25rem', textAlign: 'center' }}>
+                        <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
+                        <div style={{ position: 'absolute', bottom: -15, left: -15, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.25)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.875rem' }}>
+                                <Megaphone style={{ width: 22, height: 22, color: '#fff' }} />
+                            </div>
+                            <h4 style={{ color: '#09355F', fontWeight: 900, fontSize: '1rem', marginBottom: '0.4rem' }}>Anuncie Aqui</h4>
+                            <p style={{ fontSize: '0.8rem', color: '#1c405f', lineHeight: 1.55, marginBottom: '1.1rem', opacity: 0.85 }}>
+                                Alcance profissionais qualificados que buscam oportunidades de crescimento.
+                            </p>
+                            <Link
+                                href="/admin/publicidades/cadastrar"
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.625rem 1.25rem', background: '#09355F', color: '#FBBF53', borderRadius: 9, fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}
+                            >
+                                Saiba mais <ArrowRight style={{ width: 14, height: 14 }} />
+                            </Link>
+                        </div>
+                    </div>
+                }
+            />
+
             {/* ── Artigos Recentes ── */}
             <div className="sidebar-card">
                 <div style={{ padding: '1rem 1.25rem', borderBottom: '1.5px solid #e8edf5' }}>
@@ -110,33 +137,6 @@ export default function BlogSidebar({ slugAtual, categorias, recentes }: BlogSid
                     ))}
                 </div>
             </div>
-
-            {/* ── Anuncie Aqui (Slot Publicidade) ── */}
-            <BannerSpace 
-                formato="rectangle"
-                slotFallback={
-                    <div style={{ borderRadius: 14, overflow: 'hidden', position: 'relative', background: 'linear-gradient(135deg, #FE8341, #FBBF53)', padding: '1.75rem 1.25rem', textAlign: 'center' }}>
-                        <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
-                        <div style={{ position: 'absolute', bottom: -15, left: -15, width: 60, height: 60, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
-
-                        <div style={{ position: 'relative' }}>
-                            <div style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.25)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.875rem' }}>
-                                <Megaphone style={{ width: 22, height: 22, color: '#fff' }} />
-                            </div>
-                            <h4 style={{ color: '#09355F', fontWeight: 900, fontSize: '1rem', marginBottom: '0.4rem' }}>Anuncie Aqui</h4>
-                            <p style={{ fontSize: '0.8rem', color: '#1c405f', lineHeight: 1.55, marginBottom: '1.1rem', opacity: 0.85 }}>
-                                Alcance profissionais qualificados que buscam oportunidades de crescimento.
-                            </p>
-                            <Link
-                                href="/admin/publicidades/cadastrar"
-                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.625rem 1.25rem', background: '#09355F', color: '#FBBF53', borderRadius: 9, fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}
-                            >
-                                Saiba mais <ArrowRight style={{ width: 14, height: 14 }} />
-                            </Link>
-                        </div>
-                    </div>
-                }
-            />
 
             {/* ── Tags populares ── */}
             <div className="sidebar-card">

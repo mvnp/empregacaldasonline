@@ -130,7 +130,7 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
             .eq('blog_post_categories.category_id', catId)
             .neq('slug', slug) // Exclui o próprio post atual
             .order('published_at', { ascending: false })
-            .limit(2) as any
+            .limit(4) as any
         relatedPostsRaw = relData || []
     }
 
@@ -356,14 +356,13 @@ export default async function BlogSinglePage({ params }: { params: Promise<{ slu
                         {/* ── Posts relacionados ── */}
                         {postsRelacionados.length > 0 && (
                             <div style={{ marginBottom: '2rem' }}>
-                                {/* J3: Leaderboard above Continue Lendo */}
-                                <BannerSpace formato="leaderboard" style={{ margin: '1rem 0 2rem' }} className="ad-continue-reading-blog" />
+
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
                                     <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#09355F', whiteSpace: 'nowrap' }}>Continue lendo</h2>
                                     <div style={{ flex: 1, height: 1, background: '#e8edf5' }} />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                                     {postsRelacionados.map((p: any) => (
                                         <BlogCard key={p.id} post={p} />
                                     ))}

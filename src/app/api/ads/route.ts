@@ -25,6 +25,8 @@ export async function GET(req: Request) {
             arquivo_url,
             pub:empresa_pubs!inner(
                 id,
+                empresa_id,
+                empresas ( nome_fantasia ),
                 link_destino,
                 status,
                 data_inicio,

@@ -72,7 +72,11 @@ export default async function ListarCurriculosCandidato() {
                 <BannerSpace formato="leaderboard" style={{ margin: '2rem auto 0' }} />
             </>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                <>
+                    {/* Banner posição 0 — topo da lista */}
+                    <BannerSpace formato="native" className="ad-curriculos-top" style={{ height: 225, marginBottom: '1.5rem' }} imageColWidth={300} />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
                     {curriculos.map((c: any) => (
                         <div key={c.id} style={{ 
                             background: '#fff', padding: '1.5rem', borderRadius: 16, 
@@ -131,7 +135,8 @@ export default async function ListarCurriculosCandidato() {
                             </div>
                         </div>
                     ))}
-                </div>
+                    </div>
+                </>
             )}
         </div>
     )

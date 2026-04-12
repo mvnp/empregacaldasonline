@@ -181,7 +181,14 @@ export default async function BlogListPage({ searchParams }: { searchParams: Pro
                             {demaisPosts.map((post: any, i: number) => (
                                 <React.Fragment key={post.id}>
                                     <BlogCard post={post} />
-                                    {i === 1 && <BannerSpace formato="native" className="ad-native-blog" />}
+                                    {i === 1 && (
+                                        <BannerSpace 
+                                            formato="native" 
+                                            className="ad-native-blog" 
+                                            style={{ height: 225 }} 
+                                            imageColWidth={300} 
+                                        />
+                                    )}
                                 </React.Fragment>
                             ))}
                         </div>

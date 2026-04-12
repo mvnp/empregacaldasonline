@@ -280,7 +280,14 @@ export default function HomeClient({ inicial }: Props) {
                                     {vagasFiltradas.map((vaga, i) => (
                                         <React.Fragment key={vaga.id}>
                                             <VagaCardDB vaga={vaga} />
-                                            {i === 2 && <BannerSpace formato="native" className="ad-native-inline" />}
+                                            {i === 2 && (
+                                                <BannerSpace 
+                                                    formato="native" 
+                                                    className="ad-native-inline" 
+                                                    style={{ height: 250 }} 
+                                                    imageColWidth={300} 
+                                                />
+                                            )}
                                         </React.Fragment>
                                     ))}
 
@@ -301,8 +308,8 @@ export default function HomeClient({ inicial }: Props) {
                         </div>
 
                         <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <FilterPanel {...filterPanelProps} />
                             <BannerSpace formato="rectangle" className="ad-sidebar-rect" />
+                            <FilterPanel {...filterPanelProps} />
                         </aside>
                     </div>
                 </div>

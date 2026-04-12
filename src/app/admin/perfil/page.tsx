@@ -65,6 +65,7 @@ export default function PerfilPage() {
     const [fotoPreview, setFotoPreview] = useState('')
     const [salvando, setSalvando] = useState(false)
     const [salvou, setSalvou] = useState(false)
+    const [hasAd, setHasAd] = useState(true) // assume true until BannerSpace confirms otherwise
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -248,89 +249,102 @@ export default function PerfilPage() {
                 </div>
             )}
 
-            {/* ── Foto de Perfil ── */}
-            <div style={sectionStyle}>
-                <div style={{ ...sectionHeaderStyle }}>
-                    <Camera style={{ width: 18, height: 18, color: '#2AB9C0' }} />
-                    <h2 style={sectionTitleStyle}>Foto de Perfil</h2>
-                </div>
-                <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    {/* Avatar preview */}
-                    <div
-                        onClick={() => fileInputRef.current?.click()}
-                        style={{
-                            width: 110, height: 110, borderRadius: 18,
-                            background: fotoPreview ? `url(${fotoPreview}) center/cover` : 'linear-gradient(135deg, #09355F, #2AB9C0)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                            border: '3px solid #e8edf5', flexShrink: 0,
-                            transition: 'border-color 0.18s',
-                        }}
-                    >
-                        {!fotoPreview && (
-                            <span style={{ color: '#fff', fontWeight: 900, fontSize: '2rem' }}>
-                                {dados.nome[0]}{dados.sobrenome[0]}
-                            </span>
-                        )}
-                        {/* Overlay hover */}
-                        <div style={{
-                            position: 'absolute', inset: 0,
-                            background: 'rgba(0,0,0,0.4)', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            opacity: 0, transition: 'opacity 0.2s',
-                        }}
-                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                            onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
-                        >
-                            <Camera style={{ width: 28, height: 28, color: '#fff' }} />
-                        </div>
+            {/* ── Grid topo: Foto de Perfil + Publicidade ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: hasAd ? '1fr 1fr' : '1fr', gap: '1.25rem', marginBottom: '1.25rem', alignItems: 'stretch' }}>
+
+                {/* Card Foto de Perfil */}
+                <div style={{ ...sectionStyle, marginBottom: 0, height: '100%' }}>
+                    <div style={{ ...sectionHeaderStyle }}>
+                        <Camera style={{ width: 18, height: 18, color: '#2AB9C0' }} />
+                        <h2 style={sectionTitleStyle}>Foto de Perfil</h2>
                     </div>
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFotoChange}
-                        style={{ display: 'none' }}
-                    />
-
-                    <div>
-                        <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#09355F', marginBottom: '0.3rem' }}>
-                            {dados.nome} {dados.sobrenome}
-                        </h3>
-                        <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>{dados.cargo}</p>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                style={{
-                                    padding: '0.45rem 1rem', borderRadius: 8,
-                                    fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                                    background: '#09355F0a', border: '1.5px solid #09355F20',
-                                    color: '#09355F', display: 'flex', alignItems: 'center', gap: '0.3rem',
-                                    transition: 'background 0.18s',
-                                }}
+                    <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                        {/* Avatar preview */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                width: 110, height: 110, borderRadius: 18,
+                                background: fotoPreview ? `url(${fotoPreview}) center/cover` : 'linear-gradient(135deg, #09355F, #2AB9C0)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                                border: '3px solid #e8edf5', flexShrink: 0,
+                                transition: 'border-color 0.18s',
+                            }}
+                        >
+                            {!fotoPreview && (
+                                <span style={{ color: '#fff', fontWeight: 900, fontSize: '2rem' }}>
+                                    {dados.nome[0]}{dados.sobrenome[0]}
+                                </span>
+                            )}
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'rgba(0,0,0,0.4)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                                opacity: 0, transition: 'opacity 0.2s',
+                            }}
+                                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
                             >
-                                <Camera style={{ width: 13, height: 13 }} /> Alterar foto
-                            </button>
-                            {fotoPreview && (
+                                <Camera style={{ width: 28, height: 28, color: '#fff' }} />
+                            </div>
+                        </div>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFotoChange}
+                            style={{ display: 'none' }}
+                        />
+
+                        <div>
+                            <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#09355F', marginBottom: '0.3rem' }}>
+                                {dados.nome} {dados.sobrenome}
+                            </h3>
+                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>{dados.cargo}</p>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <button
-                                    onClick={() => setFotoPreview('')}
+                                    onClick={() => fileInputRef.current?.click()}
                                     style={{
                                         padding: '0.45rem 1rem', borderRadius: 8,
                                         fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                                        background: '#fef2f2', border: '1.5px solid #fecaca',
-                                        color: '#dc2626', transition: 'background 0.18s',
+                                        background: '#09355F0a', border: '1.5px solid #09355F20',
+                                        color: '#09355F', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                        transition: 'background 0.18s',
                                     }}
                                 >
-                                    Remover
+                                    <Camera style={{ width: 13, height: 13 }} /> Alterar foto
                                 </button>
-                            )}
+                                {fotoPreview && (
+                                    <button
+                                        onClick={() => setFotoPreview('')}
+                                        style={{
+                                            padding: '0.45rem 1rem', borderRadius: 8,
+                                            fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                                            background: '#fef2f2', border: '1.5px solid #fecaca',
+                                            color: '#dc2626', transition: 'background 0.18s',
+                                        }}
+                                    >
+                                        Remover
+                                    </button>
+                                )}
+                            </div>
+                            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                                JPG, PNG ou GIF. Máximo 5MB.
+                            </p>
                         </div>
-                        <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-                            JPG, PNG ou GIF. Máximo 5MB.
-                        </p>
                     </div>
                 </div>
+
+                {/* Card Publicidade */}
+                <BannerSpace
+                    formato="native"
+                    className="ad-perfil-sidebar"
+                    style={{ height: '100%', minHeight: 0 }}
+                    imageColWidth={280}
+                    onNoAd={() => setHasAd(false)}
+                />
+
             </div>
 
             {/* ── Dados Pessoais ── */}
@@ -396,10 +410,7 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Banner F1 - Entre Contato e Endereço */}
-            <div style={{ marginBottom: '1.25rem' }}>
-                <BannerSpace formato="leaderboard" />
-            </div>
+
 
             {/* ── Endereço ── */}
             <div style={sectionStyle}>
@@ -451,10 +462,7 @@ export default function PerfilPage() {
                 </div>
             </div>
 
-            {/* Banner F2 - Entre Endereço e Redes Sociais */}
-            <div style={{ marginBottom: '1.25rem' }}>
-                <BannerSpace formato="leaderboard" />
-            </div>
+
 
             {/* ── Redes Sociais ── */}
             <div style={sectionStyle}>
@@ -495,10 +503,7 @@ export default function PerfilPage() {
                 </button>
             </div>
 
-            {/* Banner F3 - Abaixo de Salvar Alterações */}
-            <div style={{ margin: '0 auto 2rem' }}>
-                <BannerSpace formato="billboard" />
-            </div>
+
         </div>
     )
 }
