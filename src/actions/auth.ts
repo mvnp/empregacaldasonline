@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import type { TipoUsuario, User } from '@/types/user'
 import { getRotaInicial } from '@/types/user'
 
@@ -206,7 +207,40 @@ export async function getUsuarioLogado(): Promise<User | null> {
         .eq('auth_id', authUser.id)
         .single() as { data: any; error: any }
 
-    return user as User | null
+    if (!user) return null;
+
+    // Lógica de impersonação: somente admins reais podem impersonar
+    if (user.tipo === 'admin') {
+        const cookieStore = await cookies()
+        const impersonationId = cookieStore.get('admin_impersonation')?.value
+        if (impersonationId) {
+            const { data: impUser } = await admin
+                .from('users')
+                .select('*')
+                .eq('id', impersonationId)
+                .single() as { data: any; error: any }
+            if (impUser) return impUser as User
+        }
+    }
+
+    return user as User
+}
+
+// ── Impersonação ──
+export async function iniciarImpersonacao(userId: number) {
+    const usuarioReal = await getUsuarioLogado() // vai cair no db normal pq ainda não tem cookie ou é admin
+    if (usuarioReal?.tipo !== 'admin') {
+        return { success: false, error: 'Sem permissão' }
+    }
+    const cookieStore = await cookies()
+    cookieStore.set('admin_impersonation', userId.toString(), { path: '/' })
+    return { success: true }
+}
+
+export async function encerrarImpersonacao() {
+    const cookieStore = await cookies()
+    cookieStore.delete('admin_impersonation')
+    return { success: true }
 }
 
 // ── Obter perfil com relação ao candidato ──

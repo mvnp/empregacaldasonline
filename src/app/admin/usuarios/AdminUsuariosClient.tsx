@@ -9,6 +9,7 @@ import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import FilterSelect from '@/components/admin/FilterSelect'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
 import { atualizarStatusUsuario, atualizarTipoUsuario, excluirUsuario, atualizarSenhaUsuario } from '@/actions/admin_users'
+import { iniciarImpersonacao } from '@/actions/auth'
 import type { User as UserType } from '@/types/user'
 
 const POR_PAGINA = 18
@@ -57,6 +58,17 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
         }
     }
     
+    async function handleSwitchAccount(id: number, tipo: string) {
+        const res = await iniciarImpersonacao(id)
+        if (res.success) {
+            if (tipo === 'candidato') window.location.href = '/admin/candidato'
+            else if (tipo === 'empregador') window.location.href = '/admin/empregador'
+            else window.location.href = '/admin'
+        } else {
+            alert('Erro: ' + res.error)
+        }
+    }
+
     async function handleMudarPermissao(id: number, novoTipo: 'admin' | 'empregador' | 'candidato') {
         const c = window.confirm(`Deseja alterar a permissão deste usuário para ${novoTipo.toUpperCase()}?`)
         if(!c) return;
@@ -190,13 +202,13 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                 <Key size={14} /> Senha
                             </button>
                             
-                            <Link href={`/admin/usuarios/${u.id}`} style={{
+                            <button onClick={() => handleSwitchAccount(u.id, u.tipo)} style={{
                                 background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8,
                                 padding: '0.35rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
                                 color: '#0284c7', display: 'flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none'
                             }}>
-                                <FileEdit size={14} /> Editar Perfil
-                            </Link>
+                                <User size={14} /> Switch Account
+                            </button>
                             
                             <button onClick={() => handleExcluir(u.id)} style={{
                                 background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,

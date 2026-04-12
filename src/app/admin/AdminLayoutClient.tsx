@@ -40,7 +40,7 @@ const CANDIDATO_MENU = [
     { label: 'Meu Perfil', href: '/admin/perfil', icon: User },
 ]
 
-export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+export default function AdminLayoutClient({ children, isImpersonating = false }: { children: React.ReactNode, isImpersonating?: boolean }) {
     const pathname = usePathname()
     const { tipoUsuario } = useUser()
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -282,6 +282,26 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
 
                     {/* Right side */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {/* Go Back (Impersonation) */}
+                        {isImpersonating && (
+                            <button
+                                onClick={async () => {
+                                    const { encerrarImpersonacao } = await import('@/actions/auth')
+                                    await encerrarImpersonacao()
+                                    window.location.href = '/admin/usuarios'
+                                }}
+                                title="Voltar para Admin"
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                    padding: '0.4rem 0.8rem', borderRadius: 8,
+                                    background: '#ef4444', color: '#fff', fontSize: '0.75rem', fontWeight: 600,
+                                    border: 'none', cursor: 'pointer'
+                                }}
+                            >
+                                <LogOut style={{ width: 14, height: 14 }} /> Go Back
+                            </button>
+                        )}
+
                         {/* Notifications */}
                         <button title="Notificações" style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: '#64748b' }} aria-label="Notificações">
                             <Bell style={{ width: 20, height: 20 }} />
