@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
     Building2, Mail, CreditCard, Shield, ClipboardCheck, Bell,
     Globe, FileText, Save, Eye, EyeOff, Plus, Trash2, ToggleLeft,
-    ToggleRight, Upload, AlertTriangle, Check, ChevronRight, Cpu, ChevronDown
+    ToggleRight, Upload, AlertTriangle, Check, ChevronRight, Cpu, ChevronDown, Megaphone
 } from 'lucide-react'
 
 // ── Seções do menu ──
@@ -18,6 +18,7 @@ const SECOES = [
     { id: 'seo', label: 'SEO & Integrações', icon: Globe },
     { id: 'termos', label: 'Termos & LGPD', icon: FileText },
     { id: 'openai', label: 'Open AI Setup', icon: Cpu },
+    { id: 'publicidade', label: 'Publicidade', icon: Megaphone },
 ]
 
 // ── Estilos compartilhados ──
@@ -796,6 +797,62 @@ function SecaoOpenAI() {
     )
 }
 
+// ── Seção: Publicidade ──
+function SecaoPublicidade() {
+    const [ativo, setAtivo] = useState(true)
+    const [saving, setSaving] = useState(false)
+
+    useEffect(() => {
+        fetch('/api/config/publicidade').then(res => res.json()).then(data => {
+            if (data && typeof data.ativo === 'boolean') {
+                setAtivo(data.ativo)
+            }
+        }).catch(() => {})
+    }, [])
+
+    const handleToggle = async () => {
+        const novoStatus = !ativo
+        setAtivo(novoStatus)
+        setSaving(true)
+        try {
+            await fetch('/api/config/publicidade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ativo: novoStatus })
+            })
+        } catch (e) {
+            console.error(e)
+        }
+        setSaving(false)
+    }
+
+    return (
+        <div style={cardStyle}>
+            <div style={cardHeaderStyle}>
+                <Megaphone style={{ width: 18, height: 18, color: '#FE8341' }} />
+                <h2 style={cardTitleStyle}>Gestão de Publicidade Global</h2>
+            </div>
+            <div style={{ padding: '1.25rem 1.5rem' }}>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>
+                    Esta configuração determina se as publicidades (banners criados) podem ou não ser exibidas em todo o site. Se desativado, nenhum banner será mostrado, independente das datas de início e fim individuais de cada campanha.
+                </p>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                    <div>
+                        <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#09355F', margin: '0 0 0.25rem' }}>Sistema de Publicidade</p>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                            Status atual: <strong style={{ color: ativo ? '#16a34a' : '#dc2626' }}>{ativo ? 'Ativado' : 'Desativado'}</strong>
+                        </p>
+                    </div>
+                    <button onClick={handleToggle} disabled={saving} style={{ background: 'none', border: 'none', cursor: saving ? 'wait' : 'pointer', padding: 0 }}>
+                        {ativo ? <ToggleRight style={{ width: 44, height: 44, color: '#2AB9C0' }} /> : <ToggleLeft style={{ width: 44, height: 44, color: '#cbd5e1' }} />}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── Componente principal ──
 export default function ConfiguracoesPage() {
     const [secaoAtiva, setSecaoAtiva] = useState('portal')
@@ -812,6 +869,7 @@ export default function ConfiguracoesPage() {
             case 'seo': return <SecaoSEO />
             case 'termos': return <SecaoTermos />
             case 'openai': return <SecaoOpenAI />
+            case 'publicidade': return <SecaoPublicidade />
             default: return <SecaoPortal />
         }
     }

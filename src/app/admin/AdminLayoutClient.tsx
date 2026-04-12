@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard, Briefcase, Users, Building2, BarChart3,
-    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText
+    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText, Megaphone
 } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 
@@ -19,6 +19,7 @@ const ADMIN_MENU = [
     { label: 'Empresas', href: '/admin/empresas', icon: Building2 },
     { label: 'Lista de Empresas', href: '/admin/lista-empresas', icon: List },
     { label: 'Usuários', href: '/admin/usuarios', icon: User },
+    { label: 'Publicidades', href: '/admin/publicidades', icon: Megaphone },
     { label: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
     { label: 'Configurações', href: '/admin/configuracoes', icon: Settings },
 ]
