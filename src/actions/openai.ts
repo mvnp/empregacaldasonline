@@ -266,10 +266,46 @@ export async function gerarDescricaoComIA(titulo: string) {
     }
 }
 
+async function verificarCreditoCandidato() {
+    try {
+        const { user } = await requireAuth()
+        const adminClient = createAdminClient()
+        const { data: dbUser } = await adminClient.from('users').select('id, tipo, ia_creditos(creditos)').eq('auth_id', user.id).single() as any
+        
+        if (dbUser?.tipo === 'candidato') {
+            const creditos = dbUser.ia_creditos?.creditos ?? 5;
+            if (creditos <= 0) {
+                return { success: false, error: 'Seus créditos de IA terminaram. Por favor, aguarde uma recarga ou entre em contato.' }
+            }
+            return { success: true, userId: dbUser.id, creditosAtuais: creditos }
+        }
+        return { success: true }
+    } catch {
+        return { success: true } // Não trava se não verificar
+    }
+}
+
+async function debitarCreditoCandidato(userId: number, creditosAtuais: number) {
+    try {
+        const adminClient = createAdminClient()
+        await adminClient.from('ia_creditos').upsert({ 
+            user_id: userId, 
+            creditos: creditosAtuais - 1,
+            updated_at: new Date().toISOString()
+        })
+    } catch (e) {
+        console.error('Falha ao debitar', e)
+    }
+}
+
+
 export async function gerarObjetivoComIA(cargo: string) {
     if (!cargo || !cargo.trim()) {
         return { success: false, error: 'O Cargo Desejado precisa estar preenchido no formulário principal (atrás dessa janela) para a IA ter uma referência.' }
     }
+
+    const check = await verificarCreditoCandidato()
+    if (!check.success) return check
 
     const config = await lerConfiguracaoOpenAI()
     if (!config || !config.openai_token) {
@@ -308,6 +344,10 @@ export async function gerarObjetivoComIA(cargo: string) {
             await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
         }
 
+        if (check.userId) {
+            await debitarCreditoCandidato(check.userId, check.creditosAtuais)
+        }
+
         return { success: true, data: content.trim() }
     } catch (e: any) {
         return { success: false, error: e.message || 'Erro de rede na IA.' }
@@ -315,6 +355,9 @@ export async function gerarObjetivoComIA(cargo: string) {
 }
 
 export async function gerarDadosCurriculoComIA(payload: any) {
+    const check = await verificarCreditoCandidato()
+    if (!check.success) return check
+
     const config = await lerConfiguracaoOpenAI()
     if (!config || !config.openai_token) {
         return { success: false, error: 'Chave API da OpenAI não configurada no banco de dados. Acesse as Configurações.' }
@@ -371,6 +414,10 @@ Retorne SOMENTE um JSON válido com a seguinte estrutura estrita:
 
         if (data.usage && config.user_id) {
             await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
+        }
+
+        if (check.userId) {
+            await debitarCreditoCandidato(check.userId, check.creditosAtuais)
         }
 
         let rawStr = content || '';

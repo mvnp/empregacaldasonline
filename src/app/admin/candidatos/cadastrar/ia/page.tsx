@@ -62,6 +62,7 @@ export default function CadastrarCandidatoIAPage() {
     
     // Tipo do usuário para mudar UI
     const [userTipo, setUserTipo] = useState<string>('admin')
+    const [creditosIA, setCreditosIA] = useState(0)
 
     // ── DADOS DO MODAL IA ──
     const [iaObjetivo, setIaObjetivo] = useState('')
@@ -104,6 +105,7 @@ export default function CadastrarCandidatoIAPage() {
             const u = await buscarMeuUsuarioCompleto();
             if (u) {
                 setUserTipo(u.tipo || 'admin');
+                setCreditosIA(u.creditos_ia ?? 0);
                 const c = u.candidatos && u.candidatos.length > 0 ? u.candidatos[0] : {};
                 setForm(prev => ({
                     ...prev,
@@ -143,6 +145,7 @@ export default function CadastrarCandidatoIAPage() {
                 setIaErro(res.error || 'Erro ao gerar detalhamento do objetivo. Tente novamente.')
             } else {
                 setIaObjetivo(res.data)
+                setCreditosIA(prev => Math.max(0, prev - 1))
             }
         } catch (e) {
             setIaErro('Falha técnica ao falar com a IA.')
@@ -192,6 +195,7 @@ export default function CadastrarCandidatoIAPage() {
                 setExperiencias([{ cargo: '', empresa: '', descricao: '', data_inicio: '', data_fim: '', em_andamento: false }])
             }
 
+            setCreditosIA(prev => Math.max(0, prev - 1))
             setIaLoading(false)
             setShowIaModal(false) // Fecha o modal após preencher com sucesso!
         } catch (e: any) {
@@ -293,17 +297,31 @@ export default function CadastrarCandidatoIAPage() {
                     </div>
                 </div>
 
-                <button type="button" onClick={() => setShowIaModal(true)} style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.7rem 1.75rem', borderRadius: 10,
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#fff', fontSize: '0.875rem', fontWeight: 800,
-                    border: 'none', cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                }}>
-                    <Sparkles style={{ width: 16, height: 16 }} />
-                    Preencher com IA
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {userTipo === 'candidato' && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.45rem',
+                            padding: '0.5rem 1rem', borderRadius: 8,
+                            background: '#fff', border: '1px solid #e2e8f0',
+                            color: '#334155', fontSize: '0.9rem', fontWeight: 600,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                        }}>
+                            <Sparkles style={{ width: 16, height: 16, color: '#0ea5e9' }} />
+                            <span>Créditos IA: <strong>{creditosIA}</strong></span>
+                        </div>
+                    )}
+                    <button type="button" onClick={() => setShowIaModal(true)} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        padding: '0.7rem 1.75rem', borderRadius: 10,
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: '#fff', fontSize: '0.875rem', fontWeight: 800,
+                        border: 'none', cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                    }}>
+                        <Sparkles style={{ width: 16, height: 16 }} />
+                        Preencher com IA
+                    </button>
+                </div>
             </div>
 
             {erro && (

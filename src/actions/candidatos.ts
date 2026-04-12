@@ -372,10 +372,15 @@ export async function buscarMeuUsuarioCompleto() {
         const adminClient = createAdminClient();
         const { data } = await adminClient.from('users').select(`
             id, nome, sobrenome, email, telefone, tipo,
+            ia_creditos ( creditos ),
             candidatos (
                 local, data_nascimento, whatsapp, linkedin, portfolio, github, pretensao_min, pretensao_max
             )
         `).eq('auth_id', user.id).single() as { data: any };
+        
+        if (data) {
+            data.creditos_ia = data.ia_creditos?.creditos ?? 5;
+        }
         return data || null;
     } catch {
         return null;

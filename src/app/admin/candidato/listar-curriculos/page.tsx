@@ -1,14 +1,16 @@
-import { FileText, Plus, Edit, Briefcase, Eye, Calendar, User } from 'lucide-react'
+import { FileText, Plus, Edit, Briefcase, Eye, Calendar, User, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-import { buscarMeuUserId, buscarUsuariosCandidato, listarMeusCurriculos } from '@/actions/candidatos'
+import { buscarMeuUsuarioCompleto, buscarUsuariosCandidato, listarMeusCurriculos } from '@/actions/candidatos'
 import { createAdminClient } from '@/lib/supabase'
 import CurriculoDeleteBtn from './CurriculoDeleteBtn'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ListarCurriculosCandidato() {
-    const userId = await buscarMeuUserId()
+    const usuario = await buscarMeuUsuarioCompleto()
+    const userId = usuario?.id
+    const creditosIA = usuario?.creditos_ia ?? 0
     const curriculos = userId ? await listarMeusCurriculos(userId) : []
 
     return (
@@ -17,15 +19,26 @@ export default async function ListarCurriculosCandidato() {
                 titulo="Meus Currículos" 
                 subtitulo="Crie e gerencie versões do seu currículo para se candidatar às vagas."
                 acao={
-                    <Link href="/admin/candidatos/cadastrar/ia" style={{
-                        display: 'flex', alignItems: 'center', gap: '0.45rem',
-                        padding: '0.65rem 1.25rem', borderRadius: 10,
-                        background: 'linear-gradient(135deg, #2AB9C0, #1b9ca3)',
-                        color: '#fff', fontSize: '0.9rem', fontWeight: 700,
-                        textDecoration: 'none', boxShadow: '0 4px 15px rgba(42,185,192,0.25)',
-                    }}>
-                        <Plus style={{ width: 16, height: 16 }} /> Cadastrar Currículo
-                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.45rem',
+                            padding: '0.5rem 1rem', borderRadius: 8,
+                            background: '#f8fafc', border: '1px solid #e2e8f0',
+                            color: '#334155', fontSize: '0.9rem', fontWeight: 600,
+                        }}>
+                            <Sparkles style={{ width: 16, height: 16, color: '#0ea5e9' }} />
+                            <span>Créditos IA: <strong>{creditosIA}</strong></span>
+                        </div>
+                        <Link href="/admin/candidatos/cadastrar/ia" style={{
+                            display: 'flex', alignItems: 'center', gap: '0.45rem',
+                            padding: '0.65rem 1.25rem', borderRadius: 10,
+                            background: 'linear-gradient(135deg, #2AB9C0, #1b9ca3)',
+                            color: '#fff', fontSize: '0.9rem', fontWeight: 700,
+                            textDecoration: 'none', boxShadow: '0 4px 15px rgba(42,185,192,0.25)',
+                        }}>
+                            <Plus style={{ width: 16, height: 16 }} /> Cadastrar Currículo
+                        </Link>
+                    </div>
                 }
             />
 
