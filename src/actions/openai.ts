@@ -50,7 +50,7 @@ async function registrarConsumoToken(userId: string, model: string, promptTokens
         const price = PRICING_MAP[matchModelId] || { in: 2.50, out: 10.00 };
         const costUsd = ((promptTokens / 1_000_000) * price.in) + ((completionTokens / 1_000_000) * price.out);
 
-        await adminClient.from('openai_usage_logs').insert({
+        await (adminClient.from('openai_usage_logs') as any).insert({
             user_id: userId,
             model: model,
             prompt_tokens: promptTokens,
@@ -94,16 +94,29 @@ export async function salvarConfiguracaoOpenAI(data: { openai_token: string, mod
 
 export async function lerConfiguracaoOpenAI() {
     try {
-        const adminClient = await requireAdmin()
         const { user } = await requireAuth()
-        
         if (!user) return null
 
-        const { data, error } = await adminClient
+        const adminClient = createAdminClient()
+
+        let { data, error } = await adminClient
             .from('openai_config')
             .select('*')
             .eq('user_id', user.id)
-            .single() as { data: any, error: any }
+            .maybeSingle() as { data: any, error: any }
+
+        // Se não achou configuração própria e o usuário for candidato, pega a chave global do Admin
+        if (!data) {
+            const { data: adminConfig, error: adminErr } = await adminClient
+                .from('openai_config')
+                .select('*')
+                .limit(1)
+                .maybeSingle()
+
+            if (!adminErr && adminConfig) {
+                return adminConfig as { user_id: string, openai_token: string, model: string, title?: string, prompt?: string }
+            }
+        }
 
         if (error || !data) return null
         return data as { user_id: string, openai_token: string, model: string, title?: string, prompt?: string }
@@ -250,5 +263,123 @@ export async function gerarDescricaoComIA(titulo: string) {
     } catch (e: any) {
         await gravarLog('Erro inesperado no Try/Catch externo (Geração)', e.message);
         return { success: false, error: e.message || 'Erro inesperado na IA ao gerar descrição.' }
+    }
+}
+
+export async function gerarObjetivoComIA(cargo: string) {
+    if (!cargo || !cargo.trim()) {
+        return { success: false, error: 'O Cargo Desejado precisa estar preenchido no formulário principal (atrás dessa janela) para a IA ter uma referência.' }
+    }
+
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada.' }
+    }
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Atue como um especialista de RH corporativo rigoroso. Escreva um "Objetivo Profissional / Resumo" altamente convincente (máx. 400 caracteres) para um candidato à vaga: "${cargo}". Regras de ouro: Seja extremamente profissional, sóbrio e voltado a resultados corporativos. NÃO use clichês bajuladores ou excesso de enfeites emocionais (NÃO puxe o saco da empresa ou do recrutador). Use uma linguagem madura de mercado focada em competência. Retorne SOMENTE o parágrafo de texto limpo, sem formatação markdown ou aspas.`
+                    }
+                ],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 350 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP API (Objetivo)', err);
+            return { success: false, error: err.error?.message || 'Erro ao comunicar com OpenAI para objetivo.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0].message.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
+        }
+
+        return { success: true, data: content.trim() }
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
+export async function gerarDadosCurriculoComIA(payload: any) {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada no banco de dados. Acesse as Configurações.' }
+    }
+
+    try {
+        const promptTexto = `
+Atue como um Especialista de RH Pleno e Desenvolvedor de Currículos altamente qualificado.
+Transforme os seguintes dados resumidos de um candidato em um objeto JSON completo para preenchimento de um sistema estruturado.
+
+DADOS BRUTOS RECEBIDOS:
+Objetivo: ${payload.objetivo || 'Não informado'}
+Experiências Profissionais Resumidas: ${JSON.stringify(payload.experiencias_basicas || [])}
+
+INSTRUÇÕES DE PREENCHIMENTO DO JSON RETORNADO:
+1. "resumo": Primeiro, CERTIFIQUE-SE de que a informação fornecida em 'Objetivo' realmente representa um objetivo para a vaga pretendida, um alvo de carreira ou um relato profissional. Se sim, expanda-o para um parágrafo estruturado, vendedor e atrativo (máx. 400 caracteres). Caso o texto seja aleatório, irrelevante ao contexto de trabalho ou nulo, retorne uma string vazia "".
+2. "cargo_desejado": Retorne o nome do cargo ou título profissional mais condizente baseado no 'Objetivo' e nas 'Experiências' (Ex: 'Analista de Marketing Pleno'). Caso não consiga detectar por absoluta falta de sentido, retorne string vazia "".
+3. "experiencias": Mapeie as experiências exatamente usando o JSON recebido. Para cada uma, com base no cargo e na data, crie uma "descricao" rica, profissional e coesa das atividades tipicamente desenvolvidas neste cargo, adequadas para currículo.
+4. "habilidades": Analisando a área e as experiências informadas, preveja e liste 3 a 5 habilidades (hard skills e soft skills) essenciais para esse tipo de perfil em um array de strings.
+
+Retorne SOMENTE um JSON válido com a seguinte estrutura estrita:
+{
+  "resumo": "...",
+  "cargo_desejado": "...",
+  "experiencias": [
+     { "cargo": "...", "empresa": "...", "data_inicio": "YYYY-MM-DD", "data_fim": "YYYY-MM-DD", "em_andamento": false, "descricao": "..." }
+  ],
+  "habilidades": ["Habilidade 1", "Habilidade 2", "Habilidade 3"]
+}
+`
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [{ role: 'user', content: promptTexto }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 15000 } : { max_tokens: 3000 } ),
+                response_format: { type: 'json_object' }
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP da API OpenAI (Gerar Currículo)', err);
+            return { success: false, error: err.error?.message || 'Erro ao gerar currículo na OpenAI.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0].message.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
+        }
+
+        let rawStr = content || '';
+        rawStr = rawStr.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(rawStr)
+
+        return { success: true, data: parsed }
+    } catch (e: any) {
+        await gravarLog('Erro inesperado (Gerar Currículo)', e.message);
+        return { success: false, error: e.message || 'Erro na IA ao gerar currículo.' }
     }
 }

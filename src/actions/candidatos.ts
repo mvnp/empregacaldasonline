@@ -78,12 +78,23 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
         return { success: false, error: 'Sem permissão.' }
     }
 
-    // Validações
     if (!formData.nome_completo?.trim()) return { success: false, error: 'Nome completo é obrigatório.' }
     if (!formData.email?.trim()) return { success: false, error: 'E-mail é obrigatório.' }
     if (!formData.user_id) return { success: false, error: 'Usuário vinculado é obrigatório.' }
 
-    // 1. Inserir candidato
+    // 1. Atualizar dados principais do Usuário (na tabela users)
+    const partesNome = formData.nome_completo.trim().split(' ');
+    const nome = partesNome[0];
+    const sobrenome = partesNome.slice(1).join(' ');
+
+    await (admin.from('users') as any).update({
+        nome: nome,
+        sobrenome: sobrenome || null,
+        email: formData.email.trim(),
+        telefone: formData.telefone?.trim() || null
+    }).eq('id', formData.user_id);
+
+    // 2. Inserir o novo currículo/perfil (candidatos)
     const { data: candidato, error: candError } = await admin.from('candidatos').insert({
         user_id: formData.user_id,
         nome_completo: formData.nome_completo.trim(),
@@ -103,8 +114,8 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
     } as any).select('id').single() as { data: any; error: any }
 
     if (candError || !candidato) {
-        const msg = candError?.message?.includes('candidatos_user_unique')
-            ? 'Este usuário já possui um perfil de candidato.'
+        const msg = candError?.message?.includes('candidatos_user_unique') || candError?.message?.includes('candidatos_user_id_key')
+            ? 'Erro: O banco Supabase rejeitou outro currículo pois está bloqueado! Acesse seu Banco de Dados (SQL Editor) e rode: ALTER TABLE candidatos DROP CONSTRAINT candidatos_user_id_key; para permitir currículos ilimitados como na sua regra.'
             : 'Erro ao criar candidato. Tente novamente.'
         return { success: false, error: msg }
     }
@@ -250,6 +261,25 @@ export async function atualizarCandidato(id: number, userId: number, formData: C
     return { success: true }
 }
 
+export async function excluirCurriculo(id: number, userId: number) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return { success: false, error: 'Você precisa estar logado.' }
+
+    const admin = createAdminClient()
+    
+    // Check ownership
+    const { data: currentCand } = await admin.from('candidatos').select('user_id').eq('id', id).single() as any
+    if (!currentCand || currentCand.user_id !== userId) {
+        return { success: false, error: 'Você não tem permissão para excluir este currículo.' }
+    }
+
+    const { error } = await admin.from('candidatos').delete().eq('id', id)
+    if (error) return { success: false, error: 'Erro ao excluir o currículo.' }
+
+    return { success: true }
+}
+
 export async function buscarCandidato(id: number) {
     // SECURITY PATCH: Requer autenticação para ver PII de candidatos
     let admin;
@@ -312,7 +342,12 @@ export async function buscarUsuariosCandidato() {
 
     const { data } = await admin
         .from('users')
-        .select('id, nome, sobrenome, email')
+        .select(`
+            id, nome, sobrenome, email, telefone,
+            candidatos (
+                local, data_nascimento, whatsapp, linkedin, portfolio, github, pretensao_min, pretensao_max
+            )
+        `)
         .eq('tipo', 'candidato')
         .eq('status', 'ativo')
         .order('nome') as { data: any; error: any }
@@ -326,6 +361,22 @@ export async function buscarMeuUserId() {
         const adminClient = createAdminClient();
         const { data } = await adminClient.from('users').select('id').eq('auth_id', user.id).single() as { data: any };
         return data?.id || null;
+    } catch {
+        return null;
+    }
+}
+
+export async function buscarMeuUsuarioCompleto() {
+    try {
+        const { user } = await requireAuth();
+        const adminClient = createAdminClient();
+        const { data } = await adminClient.from('users').select(`
+            id, nome, sobrenome, email, telefone, tipo,
+            candidatos (
+                local, data_nascimento, whatsapp, linkedin, portfolio, github, pretensao_min, pretensao_max
+            )
+        `).eq('auth_id', user.id).single() as { data: any };
+        return data || null;
     } catch {
         return null;
     }

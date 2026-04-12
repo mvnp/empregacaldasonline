@@ -3,6 +3,7 @@ import Link from 'next/link'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import { buscarMeuUserId, buscarUsuariosCandidato, listarMeusCurriculos } from '@/actions/candidatos'
 import { createAdminClient } from '@/lib/supabase'
+import CurriculoDeleteBtn from './CurriculoDeleteBtn'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export default async function ListarCurriculosCandidato() {
                 titulo="Meus Currículos" 
                 subtitulo="Crie e gerencie versões do seu currículo para se candidatar às vagas."
                 acao={
-                    <Link href="/admin/candidato/cadastrar-curriculos" style={{
+                    <Link href="/admin/candidatos/cadastrar/ia" style={{
                         display: 'flex', alignItems: 'center', gap: '0.45rem',
                         padding: '0.65rem 1.25rem', borderRadius: 10,
                         background: 'linear-gradient(135deg, #2AB9C0, #1b9ca3)',
@@ -37,7 +38,7 @@ export default async function ListarCurriculosCandidato() {
                     <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '1.5rem', maxWidth: 400, margin: '0 auto 2rem' }}>
                         Adicione o seu primeiro currículo para poder se candidatar às melhores vagas da plataforma.
                     </p>
-                    <Link href="/admin/candidato/cadastrar-curriculos" style={{
+                    <Link href="/admin/candidatos/cadastrar/ia" style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                         padding: '0.85rem 1.75rem', borderRadius: 12,
                         background: '#09355F', color: '#fff', fontSize: '0.9rem', fontWeight: 700,
@@ -93,6 +94,7 @@ export default async function ListarCurriculosCandidato() {
                                 }}>
                                     <Edit style={{ width: 16, height: 16 }} /> Editar
                                 </Link>
+                                {userId && <CurriculoDeleteBtn curriculoId={c.id} userId={userId} />}
                             </div>
                         </div>
                     ))}
