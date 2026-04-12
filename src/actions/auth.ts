@@ -36,7 +36,7 @@ export async function cadastrarCandidato(formData: {
     }
 
     // 2. Inserir na tabela users vinculando auth_id (admin client bypassa RLS)
-    const { error: dbError } = await admin.from('users').insert({
+    const { data: newUser, error: dbError } = await (admin.from('users') as any).insert({
         auth_id: authData.user.id,
         tipo: 'candidato' as TipoUsuario,
         nome: formData.nome,
@@ -44,14 +44,28 @@ export async function cadastrarCandidato(formData: {
         email: formData.email,
         telefone: formData.telefone || null,
         area_interesse: formData.area || null,
-    } as any)
+    }).select('id').single() as any
 
     if (dbError) {
         await admin.auth.admin.deleteUser(authData.user.id)
         return { success: false, error: 'Erro ao criar perfil. Tente novamente.' }
     }
 
-    // 3. Auto-login após cadastro
+    // 3. Criar registro na tabela candidatos (espelho do perfil)
+    if (newUser?.id) {
+        await (admin.from('candidatos') as any).insert({
+            user_id: newUser.id,
+            nome_completo: `${formData.nome}${formData.sobrenome ? ' ' + formData.sobrenome : ''}`,
+            email: formData.email,
+            telefone: formData.telefone || null,
+            whatsapp: formData.telefone || null,
+            cargo_desejado: formData.area || null,
+            status: 'ativo',
+            disponivel: true,
+        })
+    }
+
+    // 4. Auto-login após cadastro
     await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.senha,
