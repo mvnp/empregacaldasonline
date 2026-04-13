@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send } from 'lucide-react'
+import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send, MessageCircle } from 'lucide-react'
 import { VagaPublica } from '@/actions/vagas'
 import BannerSpace from '@/components/publicidade/BannerSpace'
 import VagaCardDB from '@/components/VagaCardDB'
@@ -12,9 +12,13 @@ interface VagaDetailDisplayProps {
     horario: string
     actionButton?: React.ReactNode
     vagasRelacionadas?: any[]
+    isCandidato?: boolean
+    whatsAppUrl?: string
+    mostrarContato?: boolean
+    extraContentDetalhes?: React.ReactNode
 }
 
-export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton, vagasRelacionadas }: VagaDetailDisplayProps) {
+export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton, vagasRelacionadas, isCandidato, whatsAppUrl, mostrarContato, extraContentDetalhes }: VagaDetailDisplayProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-detail-grid">
 
@@ -82,7 +86,56 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     </div>
                 )}
 
+                {/* Detalhes do Contratante */}
+                <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #e8edf5' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Building2 style={{ color: '#2AB9C0' }} /> Detalhes do Contratante
+                    </h2>
+                    <p style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                        Abaixo disponibilizamos os meios de contato informados pelo contratante para facilitar sua comunicação. Utilize essas informações com responsabilidade e, ao entrar em contato, certifique-se de mencionar que encontrou a vaga através do Emprega Caldas para maior credibilidade no seu processo seletivo.
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB9C0', flexShrink: 0, marginTop: 9 }} />
+                            <div>
+                                <strong style={{ color: '#09355F' }}>Nome da empresa:</strong>{' '}
+                                {mostrarContato ? (vaga.empresa !== 'Empresa: Cadastre-se ou faça login' ? vaga.empresa : (empresaPerfil?.nome_fantasia || vaga.empresa)) : '********************'}
+                            </div>
+                        </li>
+                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB9C0', flexShrink: 0, marginTop: 9 }} />
+                            <div>
+                                <strong style={{ color: '#09355F' }}>Site da Empresa:</strong>{' '}
+                                {mostrarContato ? (() => {
+                                    const site = vaga.link_externo || empresaPerfil?.website || '';
+                                    return site ? <a href={site.startsWith('http') ? site : `https://${site}`} target="_blank" rel="noopener noreferrer" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>{site}</a> : 'Não informado';
+                                })() : '********************'}
+                            </div>
+                        </li>
+                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB9C0', flexShrink: 0, marginTop: 9 }} />
+                            <div>
+                                <strong style={{ color: '#09355F' }}>Telefone da Empresa:</strong>{' '}
+                                {mostrarContato ? (vaga.telefone || empresaPerfil?.telefone || 'Não informado') : '********************'}
+                            </div>
+                        </li>
+                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB9C0', flexShrink: 0, marginTop: 9 }} />
+                            <div>
+                                <strong style={{ color: '#09355F' }}>WhatsApp da Empresa:</strong>{' '}
+                                {mostrarContato ? (() => {
+                                    const wapp = vaga.whatsapp || empresaPerfil?.whatsapp || '';
+                                    if (!wapp) return 'Não informado';
+                                    const cleanWapp = wapp.replace(/\D/g, '');
+                                    const link = `https://wa.me/${cleanWapp.length <= 11 ? '55' + cleanWapp : cleanWapp}`;
+                                    return <a href={link} target="_blank" rel="noopener noreferrer" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>{wapp}</a>;
+                                })() : '********************'}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
 
+                {extraContentDetalhes}
 
                 {/* Vagas Relacionadas (alocadas aqui conforme pedido) */}
                 {vagasRelacionadas && vagasRelacionadas.length > 0 && (
@@ -140,6 +193,28 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                                 </>
                             )}
                         </div>
+
+                        {isCandidato && whatsAppUrl && (
+                            <div style={{ marginTop: '1.25rem' }}>
+                                <Link 
+                                    href={whatsAppUrl} 
+                                    target={whatsAppUrl.startsWith('http') ? '_blank' : '_self'} 
+                                    style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+                                        padding: '1rem', borderRadius: 12, background: '#25D366', color: '#fff',
+                                        fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none',
+                                        boxShadow: '0 4px 15px rgba(37,211,102,0.3)', textTransform: 'uppercase'
+                                    }}
+                                    className="hover-opacity"
+                                >
+                                    <MessageCircle style={{ width: 18, height: 18 }} />
+                                    FALAR COM CONTRATANTE
+                                </Link>
+                                <style suppressHydrationWarning>{`
+                                    .hover-opacity:hover { opacity: 0.9; }
+                                `}</style>
+                            </div>
+                        )}
                     </div>
                 )}
 

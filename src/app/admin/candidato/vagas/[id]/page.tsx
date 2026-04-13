@@ -10,7 +10,9 @@ import { buscarEmpresaPublica } from '@/actions/empresas'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import VagaDetailDisplay from '@/components/VagaDetailDisplay'
 import CandidatarBotao from '@/components/CandidatarBotao'
+import BannerSpace from '@/components/publicidade/BannerSpace'
 import { verificarCandidatura } from '@/actions/candidaturas'
+import { verificarOnboardingCandidato, getUsuarioLogado } from '@/actions/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,6 +65,34 @@ export default async function DetalheVagaCandidatoPage({ params }: { params: Pro
     const nivel = vaga.nivel ? vaga.nivel.charAt(0).toUpperCase() + vaga.nivel.slice(1) : ''
     const horario = vaga.modalidade === 'remoto' ? 'Horário Flexível' : 'Horário Comercial'
     const salario = formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
+
+    const user = await getUsuarioLogado();
+    const isCandidato = user?.tipo === 'candidato';
+    const onboardingStatus = isCandidato ? await verificarOnboardingCandidato() : null;
+    const onboardingConcluido = isCandidato ? (onboardingStatus?.perfilCompleto && onboardingStatus?.temCurriculo) : false;
+
+    let mostrarContato = false;
+    if (user) {
+        if (isCandidato) {
+            mostrarContato = !!onboardingConcluido;
+        } else {
+            mostrarContato = true;
+        }
+    }
+
+    let whatsAppUrl = '';
+    if (isCandidato) {
+        if (!onboardingConcluido) {
+            whatsAppUrl = '/admin/perfil';
+        } else {
+            const rawPhone = vaga.whatsapp || vaga.telefone || empresaPerfil?.whatsapp || empresaPerfil?.telefone || '';
+            const cleanPhone = rawPhone.replace(/\D/g, '');
+            if (cleanPhone) {
+                const fullPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+                whatsAppUrl = `https://wa.me/${fullPhone}`;
+            }
+        }
+    }
 
     const jaCandidatado = await verificarCandidatura(vaga.id)
     
@@ -127,6 +157,14 @@ export default async function DetalheVagaCandidatoPage({ params }: { params: Pro
                     horario={horario}
                     actionButton={
                         <CandidatarBotao vagaId={vaga.id} jaCandidatado={jaCandidatado} curriculos={curriculos} />
+                    }
+                    isCandidato={isCandidato}
+                    whatsAppUrl={whatsAppUrl}
+                    mostrarContato={mostrarContato}
+                    extraContentDetalhes={
+                        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                            <BannerSpace formato="leaderboard" className="ad-candidato-detalhes" />
+                        </div>
                     }
                 />
             </div>

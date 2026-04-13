@@ -11,6 +11,7 @@ import { buscarVagaPublica, listarVagasPublicas } from '@/actions/vagas'
 import { buscarEmpresaPublica } from '@/actions/empresas'
 import VagaDetailDisplay from '@/components/VagaDetailDisplay'
 import BannerSpace from '@/components/publicidade/BannerSpace'
+import { verificarOnboardingCandidato, getUsuarioLogado } from '@/actions/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,6 +129,34 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
     const horario = vaga.modalidade === 'remoto' ? 'Horário Flexível' : 'Horário Comercial'
     const salario = vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? 'R$ **,***.**' : formatSalario(vaga.salario_min, vaga.salario_max, vaga.mostrar_salario, vaga.salario_a_combinar)
 
+    const user = await getUsuarioLogado();
+    const isCandidato = user?.tipo === 'candidato';
+    const onboardingStatus = isCandidato ? await verificarOnboardingCandidato() : null;
+    const onboardingConcluido = isCandidato ? (onboardingStatus?.perfilCompleto && onboardingStatus?.temCurriculo) : false;
+
+    let mostrarContato = false;
+    if (user) {
+        if (isCandidato) {
+            mostrarContato = !!onboardingConcluido;
+        } else {
+            mostrarContato = true;
+        }
+    }
+
+    let whatsAppUrl = '';
+    if (isCandidato) {
+        if (!onboardingConcluido) {
+            whatsAppUrl = '/admin/perfil';
+        } else {
+            const rawPhone = vaga.whatsapp || vaga.telefone || empresaPerfil?.whatsapp || empresaPerfil?.telefone || '';
+            const cleanPhone = rawPhone.replace(/\D/g, '');
+            if (cleanPhone) {
+                const fullPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
+                whatsAppUrl = `https://wa.me/${fullPhone}`;
+            }
+        }
+    }
+
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f7fa' }}>
             {/* Header / Navbar adaptado */}
@@ -203,6 +232,9 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                         regime={regime}
                         horario={horario}
                         vagasRelacionadas={vagasRelacionadas}
+                        isCandidato={isCandidato}
+                        whatsAppUrl={whatsAppUrl}
+                        mostrarContato={mostrarContato}
                     />
                 </div>
             </main>
