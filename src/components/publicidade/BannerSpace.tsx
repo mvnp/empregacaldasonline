@@ -50,27 +50,62 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
     if (formato === 'native') {
         const defaultImgWidth = imageColWidth || 280;
         return (
+            <>
+            <style>{`
+                .ad-banner-native {
+                    display: flex;
+                    flex-direction: row;
+                    background: #fff;
+                    border-radius: 16px;
+                    border: 1.5px solid #e8edf5;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+                    overflow: hidden;
+                    position: relative;
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                    text-decoration: none;
+                    width: 100%;
+                }
+                .ad-banner-native-text {
+                    flex: 1;
+                    padding: 1.25rem;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    order: 1;
+                }
+                .ad-banner-native-img {
+                    width: 100%;
+                    max-width: ${defaultImgWidth}px;
+                    flex-shrink: 0;
+                    position: relative;
+                    order: 2;
+                }
+                @media (max-width: 768px) {
+                    .ad-banner-native {
+                        flex-direction: column;
+                        height: auto !important;
+                    }
+                    .ad-banner-native-img {
+                        max-width: 100%;
+                        height: auto;
+                        aspect-ratio: 16 / 9;
+                        order: 1;
+                    }
+                    .ad-banner-native-text {
+                        order: 2;
+                    }
+                }
+            `}</style>
             <a 
                 href={ad.pub.link_destino} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className={`ad-banner-space ${className}`}
-                style={{ 
-                    display: 'flex', 
-                    background: '#fff',
-                    borderRadius: 16,
-                    border: '1.5px solid #e8edf5',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                    textDecoration: 'none',
-                    ...dims,
-                    ...style 
-                }}
+                className={`ad-banner-space ad-banner-native ${className}`}
+                style={style}
             >
-                {/* Lado Esquerdo - Textos */}
-                <div style={{ flex: 1, padding: '1.25rem', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                {/* Textos */}
+                <div className="ad-banner-native-text">
                     <div>
                         {/* Primeira linha: Nome da empresa */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -102,8 +137,8 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
                     </div>
                 </div>
 
-                {/* Lado Direito - Imagem */}
-                <div style={{ width: '100%', maxWidth: defaultImgWidth, flexShrink: 0, position: 'relative' }}>
+                {/* Imagem */}
+                <div className="ad-banner-native-img">
                     <img 
                         src={ad.arquivo_url} 
                         alt="Conteúdo Patrocinado" 
@@ -120,6 +155,7 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
                     </span>
                 </div>
             </a>
+            </>
         );
     }
 
