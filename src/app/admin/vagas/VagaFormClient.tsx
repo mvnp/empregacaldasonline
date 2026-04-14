@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-    ArrowLeft, Save, Plus, X, Briefcase, MapPin, Building2,
-    DollarSign, FileText, Mail, ExternalLink, Star, Bot
+    ArrowLeft, Save, Plus, X, Briefcase,
+    DollarSign, FileText, Mail, ExternalLink, Star, Bot, Image as ImageIcon
 } from 'lucide-react'
 import { cadastrarVaga, editarVaga, type VagaFormData } from '@/actions/vagas'
 import { extrairDadosVagaDeImagem } from '@/actions/openai'
+import { salvarImagemVaga, vincularImagemVaga } from '@/actions/vaga_imagens'
 
 interface VagaFormClientProps {
     initialData?: any;
@@ -25,6 +26,11 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [aiLoading, setAiLoading] = useState(false)
     const [aiError, setAiError] = useState('')
     const [aiGerandoDescricao, setAiGerandoDescricao] = useState(false)
+
+    // ── Estado de Imagem Salva ──
+    const [aiImageUrl, setAiImageUrl] = useState<string | null>(null)
+    const [aiRegistroId, setAiRegistroId] = useState<number | null>(null)
+    const [showImagePreview, setShowImagePreview] = useState(false)
 
     const [sugestoesEmpresas, setSugestoesEmpresas] = useState<string[]>([])
     const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
@@ -115,6 +121,11 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                 return
             }
 
+            // ── Vincular imagem à vaga recém-criada ──────────────────
+            if (aiRegistroId && resultado.vagaId) {
+                await vincularImagemVaga(aiRegistroId, resultado.vagaId).catch(() => null)
+            }
+
             window.location.href = '/admin/vagas'
         } catch {
             setLoading(false)
@@ -132,7 +143,17 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
             const base64Image = reader.result as string
 
             try {
-                const response = await extrairDadosVagaDeImagem(base64Image)
+                // ── Processar IA + Upload em paralelo ──────────────────
+                const [response, uploadResult] = await Promise.all([
+                    extrairDadosVagaDeImagem(base64Image),
+                    salvarImagemVaga(base64Image, aiFile.name, null),
+                ])
+
+                // ── Salvar image URL para preview ──────────────────────
+                if (uploadResult.success && uploadResult.url_publica) {
+                    setAiImageUrl(uploadResult.url_publica)
+                    if (uploadResult.registro_id) setAiRegistroId(uploadResult.registro_id)
+                }
 
                 if (!response.success) {
                     throw new Error(response.error || 'Erro ao processar imagem.')
@@ -242,20 +263,39 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                         <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Preencha os dados da nova vaga</p>
                     </div>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setShowAIModal(true)}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.6rem 1.1rem', borderRadius: 10,
-                        background: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0',
-                        fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                        boxShadow: '0 2px 8px rgba(22, 101, 52, 0.05)'
-                    }}
-                >
-                    <Bot style={{ width: 16, height: 16 }} />
-                    <span className="hidden sm:inline">Preencher com Imagem (IA)</span>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {/* Botão Ver Imagem — aparece após upload */}
+                    {aiImageUrl && (
+                        <button
+                            type="button"
+                            onClick={() => setShowImagePreview(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.6rem 1.1rem', borderRadius: 10,
+                                background: '#eff6ff', color: '#1d4ed8', border: '1.5px solid #bfdbfe',
+                                fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                                boxShadow: '0 2px 8px rgba(29, 78, 216, 0.07)'
+                            }}
+                        >
+                            <ImageIcon style={{ width: 16, height: 16 }} />
+                            <span>Ver Imagem</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowAIModal(true)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            padding: '0.6rem 1.1rem', borderRadius: 10,
+                            background: '#f0fdf4', color: '#166534', border: '1.5px solid #bbf7d0',
+                            fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                            boxShadow: '0 2px 8px rgba(22, 101, 52, 0.05)'
+                        }}
+                    >
+                        <Bot style={{ width: 16, height: 16 }} />
+                        <span className="hidden sm:inline">Preencher com Imagem (IA)</span>
+                    </button>
+                </div>
             </div>
 
             {/* Erro */}
@@ -273,13 +313,33 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
             {showAIModal && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                    backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 9999,
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                     <div style={{
                         background: '#fff', borderRadius: 16, padding: '2rem',
-                        width: '100%', maxWidth: 450, boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                        width: '100%', maxWidth: 460, boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                        position: 'relative', overflow: 'hidden'
                     }}>
+                        {/* Loading overlay dentro do modal */}
+                        {aiLoading && (
+                            <div style={{
+                                position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.92)',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                justifyContent: 'center', gap: '1rem', zIndex: 10, borderRadius: 16
+                            }}>
+                                <div style={{
+                                    width: 44, height: 44,
+                                    border: '4px solid #e2e8f0',
+                                    borderTopColor: '#10a37f',
+                                    borderRadius: '50%',
+                                    animation: 'spin 0.7s linear infinite'
+                                }} />
+                                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#09355F', margin: 0 }}>Extraindo dados e salvando imagem...</p>
+                                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0 }}>Aguarde, ambas as operações rodam em paralelo.</p>
+                            </div>
+                        )}
+
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#09355F', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Bot style={{ width: 22, height: 22, color: '#10a37f' }} />
@@ -296,7 +356,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             </div>
                         )}
 
-                        <div style={{ marginBottom: '1.5rem' }}>
+                        <div style={{ marginBottom: '1rem' }}>
                             <label style={{ ...labelStyle, marginBottom: '0.5rem' }}>Anexo do Anúncio (Imagem)</label>
                             <input
                                 type="file"
@@ -307,6 +367,21 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                     borderRadius: 10, background: '#f8fafc', color: '#475569', fontSize: '0.85rem'
                                 }}
                             />
+                        </div>
+
+                        {/* Preview local da imagem selecionada */}
+                        {aiFile && (
+                            <div style={{ marginBottom: '1.25rem', borderRadius: 10, overflow: 'hidden', border: '1.5px solid #e2e8f0', background: '#f8fafc', textAlign: 'center', padding: '0.5rem' }}>
+                                <img
+                                    src={URL.createObjectURL(aiFile)}
+                                    alt="Preview"
+                                    style={{ maxHeight: 200, maxWidth: '100%', borderRadius: 8, objectFit: 'contain' }}
+                                />
+                            </div>
+                        )}
+
+                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.65rem 0.85rem', marginBottom: '1.25rem', fontSize: '0.78rem', color: '#166534' }}>
+                            <strong>ℹ️ O que acontece:</strong> A imagem é enviada para a IA extrair os dados e <strong>simultaneamente</strong> salva no Storage do Supabase. Após cadastrar a vaga, você poderá visualizá-la a qualquer momento.
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -333,8 +408,65 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                 ) : (
                                     <Bot style={{ width: 14, height: 14 }} />
                                 )}
-                                {aiLoading ? 'Lendo imagem...' : 'Extrair Informações'}
+                                {aiLoading ? 'Processando...' : 'Extrair Informações'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Preview da Imagem Salva */}
+            {showImagePreview && aiImageUrl && (
+                <div
+                    onClick={() => setShowImagePreview(false)}
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 10000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '1rem', cursor: 'zoom-out'
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#fff', borderRadius: 16, padding: '1rem',
+                            maxWidth: '90vw', maxHeight: '90vh',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+                            display: 'flex', flexDirection: 'column', gap: '1rem',
+                            cursor: 'default'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#09355F', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <ImageIcon style={{ width: 18, height: 18, color: '#1d4ed8' }} />
+                                Imagem do Anúncio
+                            </span>
+                            <button
+                                onClick={() => setShowImagePreview(false)}
+                                style={{ background: '#f1f5f9', border: 'none', borderRadius: 8, padding: '0.4rem', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                                <X style={{ width: 18, height: 18, color: '#475569' }} />
+                            </button>
+                        </div>
+                        <img
+                            src={aiImageUrl}
+                            alt="Imagem do anúncio da vaga"
+                            style={{
+                                maxWidth: '80vw', maxHeight: '75vh',
+                                borderRadius: 10, objectFit: 'contain',
+                                border: '1px solid #e2e8f0'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Imagem salva no Supabase Storage • Clique fora para fechar</span>
+                            <a
+                                href={aiImageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                            >
+                                <ExternalLink style={{ width: 13, height: 13 }} /> Abrir original
+                            </a>
                         </div>
                     </div>
                 </div>
