@@ -19,6 +19,7 @@ interface VagaFormClientProps {
 export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaFormClientProps) {
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
+    const [sucesso, setSucesso] = useState('')
 
     // ── Estado do Modal IA ──
     const [showAIModal, setShowAIModal] = useState(false)
@@ -93,9 +94,20 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         setter(prev => prev.map((item, i) => i === index ? value : item))
     }
 
+    const formInicial = {
+        titulo: '', descricao: '', empresa: '', local: '',
+        modalidade: '' as VagaFormData['modalidade'],
+        tipo_contrato: '', nivel: '',
+        salario_min: '', salario_max: '',
+        mostrar_salario: true, salario_a_combinar: false,
+        email_contato: '', telefone_contato: '', whatsapp_contato: '',
+        link_externo: '', json_content: '', status: 'ativa', destaque: false,
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setErro('')
+        setSucesso('')
 
         if (!form.titulo.trim()) { setErro('Título é obrigatório.'); return }
         if (!form.empresa.trim()) { setErro('Empresa é obrigatória.'); return }
@@ -126,7 +138,17 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                 await vincularImagemVaga(aiRegistroId, resultado.vagaId).catch(() => null)
             }
 
-            window.location.href = '/admin/vagas'
+            // ── Reset completo do formulário para novo cadastro ────────
+            setForm(formInicial)
+            setResponsabilidades([''])
+            setRequisitos([''])
+            setDiferenciais([''])
+            setBeneficios([''])
+            setAiImageUrl(null)
+            setAiRegistroId(null)
+            setSucesso(`Vaga "${formData.titulo}" cadastrada com sucesso! Pronto para nova vaga.`)
+            setLoading(false)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         } catch {
             setLoading(false)
             setErro('Erro de conexão. Tente novamente.')
@@ -306,6 +328,24 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     fontSize: '0.85rem', color: '#dc2626', fontWeight: 500,
                 }}>
                     {erro}
+                </div>
+            )}
+
+            {/* Sucesso */}
+            {sucesso && (
+                <div style={{
+                    background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12,
+                    padding: '0.85rem 1.25rem', marginBottom: '1.25rem',
+                    fontSize: '0.85rem', color: '#166534', fontWeight: 600,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'
+                }}>
+                    <span>✅ {sucesso}</span>
+                    <a
+                        href="/admin/vagas"
+                        style={{ fontSize: '0.8rem', color: '#15803d', fontWeight: 700, textDecoration: 'underline', whiteSpace: 'nowrap' }}
+                    >
+                        Ver lista de vagas →
+                    </a>
                 </div>
             )}
 
