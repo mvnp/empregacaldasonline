@@ -55,15 +55,15 @@ export async function generateMetadata(
     const descricaoSeo = vaga.descricao ? vaga.descricao.substring(0, 160) + '...' : `Vaga para ${vaga.titulo} em Caldas Novas e região. Confira os detalhes e candidate-se agora!`
 
     return {
-        title: `${vaga.titulo} | Emprega Caldas Online`,
+        title: `${vaga.titulo} | Emprega Caldas Novas Online`,
         description: descricaoSeo,
         openGraph: {
-            title: `${vaga.titulo} | Emprega Caldas Online`,
+            title: `${vaga.titulo} | Emprega Caldas Novas Online`,
             description: descricaoSeo,
             images: [
                 {
                     url: 'https://empregacaldas.online/portal-jobs-caldas-novas.png',
-                    alt: `Vaga para ${vaga.titulo} - Emprega Caldas`,
+                    alt: `Vaga para ${vaga.titulo} - Emprega Caldas Novas Online`,
                     width: 1200,
                     height: 630,
                 },
