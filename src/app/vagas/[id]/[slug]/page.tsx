@@ -55,10 +55,10 @@ export async function generateMetadata(
     const descricaoSeo = vaga.descricao ? vaga.descricao.substring(0, 160) + '...' : `Vaga para ${vaga.titulo} em Caldas Novas e região. Confira os detalhes e candidate-se agora!`
 
     return {
-        title: `${vaga.titulo} | Emprega Caldas Novas Online`,
+        title: `${vaga.titulo} - Emprega Caldas Novas Online`,
         description: descricaoSeo,
         openGraph: {
-            title: `${vaga.titulo} | Emprega Caldas Novas Online`,
+            title: `${vaga.titulo} - Emprega Caldas Novas Online`,
             description: descricaoSeo,
             images: [
                 {
