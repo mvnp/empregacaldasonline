@@ -205,7 +205,7 @@ export async function atualizarPublicidade(id: number, form: {
 
 /**
  * Registra um clique em uma publicidade.
- * Regra: o mesmo IP não é contado novamente na mesma pub_id+formato dentro de 1 hora.
+ * Regra: o mesmo IP não é contado novamente na mesma pub_id+formato+página dentro de 1 hora.
  *
  * O trigger `trg_pub_click_stats` no banco incrementa automaticamente
  * o contador em `pub_click_stats` após cada INSERT em `pub_click_logs`.
@@ -242,13 +242,14 @@ export async function registrarClickPublicidade(params: {
         // Usa o admin client para bypassar RLS no insert
         const admin = createAdminClient()
 
-        // Verifica deduplicação: mesmo IP + pub_id + formato em <= 1 hora
+        // Verifica deduplicação: mesmo IP + pub_id + formato + page em <= 1 hora
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
         const { data: existing } = await (admin.from('pub_click_logs') as any)
             .select('id')
             .eq('ip', ip)
             .eq('pub_id', pub_id)
             .eq('formato', formato)
+            .eq('page', page)
             .gte('clicked_at', oneHourAgo)
             .limit(1)
             .maybeSingle()

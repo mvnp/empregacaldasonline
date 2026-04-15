@@ -7,7 +7,7 @@
 --   pub_click_stats  → contador agregado por (pub_id, formato)
 --
 -- Regra de negócio:
---   • O mesmo IP só conta 1 click por pub_id+formato dentro de 1 hora
+--   • O mesmo IP só conta 1 click por pub_id+formato+page dentro de 1 hora
 --   • Cada par (pub_id, formato) tem exatamente 1 linha em pub_click_stats
 --   • Se duas pub_ids diferentes usam o mesmo formato, são dois registros
 --     distintos em pub_click_stats (um por pub_id)
