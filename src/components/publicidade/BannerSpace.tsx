@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Calendar, Clock, ArrowRight } from 'lucide-react'
+import { registrarClickPublicidade } from '@/actions/publicidade'
 
 interface BannerSpaceProps {
     formato: 'rectangle' | 'leaderboard' | 'billboard' | 'native'
@@ -38,6 +39,16 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
     if (!ad) {
         return slotFallback as React.ReactElement | null
     }
+
+    const handleAdClick = () => {
+        if (!ad) return;
+        registrarClickPublicidade({
+            pub_id: ad.pub.id,
+            empresa_id: ad.pub.empresa_id,
+            formato: formato,
+            page: window.location.href
+        }).catch(err => console.error('Erro ao registrar clique:', err));
+    };
 
     const dimsContext = {
         rectangle: { width: '100%', maxWidth: 300, aspectRatio: '300/250' },
@@ -103,6 +114,7 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
                 rel="noopener noreferrer"
                 className={`ad-banner-space ad-banner-native ${className}`}
                 style={style}
+                onClick={handleAdClick}
             >
                 {/* Textos */}
                 <div className="ad-banner-native-text">
@@ -178,6 +190,7 @@ export default function BannerSpace({ formato, className = '', style = {}, slotF
                 ...style 
             }}
             title="Patrocinado"
+            onClick={handleAdClick}
         >
             <span style={{
                 position: 'absolute', top: 4, right: 6, fontSize: '0.6rem', 
