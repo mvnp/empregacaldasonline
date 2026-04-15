@@ -17,12 +17,6 @@ export async function gerarSitemapAction() {
 
         if (vError) throw new Error('Erro ao buscar vagas: ' + vError.message)
 
-        // 2. Buscar Posts do Blog (opcional, mas recomendado)
-        const { data: posts } = await admin
-            .from('blog_posts')
-            .select('id, slug, updated_at')
-            .eq('status', 'published')
-
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://empregacaldas.online'
         
         let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -45,16 +39,6 @@ export async function gerarSitemapAction() {
     <loc>${baseUrl}/vagas/${vaga.id}</loc>
     <lastmod>${new Date(vaga.updated_at || new Date()).toISOString()}</lastmod>
     <priority>0.8</priority>
-  </url>`
-        })
-
-        // Add Blog Posts
-        posts?.forEach(post => {
-            xml += `
-  <url>
-    <loc>${baseUrl}/blog/${post.slug || post.id}</loc>
-    <lastmod>${new Date(post.updated_at || new Date()).toISOString()}</lastmod>
-    <priority>0.7</priority>
   </url>`
         })
 
