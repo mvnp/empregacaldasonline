@@ -13,7 +13,7 @@ export async function gerarSitemapAction() {
             .from('vagas')
             .select('id, updated_at')
             .eq('status', 'ativa')
-            .order('updated_at', { ascending: false })
+            .order('updated_at', { ascending: false }) as { data: any[] | null, error: any }
 
         if (vError) throw new Error('Erro ao buscar vagas: ' + vError.message)
 
@@ -33,7 +33,7 @@ export async function gerarSitemapAction() {
   </url>`
 
         // Add Vagas
-        vagas?.forEach(vaga => {
+        vagas?.forEach((vaga: any) => {
             xml += `
   <url>
     <loc>${baseUrl}/vagas/${vaga.id}</loc>
