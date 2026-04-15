@@ -1,56 +1,20 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase'
-import fs from 'fs'
-import path from 'path'
+import { revalidatePath } from 'next/cache'
 
 export async function gerarSitemapAction() {
     try {
-        const admin = createAdminClient()
+        // Agora que usamos uma rota dinâmica (/sitemap.xml/route.ts),
+        // não precisamos mais gravar um arquivo físico.
+        // Basta disparar a revalidação do cache para garantir que a rota mostre dados novos.
         
-        // 1. Buscar Vagas
-        const { data: vagas, error: vError } = await admin
-            .from('vagas')
-            .select('id, updated_at')
-            .eq('status', 'ativa')
-            .order('updated_at', { ascending: false }) as { data: any[] | null, error: any }
+        revalidatePath('/sitemap.xml')
+        revalidatePath('/')
+        revalidatePath('/vagas')
 
-        if (vError) throw new Error('Erro ao buscar vagas: ' + vError.message)
-
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://empregacaldas.online'
-        
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/vagas</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <priority>0.9</priority>
-  </url>`
-
-        // Add Vagas
-        vagas?.forEach((vaga: any) => {
-            xml += `
-  <url>
-    <loc>${baseUrl}/vagas/${vaga.id}</loc>
-    <lastmod>${new Date(vaga.updated_at || new Date()).toISOString()}</lastmod>
-    <priority>0.8</priority>
-  </url>`
-        })
-
-        xml += `
-</urlset>`
-
-        const publicPath = path.join(process.cwd(), 'public', 'sitemap.xml')
-        fs.writeFileSync(publicPath, xml, 'utf8')
-
-        return { success: true, message: 'Sitemap gerado com sucesso em ' + new Date().toLocaleTimeString() }
+        return { success: true, message: 'Cache do Sitemap atualizado! Acesse seu-site.com/sitemap.xml para ver.' }
     } catch (error: any) {
-        console.error('Erro ao gerar sitemap:', error)
+        console.error('Erro ao atualizar sitemap:', error)
         return { success: false, error: error.message }
     }
 }
