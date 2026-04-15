@@ -58,6 +58,21 @@ async function encontrarEmpresaExistente(
     return data ? data.id : null
 }
 
+function slugify(text: string) {
+    const slug = text
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+
+    const timestamp = Math.floor(Date.now() / 1000).toString().slice(-4)
+    return `${slug}-${timestamp}`
+}
+
 // ── Cadastrar Vaga ──
 export async function cadastrarVaga(formData: VagaFormData) {
     const supabase = await createServerSupabaseClient()
@@ -169,6 +184,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
         link_externo: formData.link_externo?.trim() || null,
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
+        slug: slugify(formData.titulo),
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         criado_por: user.id,
         empresa_id: empresa_id
@@ -271,6 +287,7 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
         link_externo: formData.link_externo?.trim() || null,
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
+        slug: slugify(formData.titulo),
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         empresa_id: empresa_id,
         updated_at: new Date().toISOString()
@@ -348,6 +365,7 @@ export interface VagaPublica {
     mostrar_salario: boolean
     salario_a_combinar: boolean
     destaque: boolean
+    slug: string | null
     created_at: string
 }
 
@@ -379,7 +397,7 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
     // Build query para dados
     let dataQuery = admin
         .from('vagas')
-        .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, created_at')
+        .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, slug, created_at')
         .eq('status', 'ativa')
         .order('created_at', { ascending: false })
         .range(from, to)

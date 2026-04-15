@@ -189,7 +189,7 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                         {diasAtras(vaga.created_at)}
                     </span>
                     <Link
-                        href={`/vagas/${vaga.id}`}
+                        href={`/vagas/${vaga.id}/${vaga.slug || 'vaga'}`}
                         className="btn-primary"
                         style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', borderRadius: 8, textDecoration: 'none', outline: 'none' }}
                     >

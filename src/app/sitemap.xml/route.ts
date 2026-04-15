@@ -10,7 +10,7 @@ export async function GET() {
         // 1. Buscar Vagas
         const { data: vagas } = await admin
             .from('vagas')
-            .select('id, updated_at')
+            .select('id, slug, updated_at')
             .eq('status', 'ativa')
             .order('updated_at', { ascending: false }) as { data: any[] | null }
 
@@ -31,9 +31,10 @@ export async function GET() {
 
         // Add Vagas
         vagas?.forEach((vaga: any) => {
+            const slug = vaga.slug || 'vaga'
             xml += `
   <url>
-    <loc>${baseUrl}/vagas/${vaga.id}</loc>
+    <loc>${baseUrl}/vagas/${vaga.id}/${slug}</loc>
     <lastmod>${new Date(vaga.updated_at || new Date()).toISOString()}</lastmod>
     <priority>0.8</priority>
   </url>`
