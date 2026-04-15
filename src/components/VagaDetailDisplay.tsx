@@ -3,6 +3,7 @@ import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send, Messa
 import { VagaPublica } from '@/actions/vagas'
 import BannerSpace from '@/components/publicidade/BannerSpace'
 import VagaCardDB from '@/components/VagaCardDB'
+import VagaReportButton from '@/components/VagaReportButton'
 
 interface VagaDetailDisplayProps {
     vaga: any
@@ -24,15 +25,16 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Descrição */}
-                <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #e8edf5' }}>
+                <div style={{ background: '#fff', padding: '2rem', borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #e8edf5', position: 'relative', overflow: 'hidden' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#09355F', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         Descrição da Vaga
                     </h2>
-                    <div style={{ fontSize: '0.95rem', color: '#475569', lineHeight: 1.8 }}>
+                    <div style={{ fontSize: '0.95rem', color: '#475569', lineHeight: 1.8, paddingBottom: '0.5rem' }}>
                         {(vaga.descricao || '').split('\n').map((p: string, i: number) => (
                             <p key={i} style={{ marginBottom: '1rem' }}>{p}</p>
                         ))}
                     </div>
+                    <VagaReportButton vagaId={vaga.id} />
                 </div>
 
                 {/* Responsabilidades */}
