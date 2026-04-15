@@ -883,9 +883,14 @@ export default function ConfiguracoesPage() {
     const [gerando, setGerando] = useState(false)
     const handleGerarSitemap = async () => {
         setGerando(true)
-        const res = await gerarSitemapAction()
-        setGerando(false)
-        alert(res.message || res.error)
+        try {
+            const res = await gerarSitemapAction()
+            alert(res.message || res.error)
+        } catch (err: any) {
+            alert('Erro ao processar: ' + err.message)
+        } finally {
+            setGerando(false)
+        }
     }
 
     return (
