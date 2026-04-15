@@ -17,8 +17,7 @@ export async function criarVagaNotification(payload: VagaNotificationPayload): P
         return { success: false, error: 'Dados obrigatórios ausentes.' }
     }
 
-    const { error } = await supabase
-        .from('vaga_notifications')
+    const { error } = await (supabase.from('vaga_notifications') as any)
         .insert({
             vaga_id,
             motivo,
