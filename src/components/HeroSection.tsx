@@ -86,16 +86,16 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
                 </p>
 
                 {/* Barra de busca */}
-                <div className="anim-fade-up d-300" style={{ maxWidth: 940 }}>
-                    <div style={{
-                        display: 'flex', flexWrap: 'wrap', gap: '0.75rem',
+                <div className="anim-fade-up d-300" style={{ maxWidth: 940, width: '100%' }}>
+                    <div className="hero-search-container" style={{
+                        display: 'flex', flexWrap: 'wrap', gap: '0.75rem', width: '100%',
                         padding: '0.75rem',
                         background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(14px)',
                         borderRadius: 16, border: '1px solid rgba(255,255,255,0.18)',
                         boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
                     }}>
                         {/* Campo: Cargo */}
-                        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
+                        <div className="hero-search-item" style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
                             <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: '#9aabb8', pointerEvents: 'none' }} />
                             <input
                                 type="text"
@@ -108,10 +108,10 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
                         </div>
 
                         {/* Divisor vertical */}
-                        <div style={{ width: 1, background: 'rgba(255,255,255,0.2)', alignSelf: 'stretch' }} />
+                        <div className="hero-search-divider" style={{ width: 1, background: 'rgba(255,255,255,0.2)', alignSelf: 'stretch' }} />
 
                         {/* Campo: Cidade */}
-                        <div style={{ position: 'relative', flex: '0 1 200px', minWidth: 160 }}>
+                        <div className="hero-search-item" style={{ position: 'relative', flex: '0 1 200px', minWidth: 160 }}>
                             <MapPin style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: '#9aabb8', pointerEvents: 'none' }} />
                             <input
                                 type="text"
@@ -125,7 +125,7 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
 
                         {/* Botão buscar */}
                         <button
-                            className="btn-primary anim-pulse-ring"
+                            className="btn-primary anim-pulse-ring hero-search-btn"
                             onClick={onBuscar}
                             style={{ padding: '0 1.75rem', height: 52, fontSize: '1rem', borderRadius: 10, flexShrink: 0 }}
                         >
@@ -137,6 +137,7 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
                             href="https://chat.whatsapp.com/KIYDOOBhx9LLc9hWOKmFOE"
                             target="_blank"
                             rel="noopener noreferrer"
+                            className="hero-search-btn-whatsapp"
                             style={{
                                 padding: '0 1.5rem',
                                 height: 52,
@@ -148,6 +149,7 @@ export default function HeroSection({ busca, cidade, onBuscaChange, onCidadeChan
                                 textDecoration: 'none',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '0.5rem',
                                 boxShadow: '0 4px 14px rgba(37, 211, 102, 0.4)',
                                 transition: 'all 0.2s ease',

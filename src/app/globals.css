@@ -1073,3 +1073,30 @@ body {
     margin-bottom: 0.85rem;
   }
 }
+
+/* ── Hero Search Responsive ────────────────── */
+@media (max-width: 640px) {
+  .hero-search-container {
+      flex-direction: column !important;
+      gap: 0.75rem !important;
+  }
+  .hero-search-item {
+      width: 100% !important;
+      flex: 1 1 100% !important;
+      min-width: 0 !important;
+  }
+  .hero-search-divider {
+      display: none !important;
+  }
+  .hero-search-btn, 
+  .hero-search-btn-whatsapp {
+      width: 100% !important;
+      font-size: 1rem !important;
+      height: 56px !important;
+      justify-content: center !important;
+  }
+  .hero-content {
+      padding-left: 1.25rem !important;
+      padding-right: 1.25rem !important;
+  }
+}
