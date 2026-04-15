@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { gerarSitemapAction } from '@/actions/sitemap'
 import {
     Building2, Mail, CreditCard, Shield, ClipboardCheck, Bell,
     Globe, FileText, Save, Eye, EyeOff, Plus, Trash2, ToggleLeft,
@@ -879,6 +880,14 @@ export default function ConfiguracoesPage() {
         setTimeout(() => setSalvo(false), 2500)
     }
 
+    const [gerando, setGerando] = useState(false)
+    const handleGerarSitemap = async () => {
+        setGerando(true)
+        const res = await gerarSitemapAction()
+        setGerando(false)
+        alert(res.message || res.error)
+    }
+
     return (
         <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
@@ -886,10 +895,16 @@ export default function ConfiguracoesPage() {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F', margin: '0 0 0.15rem' }}>Configurações</h1>
                     <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Gerencie todas as configurações do portal</p>
                 </div>
-                <button onClick={handleSalvar} style={btnPrimary}>
-                    {salvo ? <Check style={{ width: 15, height: 15 }} /> : <Save style={{ width: 15, height: 15 }} />}
-                    {salvo ? 'Salvo!' : 'Salvar Alterações'}
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button onClick={handleGerarSitemap} style={btnSecondary} disabled={gerando}>
+                        <Globe style={{ width: 15, height: 15 }} />
+                        {gerando ? 'Gerando...' : 'Gerar Sitemap.xml'}
+                    </button>
+                    <button onClick={handleSalvar} style={btnPrimary}>
+                        {salvo ? <Check style={{ width: 15, height: 15 }} /> : <Save style={{ width: 15, height: 15 }} />}
+                        {salvo ? 'Salvo!' : 'Salvar Alterações'}
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '1.25rem', alignItems: 'start' }} className="admin-main-grid">
