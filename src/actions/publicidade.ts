@@ -45,7 +45,37 @@ export async function listarPublicidades() {
         .order('created_at', { ascending: false })
 
     if (error) return { success: false, error: 'Erro ao carregar publicidades' }
-    return { success: true, publicidades: data }
+
+    // Fetch total clicks
+    const { data: statsData } = await (admin.from('pub_click_stats') as any).select('pub_id, clicks');
+    const totalClicksByPub: Record<number, number> = {};
+    if (statsData) {
+        statsData.forEach((stat: any) => {
+            totalClicksByPub[stat.pub_id] = (totalClicksByPub[stat.pub_id] || 0) + Number(stat.clicks);
+        });
+    }
+
+    // Fetch clicks today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { data: logsData } = await (admin.from('pub_click_logs') as any)
+        .select('pub_id')
+        .gte('clicked_at', todayStart.toISOString());
+    
+    const clicksTodayByPub: Record<number, number> = {};
+    if (logsData) {
+        logsData.forEach((log: any) => {
+            clicksTodayByPub[log.pub_id] = (clicksTodayByPub[log.pub_id] || 0) + 1;
+        });
+    }
+
+    const publicidadesComClicks = data.map((pub: any) => ({
+        ...pub,
+        total_clicks: totalClicksByPub[pub.id] || 0,
+        clicks_hoje: clicksTodayByPub[pub.id] || 0
+    }));
+
+    return { success: true, publicidades: publicidadesComClicks }
 }
 
 export async function criarPublicidade(formData: FormData) {

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
-import { Plus, Megaphone, Calendar, DollarSign, Image as ImageIcon } from 'lucide-react'
+import { Plus, Megaphone, Calendar, DollarSign, Image as ImageIcon, MousePointerClick } from 'lucide-react'
 
 export default function PublicidadesClient({ publicidades }: { publicidades: any[] }) {
     return (
@@ -69,6 +69,14 @@ export default function PublicidadesClient({ publicidades }: { publicidades: any
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                             <ImageIcon size={14} /> 
                                             {(pub.imagens || []).length} formatos
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#0ea5e9' }}>
+                                            <MousePointerClick size={14} /> 
+                                            {pub.total_clicks || 0} cliques
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#16a34a' }}>
+                                            <MousePointerClick size={14} /> 
+                                            {pub.clicks_hoje || 0} hoje
                                         </span>
                                     </div>
                                     <div style={{ marginTop: '0.35rem' }}>
