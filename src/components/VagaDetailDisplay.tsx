@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send, MessageCircle } from 'lucide-react'
+import { CheckCircle2, Star, Gift, DollarSign, Briefcase, Building2, Send, MessageCircle, Clock } from 'lucide-react'
 import { VagaPublica } from '@/actions/vagas'
 import BannerSpace from '@/components/publicidade/BannerSpace'
 import VagaCardDB from '@/components/VagaCardDB'
@@ -235,6 +235,17 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                                 <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#09355F', margin: 0 }}>{salario}</p>
                             </div>
                         </div>
+                        {vaga.tipo_pagamento && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fef9c3', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#854d0e' }}>
+                                    <Clock style={{ width: 20, height: 20 }} />
+                                </div>
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 0.15rem' }}>Tipo de Pagamento</p>
+                                    <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#09355F', margin: 0 }}>{vaga.tipo_pagamento}</p>
+                                </div>
+                            </div>
+                        )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FE8341' }}>
                                 <Briefcase style={{ width: 20, height: 20 }} />

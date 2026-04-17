@@ -28,6 +28,7 @@ export interface VagaFormData {
     requisitos: string[]
     diferenciais: string[]
     beneficios: string[]
+    tipo_pagamento?: string | null
 }
 
 // ── Funções Auxiliares ──
@@ -203,6 +204,7 @@ export async function cadastrarVaga(formData: VagaFormData) {
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
         slug: slugify(formData.titulo),
+        tipo_pagamento: formData.tipo_pagamento || null,
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         criado_por: user.id,
         empresa_id: empresa_id
@@ -306,6 +308,7 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
         status: formData.status || 'ativa',
         destaque: formData.destaque || false,
         slug: slugify(formData.titulo),
+        tipo_pagamento: formData.tipo_pagamento || null,
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         empresa_id: empresa_id,
         updated_at: new Date().toISOString()
@@ -415,7 +418,7 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
     // Build query para dados
     let dataQuery = admin
         .from('vagas')
-        .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, slug, created_at')
+        .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, slug, created_at, tipo_pagamento')
         .eq('status', 'ativa')
         .order('created_at', { ascending: false })
         .range(from, to)

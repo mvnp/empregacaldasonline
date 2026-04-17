@@ -63,6 +63,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         json_content: initialData?.json_content ? JSON.stringify(initialData.json_content, null, 2) : '',
         status: initialData?.status || 'ativa',
         destaque: initialData ? initialData.destaque : false,
+        tipo_pagamento: initialData?.tipo_pagamento || null,
     })
 
     const [responsabilidades, setResponsabilidades] = useState<string[]>(initialData?.responsabilidades?.length ? initialData.responsabilidades : [''])
@@ -130,6 +131,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         mostrar_salario: true, salario_a_combinar: false,
         email_contato: '', telefone_contato: '', whatsapp_contato: '',
         link_externo: '', json_content: '', status: 'ativa', destaque: false,
+        tipo_pagamento: null,
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -804,6 +806,25 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                         <input type="checkbox" checked={form.salario_a_combinar} onChange={e => updateField('salario_a_combinar', e.target.checked)} />
                         Salário a combinar
                     </label>
+
+                    <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={form.tipo_pagamento === 'Diária'} 
+                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Diária' : null)} 
+                            />
+                            Diária
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={form.tipo_pagamento === 'Semanal'} 
+                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Semanal' : null)} 
+                            />
+                            Semanal
+                        </label>
+                    </div>
                 </div>
 
                 {/* ── Contato ── */}
