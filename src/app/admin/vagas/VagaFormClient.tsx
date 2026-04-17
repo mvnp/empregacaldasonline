@@ -6,9 +6,10 @@ import {
     ArrowLeft, Save, Plus, X, Briefcase,
     DollarSign, FileText, Mail, ExternalLink, Star, Bot, Image as ImageIcon
 } from 'lucide-react'
-import { cadastrarVaga, editarVaga, type VagaFormData } from '@/actions/vagas'
+import { cadastrarVaga, editarVaga, type VagaFormData, buscarTodosTitulosVagas } from '@/actions/vagas'
 import { extrairDadosVagaDeImagem } from '@/actions/openai'
 import { salvarImagemVaga, vincularImagemVaga } from '@/actions/vaga_imagens'
+import { buscarTodasEmpresasNomes, buscarEmpresaPorNome } from '@/actions/empresas'
 
 interface VagaFormClientProps {
     initialData?: any;
@@ -35,11 +36,12 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
 
     const [sugestoesEmpresas, setSugestoesEmpresas] = useState<string[]>([])
     const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
+    const [sugestoesTitulos, setSugestoesTitulos] = useState<string[]>([])
+    const [mostrarSugestoesTitulos, setMostrarSugestoesTitulos] = useState(false)
 
     useEffect(() => {
-        import('@/actions/empresas').then(({ buscarTodasEmpresasNomes }) => {
-            buscarTodasEmpresasNomes().then(res => setSugestoesEmpresas(res as string[]))
-        })
+        buscarTodasEmpresasNomes().then(res => setSugestoesEmpresas(res as string[]))
+        buscarTodosTitulosVagas().then(res => setSugestoesTitulos(res as string[]))
     }, [])
 
     const [form, setForm] = useState({
@@ -50,13 +52,13 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         modalidade: (initialData?.modalidade || '') as VagaFormData['modalidade'],
         tipo_contrato: initialData?.tipo_contrato || '',
         nivel: initialData?.nivel || '',
-        salario_min: initialData?.salario_min ? String(initialData.salario_min) : '',
-        salario_max: initialData?.salario_max ? String(initialData.salario_max) : '',
+        salario_min: initialData?.salario_min ? formatCurrency(String(initialData.salario_min)) : '',
+        salario_max: initialData?.salario_max ? formatCurrency(String(initialData.salario_max)) : '',
         mostrar_salario: initialData ? initialData.mostrar_salario : true,
         salario_a_combinar: initialData ? initialData.salario_a_combinar : false,
         email_contato: initialData?.email_contato || '',
-        telefone_contato: initialData?.telefone || '',
-        whatsapp_contato: initialData?.whatsapp || '',
+        telefone_contato: initialData?.telefone_contato ? formatPhoneInput(initialData.telefone_contato) : (initialData?.telefone ? formatPhoneInput(initialData.telefone) : ''),
+        whatsapp_contato: initialData?.whatsapp_contato ? formatPhoneInput(initialData.whatsapp_contato) : (initialData?.whatsapp ? formatPhoneInput(initialData.whatsapp) : ''),
         link_externo: initialData?.link_externo || '',
         json_content: initialData?.json_content ? JSON.stringify(initialData.json_content, null, 2) : '',
         status: initialData?.status || 'ativa',
@@ -70,6 +72,32 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
 
     function updateField(field: string, value: any) {
         setForm(prev => ({ ...prev, [field]: value }))
+    }
+
+    function toTitleCase(str: string) {
+        if (!str) return '';
+        const preposicoes = ["a", "ante", "após", "até", "com", "contra", "de", "desde", "em", "entre", "para", "perante", "por", "sem", "sob", "sobre", "trás"];
+        return str.toLowerCase().split(' ').map((word, index) => {
+            if (preposicoes.includes(word) && index !== 0) {
+                return word;
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    }
+
+    function formatCurrency(value: string) {
+        if (!value) return ''
+        let v = value.replace(/\D/g, '')
+        if (!v) return ''
+        v = (Number(v) / 100).toFixed(2)
+        v = v.replace('.', ',')
+        v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')
+        return 'R$ ' + v
+    }
+
+    function parseCurrencyToNumber(value: string) {
+        if (!value) return ''
+        return value.replace('R$ ', '').replace(/\./g, '').replace(',', '.')
     }
 
     function formatPhoneInput(value: string) {
@@ -117,6 +145,8 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         try {
             const formData = {
                 ...form,
+                salario_min: parseCurrencyToNumber(form.salario_min),
+                salario_max: parseCurrencyToNumber(form.salario_max),
                 responsabilidades: responsabilidades.filter(r => r.trim()),
                 requisitos: requisitos.filter(r => r.trim()),
                 diferenciais: diferenciais.filter(r => r.trim()),
@@ -187,12 +217,13 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     updateField('json_content', JSON.stringify(json, null, 2))
 
                     // ─── Campos Simples ───
-                    if (json.titulo) updateField('titulo', json.titulo)
-                    if (json.empresa) updateField('empresa', json.empresa)
+                    if (json.titulo) updateField('titulo', toTitleCase(json.titulo))
+                    if (json.empresa) updateField('empresa', toTitleCase(json.empresa))
                     if (json.local) updateField('local', json.local)
                     if (json.descricao) updateField('descricao', json.descricao)
                     if (json.telefone || json.telefone_contato) updateField('telefone_contato', formatPhoneInput(json.telefone || json.telefone_contato))
                     if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', formatPhoneInput(json.whatsapp || json.whatsapp_contato))
+                    
                     if (json.email_contato || json.email) {
                         updateField('email_contato', json.email_contato || json.email)
                     } else if (json.empresa) {
@@ -215,12 +246,17 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     if (json.configuracoes?.status) updateField('status', json.configuracoes.status.toLowerCase())
 
                     // ─── Remuneração ───
-                    const parseBRL = (value: any) => {
-                        if (!value) return ''
-                        return String(value).replace(/\./g, '').replace(',', '.')
+                    const rawMin = json.remuneracao?.minimo
+                    const rawMax = json.remuneracao?.maximo
+                    
+                    if (!rawMin && !rawMax) {
+                        updateField('salario_a_combinar', true)
+                    } else {
+                        updateField('salario_a_combinar', false)
+                        updateField('mostrar_salario', true)
+                        if (rawMin) updateField('salario_min', formatCurrency(String(rawMin).replace(/\./g, '')))
+                        if (rawMax) updateField('salario_max', formatCurrency(String(rawMax).replace(/\./g, '')))
                     }
-                    if (json.remuneracao?.minimo) updateField('salario_min', parseBRL(json.remuneracao.minimo))
-                    if (json.remuneracao?.maximo) updateField('salario_max', parseBRL(json.remuneracao.maximo))
 
                     // ─── Arrays (Responsabilidades, Benefícios...) ───
                     if (Array.isArray(json.responsabilidades) && json.responsabilidades.length) {
@@ -532,10 +568,55 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div style={{ gridColumn: '1 / -1' }}>
                             <label style={labelStyle}>Título da Vaga *</label>
-                            <input
-                                style={inputStyle} placeholder="Ex: Desenvolvedor Front-End React"
-                                value={form.titulo} onChange={e => updateField('titulo', e.target.value)}
-                            />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    style={inputStyle} placeholder="Ex: Desenvolvedor Front-End React"
+                                    value={form.titulo} 
+                                    onChange={e => {
+                                        updateField('titulo', e.target.value)
+                                        setMostrarSugestoesTitulos(true)
+                                    }}
+                                    onFocus={() => setMostrarSugestoesTitulos(true)}
+                                    onBlur={() => setTimeout(() => setMostrarSugestoesTitulos(false), 200)}
+                                />
+                                {mostrarSugestoesTitulos && form.titulo.trim().length > 0 && (
+                                    (() => {
+                                        const search = form.titulo.toLowerCase()
+                                        const filtradas = sugestoesTitulos.filter(t => t.toLowerCase().includes(search) && t.toLowerCase() !== search).slice(0, 5)
+                                        if (filtradas.length === 0) return null;
+                                        return (
+                                            <ul style={{
+                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                background: '#fff', border: '1.5px solid #e8edf5',
+                                                borderRadius: '0 0 10px 10px', marginTop: '-4px',
+                                                boxShadow: '0 4px 12px rgba(9,53,95,0.06)',
+                                                maxHeight: 200, overflowY: 'auto',
+                                                listStyle: 'none', padding: 0, margin: 0, zIndex: 11
+                                            }}>
+                                                {filtradas.map((titulo, i) => (
+                                                    <li
+                                                        key={i}
+                                                        onClick={() => {
+                                                            updateField('titulo', titulo)
+                                                            setMostrarSugestoesTitulos(false)
+                                                        }}
+                                                        style={{
+                                                            padding: '0.65rem 0.85rem', cursor: 'pointer',
+                                                            fontSize: '0.85rem', color: '#374151',
+                                                            borderBottom: i < filtradas.length - 1 ? '1px solid #f1f5f9' : 'none',
+                                                            background: '#fff'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+                                                    >
+                                                        {titulo}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )
+                                    })()
+                                )}
+                            </div>
                         </div>
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
@@ -581,9 +662,19 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                                 {filtradas.map((empresaString, i) => (
                                                     <li
                                                         key={i}
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             updateField('empresa', empresaString)
                                                             setMostrarSugestoes(false)
+                                                            
+                                                            // Auto-preencher contato
+                                                            const dados = await buscarEmpresaPorNome(empresaString) as any
+                                                            if (dados) {
+                                                                if (dados.email_contato) updateField('email_contato', dados.email_contato)
+                                                                if (dados.telefone) updateField('telefone_contato', formatPhoneInput(dados.telefone))
+                                                                if (dados.whatsapp) updateField('whatsapp_contato', formatPhoneInput(dados.whatsapp))
+                                                                if (dados.website) updateField('link_externo', dados.website)
+                                                                if (dados.localizacao) updateField('local', dados.localizacao)
+                                                            }
                                                         }}
                                                         style={{
                                                             padding: '0.65rem 0.85rem', cursor: 'pointer',
@@ -693,15 +784,15 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                         <div>
                             <label style={labelStyle}>Salário Mínimo (R$)</label>
                             <input
-                                type="number" step="0.01" style={inputStyle} placeholder="Ex: 3000.00"
-                                value={form.salario_min} onChange={e => updateField('salario_min', e.target.value)}
+                                style={inputStyle} placeholder="Ex: R$ 3.000,00"
+                                value={form.salario_min} onChange={e => updateField('salario_min', formatCurrency(e.target.value))}
                             />
                         </div>
                         <div>
                             <label style={labelStyle}>Salário Máximo (R$)</label>
                             <input
-                                type="number" step="0.01" style={inputStyle} placeholder="Ex: 5000.00"
-                                value={form.salario_max} onChange={e => updateField('salario_max', e.target.value)}
+                                style={inputStyle} placeholder="Ex: R$ 5.000,00"
+                                value={form.salario_max} onChange={e => updateField('salario_max', formatCurrency(e.target.value))}
                             />
                         </div>
                     </div>

@@ -110,3 +110,21 @@ export async function listarEmpresasPublicas() {
     if (error) return []
     return data || []
 }
+
+export async function buscarEmpresaPorNome(nome: string) {
+    let admin;
+    try {
+        const auth = await requireAdminOrEmpregador();
+        admin = auth.adminClient;
+    } catch {
+        const { createAdminClient } = await import('@/lib/supabase')
+        admin = createAdminClient();
+    }
+    const { data } = await admin
+        .from('empresas')
+        .select('*')
+        .eq('nome_fantasia', nome)
+        .limit(1)
+        .single();
+    return data || null;
+}

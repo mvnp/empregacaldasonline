@@ -58,6 +58,24 @@ async function encontrarEmpresaExistente(
     return data ? data.id : null
 }
 
+export async function buscarTodosTitulosVagas() {
+    let admin;
+    try {
+        const auth = await requireAdminOrEmpregador();
+        admin = auth.adminClient;
+    } catch {
+        const { createAdminClient } = await import('@/lib/supabase')
+        admin = createAdminClient();
+    }
+    const { data } = await admin
+        .from('vagas')
+        .select('titulo')
+        .order('titulo', { ascending: true });
+        
+    if (!data) return [];
+    return Array.from(new Set(data.map((v: any) => v.titulo))).filter(Boolean);
+}
+
 function slugify(text: string) {
     const slug = text
         .toString()
