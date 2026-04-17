@@ -196,39 +196,32 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                 </span>
                                 {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 400}}>(Empresa Vinculada)</span>}
 
-                                {u.tipo === 'candidato' && ((): any => {
+                                {(u.tipo === 'candidato' || u.tipo === 'empregador') && ((): any => {
                                     const cand = (u as any)._candidato;
-                                    const rawVal = cand?.whatsapp || cand?.telefone;
-                                    const clearNum = rawVal ? rawVal.replace(/\D/g, '') : '';
-                                    if(clearNum) {
-                                        return (
-                                            <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                                padding: '2px 8px', borderRadius: 8, background: '#dcfce7', color: '#16a34a',
-                                                fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', border: '1px solid #bbf7d0'
-                                            }}>
-                                                <MessageCircle size={12} /> Chat
-                                            </a>
-                                        )
-                                    }
-                                    return null;
-                                })()}
-                                {u.tipo === 'empregador' && ((): any => {
                                     const emp = (u as any).empresas?.[0];
-                                    const rawVal = emp?.whatsapp || emp?.telefone;
-                                    const clearNum = rawVal ? rawVal.replace(/\D/g, '') : '';
-                                    if(clearNum) {
-                                        return (
-                                            <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                                padding: '2px 8px', borderRadius: 8, background: '#dcfce7', color: '#16a34a',
-                                                fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', border: '1px solid #bbf7d0'
-                                            }}>
-                                                <MessageCircle size={12} /> Chat
-                                            </a>
-                                        )
-                                    }
-                                    return null;
+                                    
+                                    const whatsapp = cand?.whatsapp || emp?.whatsapp;
+                                    const telefone = cand?.telefone || emp?.telefone || u.telefone;
+                                    
+                                    const numFinal = whatsapp || telefone;
+                                    const clearNum = numFinal ? numFinal.replace(/\D/g, '') : '';
+                                    
+                                    if(!clearNum) return null;
+
+                                    const temWhatsApp = !!whatsapp;
+
+                                    return (
+                                        <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                            padding: '2px 8px', borderRadius: 8, 
+                                            background: temWhatsApp ? '#dcfce7' : '#fef3c7', 
+                                            color: temWhatsApp ? '#16a34a' : '#d97706',
+                                            fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', 
+                                            border: `1px solid ${temWhatsApp ? '#bbf7d0' : '#fde68a'}`
+                                        }}>
+                                            <MessageCircle size={12} /> Chat
+                                        </a>
+                                    )
                                 })()}
                             </h3>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#64748b' }}>
