@@ -182,11 +182,21 @@ export default function PerfilPage() {
             // Se candidato em onboarding (etapa 1), avançar para etapa 2
             if (tipoUsuario === 'candidato' && onboarding && !onboarding.perfilCompleto) {
                 await revalidarLayoutAdmin()
-                router.push('/admin/candidatos/cadastrar/ia')
+                const redirect = new URLSearchParams(window.location.search).get('redirect')
+                if (redirect) {
+                    router.push(`/admin/candidatos/cadastrar/ia?redirect=${encodeURIComponent(redirect)}`)
+                } else {
+                    router.push('/admin/candidatos/cadastrar/ia')
+                }
                 return
             }
             setSalvou(true)
-            setTimeout(() => setSalvou(false), 3000)
+            const redirectParam = new URLSearchParams(window.location.search).get('redirect')
+            if (redirectParam) {
+                router.push(redirectParam)
+            } else {
+                setTimeout(() => setSalvou(false), 3000)
+            }
         } else {
             alert(res.error || 'Erro ao salvar. Tente novamente.')
         }

@@ -239,9 +239,11 @@ export default function CadastrarCandidatoIAPage() {
                 // Se estava em onboarding (etapa 2), revalidar e ir para o dashboard
                 if (onboarding && !onboarding.temCurriculo) {
                     await revalidarLayoutAdmin()
-                    window.location.href = '/admin/candidato'
+                    const redirect = new URLSearchParams(window.location.search).get('redirect')
+                    window.location.href = redirect || '/admin/candidato'
                 } else {
-                    window.location.href = '/admin/candidato/listar-curriculos'
+                    const redirect = new URLSearchParams(window.location.search).get('redirect')
+                    window.location.href = redirect || '/admin/candidato/listar-curriculos'
                 }
             } else {
                 window.location.href = '/admin/candidatos'

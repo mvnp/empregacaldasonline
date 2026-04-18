@@ -13,6 +13,7 @@ import CandidatarBotao from '@/components/CandidatarBotao'
 import BannerSpace from '@/components/publicidade/BannerSpace'
 import { verificarCandidatura } from '@/actions/candidaturas'
 import { verificarOnboardingCandidato, getUsuarioLogado } from '@/actions/auth'
+import { redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +71,10 @@ export default async function DetalheVagaCandidatoPage({ params }: { params: Pro
     const isCandidato = user?.tipo === 'candidato';
     const onboardingStatus = isCandidato ? await verificarOnboardingCandidato() : null;
     const onboardingConcluido = isCandidato ? (onboardingStatus?.perfilCompleto && onboardingStatus?.temCurriculo) : false;
+
+    if (isCandidato && !onboardingStatus?.perfilCompleto) {
+        redirect(`/admin/perfil?redirect=/admin/candidato/vagas/${id}`)
+    }
 
     let mostrarContato = false;
     if (user) {

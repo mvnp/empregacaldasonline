@@ -157,6 +157,29 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
         }
     }
 
+    let actionLink = `/login?redirect=/admin/candidato/vagas/${vaga.id}`
+    if (user) {
+        if (isCandidato) {
+            actionLink = `/admin/candidato/vagas/${vaga.id}`
+        } else {
+            actionLink = user.tipo === 'admin' ? '/admin' : '/admin/empregador'
+        }
+    }
+
+    const applyButton = (
+        <Link 
+            href={actionLink} 
+            className="btn-primary" 
+            style={{ 
+                width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: 12, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                boxShadow: '0 8px 25px rgba(254,131,65,0.25)', textDecoration: 'none' 
+            }}
+        >
+            Candidatar-se <Send style={{ width: 16, height: 16 }} />
+        </Link>
+    )
+
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f7fa' }}>
             {/* Header / Navbar adaptado */}
@@ -266,6 +289,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                         isCandidato={isCandidato}
                         whatsAppUrl={whatsAppUrl}
                         mostrarContato={mostrarContato}
+                        actionButton={applyButton}
                     />
                 </div>
             </main>
