@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import FilterSelect from '@/components/admin/FilterSelect'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
 import { atualizarStatusUsuario, atualizarTipoUsuario, excluirUsuario, atualizarSenhaUsuario } from '@/actions/admin_users'
+import { buscarDocumentoPDFDoUsuario, uploadCurriculoPDFExistente } from '@/actions/candidatos'
 import { iniciarImpersonacao } from '@/actions/auth'
 import type { User as UserType } from '@/types/user'
 
@@ -48,6 +49,14 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
     const [novaSenha, setNovaSenha] = useState('')
     const [confirmaSenha, setConfirmaSenha] = useState('')
     const [senhaLoading, setSenhaLoading] = useState(false)
+
+    // PDF states
+    const [pdfCache, setPdfCache] = useState<Record<number, { url: string } | null | 'loading'>>({})
+    const [modalPdfUpload, setModalPdfUpload] = useState<{ userId: number, nome: string } | null>(null)
+    const [pdfUploadFile, setPdfUploadFile] = useState<File | null>(null)
+    const [pdfUploadLoading, setPdfUploadLoading] = useState(false)
+    const [pdfUploadErro, setPdfUploadErro] = useState('')
+    const pdfInputRef = useRef<HTMLInputElement | null>(null)
 
     const filtrados = useMemo(() => {
         return lista.filter(u => {
@@ -128,6 +137,58 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             setConfirmaSenha('')
         } else {
             alert('Erro ao atualizar senha: ' + res.error)
+        }
+    }
+
+    async function handlePdfBotao(userId: number, nome: string) {
+        // Verificar cache
+        if (pdfCache[userId] === 'loading') return
+        
+        if (pdfCache[userId] === undefined) {
+            setPdfCache(prev => ({ ...prev, [userId]: 'loading' }))
+            const result = await buscarDocumentoPDFDoUsuario(userId)
+            setPdfCache(prev => ({ ...prev, [userId]: result ? { url: result.url } : null }))
+            
+            if (result) {
+                window.open(result.url, '_blank')
+            } else {
+                setModalPdfUpload({ userId, nome })
+            }
+        } else if (pdfCache[userId] === null) {
+            setModalPdfUpload({ userId, nome })
+        } else if (pdfCache[userId] && (pdfCache[userId] as any).url) {
+            window.open((pdfCache[userId] as any).url, '_blank')
+        }
+    }
+
+    async function handleUploadPdf() {
+        if (!pdfUploadFile || !modalPdfUpload) return
+        setPdfUploadErro('')
+        setPdfUploadLoading(true)
+
+        try {
+            const reader = new FileReader()
+            reader.onload = async () => {
+                const base64 = (reader.result as string).split(',')[1]
+                const res = await uploadCurriculoPDFExistente(modalPdfUpload.userId, base64, pdfUploadFile.name)
+                setPdfUploadLoading(false)
+                if (res.success) {
+                    setPdfCache(prev => ({ ...prev, [modalPdfUpload.userId]: { url: (res as any).url || '' } }))
+                    setModalPdfUpload(null)
+                    setPdfUploadFile(null)
+                    alert('Currículo PDF enviado com sucesso!')
+                } else {
+                    setPdfUploadErro((res as any).error || 'Erro ao enviar PDF.')
+                }
+            }
+            reader.onerror = () => {
+                setPdfUploadLoading(false)
+                setPdfUploadErro('Erro ao ler o arquivo.')
+            }
+            reader.readAsDataURL(pdfUploadFile)
+        } catch (e: any) {
+            setPdfUploadLoading(false)
+            setPdfUploadErro(e.message || 'Erro inesperado.')
         }
     }
 
@@ -221,6 +282,35 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                         }}>
                                             <MessageCircle size={12} /> Chat
                                         </a>
+                                    )
+                                })()}
+
+                                {u.tipo === 'candidato' && (() => {
+                                    const isLoading = pdfCache[u.id] === 'loading'
+                                    const temPdf = pdfCache[u.id] !== null && pdfCache[u.id] !== undefined && pdfCache[u.id] !== 'loading'
+                                    return (
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePdfBotao(u.id, `${u.nome} ${u.sobrenome}`)}
+                                            title={temPdf ? 'Baixar currículo PDF' : 'Upload de currículo PDF'}
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                padding: '2px 8px', borderRadius: 8,
+                                                background: temPdf ? '#eff6ff' : '#f8fafc',
+                                                color: temPdf ? '#2563eb' : '#94a3b8',
+                                                fontSize: '0.7rem', fontWeight: 700,
+                                                border: `1px solid ${temPdf ? '#bfdbfe' : '#e2e8f0'}`,
+                                                cursor: isLoading ? 'wait' : 'pointer',
+                                            }}
+                                        >
+                                            {isLoading
+                                                ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                                : temPdf
+                                                    ? <FileText size={12} />
+                                                    : <Upload size={12} />
+                                            }
+                                            {isLoading ? '...' : 'PDF'}
+                                        </button>
                                     )
                                 })()}
                             </h3>
@@ -327,6 +417,79 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                     </div>
                 </div>
             )}
+
+            {/* Modal Upload PDF */}
+            {modalPdfUpload && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                    zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+                }}>
+                    <div style={{ background: '#fff', borderRadius: 16, padding: '0', width: '100%', maxWidth: 480, boxShadow: '0 10px 40px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e8edf5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+                            <h3 style={{ margin: 0, color: '#09355F', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Upload size={18} style={{ color: '#2563eb' }} />
+                                Upload de Currículo PDF
+                            </h3>
+                            <button onClick={() => { setModalPdfUpload(null); setPdfUploadFile(null); setPdfUploadErro('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                                <X size={22} />
+                            </button>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
+                                Envie o PDF do currículo para <strong>{modalPdfUpload.nome}</strong>
+                            </p>
+                            {pdfUploadErro && (
+                                <div style={{ padding: '0.6rem 0.85rem', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: '0.82rem', marginBottom: '0.75rem', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <AlertCircle size={13} />{pdfUploadErro}
+                                </div>
+                            )}
+                            <div
+                                onClick={() => pdfInputRef.current?.click()}
+                                style={{
+                                    border: `2px dashed ${pdfUploadFile ? '#22c55e' : '#cbd5e1'}`,
+                                    borderRadius: 12, padding: '1.75rem',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem',
+                                    background: pdfUploadFile ? '#f0fdf4' : '#f8fafc',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <input
+                                    ref={pdfInputRef}
+                                    type="file" accept="application/pdf" style={{ display: 'none' }}
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) { if (f.type !== 'application/pdf') { setPdfUploadErro('Apenas PDFs.'); return } setPdfUploadErro(''); setPdfUploadFile(f) } }}
+                                />
+                                {pdfUploadFile ? (
+                                    <>
+                                        <FileText size={28} style={{ color: '#16a34a' }} />
+                                        <p style={{ fontWeight: 700, color: '#16a34a', fontSize: '0.875rem', textAlign: 'center' }}>{pdfUploadFile.name}</p>
+                                        <p style={{ fontSize: '0.72rem', color: '#64748b' }}>Clique para trocar</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={28} style={{ color: '#94a3b8' }} />
+                                        <p style={{ fontWeight: 600, color: '#64748b', fontSize: '0.875rem', textAlign: 'center' }}>Clique para selecionar o PDF</p>
+                                        <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Máximo 10 MB</p>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e8edf5', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                            <button type="button" onClick={() => { setModalPdfUpload(null); setPdfUploadFile(null); setPdfUploadErro('') }} style={{ padding: '0.5rem 1rem', borderRadius: 8, background: '#f1f5f9', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>Cancelar</button>
+                            <button
+                                type="button"
+                                disabled={!pdfUploadFile || pdfUploadLoading}
+                                onClick={handleUploadPdf}
+                                style={{ padding: '0.5rem 1.25rem', borderRadius: 8, background: (!pdfUploadFile || pdfUploadLoading) ? '#94a3b8' : '#09355F', color: '#fff', border: 'none', cursor: (!pdfUploadFile || pdfUploadLoading) ? 'not-allowed' : 'pointer', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            >
+                                {pdfUploadLoading ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Enviando...</> : <><Upload size={13} /> Enviar PDF</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CSS para spinner */}
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
     )
 }

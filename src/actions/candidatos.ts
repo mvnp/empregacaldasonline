@@ -400,3 +400,297 @@ export async function listarMeusCurriculos(userId: number) {
 
     return data || []
 }
+
+// ── Helpers de sanitização ──
+function sanitizarTelefone(tel: string | null | undefined): string {
+    if (!tel) return ''
+    return tel.replace(/\D/g, '')
+}
+
+function sanitizarEmail(email: string | null | undefined): string {
+    if (!email) return ''
+    return email.trim().toLowerCase()
+}
+
+// ── Cadastrar Candidato via PDF (IA) ──
+export interface CandidatoPDFData {
+    // Dados pessoais extraídos do PDF
+    nome: string
+    sobrenome: string
+    email: string | null
+    data_nascimento: string | null
+    cpf: string | null
+    telefone: string | null
+    whatsapp: string | null
+    // Dados do currículo
+    cargo_desejado: string
+    resumo: string
+    local: string | null
+    linkedin: string | null
+    github: string | null
+    portfolio: string | null
+    habilidades: string[]
+    experiencias: ExperienciaItem[]
+    formacoes: FormacaoItem[]
+    idiomas: IdiomaItem[]
+    // PDF storage
+    pdfBase64: string
+    pdfNomeOriginal: string
+}
+
+export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return { success: false, error: 'Você precisa estar logado.' }
+
+    const admin = createAdminClient()
+
+    // Verificar se é admin
+    const { data: adminUser } = await admin.from('users').select('id, tipo').eq('auth_id', authUser.id).single() as { data: any, error: any }
+    if (!adminUser || adminUser.tipo !== 'admin') {
+        return { success: false, error: 'Apenas administradores podem usar esta funcionalidade.' }
+    }
+
+    // ── 1. ARMAZENAR O PDF NO STORAGE ──
+    let pdfStoragePath: string | null = null
+    let pdfPublicUrl: string | null = null
+
+    try {
+        const pdfBuffer = Buffer.from(dados.pdfBase64, 'base64')
+        const nomeArquivo = `${Date.now()}_${dados.pdfNomeOriginal.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+        const storagePath = `arquivos/${nomeArquivo}`
+
+        const { data: uploadData, error: uploadError } = await admin.storage
+            .from('curriculos')
+            .upload(storagePath, pdfBuffer, {
+                contentType: 'application/pdf',
+                upsert: false
+            })
+
+        if (!uploadError && uploadData) {
+            pdfStoragePath = uploadData.path
+            const { data: urlData } = admin.storage.from('curriculos').getPublicUrl(storagePath)
+            pdfPublicUrl = urlData?.publicUrl || null
+        }
+    } catch (e) {
+        console.error('Erro ao armazenar PDF:', e)
+        // Não bloqueia o fluxo — apenas loga
+    }
+
+    // ── 2. SANITIZAR E BUSCAR USUÁRIO EXISTENTE ──
+    const emailSanitizado = sanitizarEmail(dados.email)
+    const telefoneSanitizado = sanitizarTelefone(dados.telefone)
+    const whatsappSanitizado = sanitizarTelefone(dados.whatsapp)
+
+    let userId: number | null = null
+    let userExistente = false
+
+    // Buscar por e-mail primeiro
+    if (emailSanitizado) {
+        const { data: userPorEmail } = await admin.from('users').select('id').ilike('email', emailSanitizado).maybeSingle() as { data: any }
+        if (userPorEmail) {
+            userId = userPorEmail.id
+            userExistente = true
+        }
+    }
+
+    // Buscar por telefone / whatsapp / celular se não encontrou por email
+    if (!userId && (telefoneSanitizado || whatsappSanitizado)) {
+        const numerosParaBuscar = [telefoneSanitizado, whatsappSanitizado].filter(Boolean)
+        for (const num of numerosParaBuscar) {
+            // Busca na tabela users (telefone, celular)
+            const { data: userPorTel } = await admin.from('users')
+                .select('id')
+                .or(`telefone.ilike.%${num}%,celular.ilike.%${num}%`)
+                .maybeSingle() as { data: any }
+            if (userPorTel) { userId = userPorTel.id; userExistente = true; break }
+
+            // Busca na tabela candidatos (telefone, whatsapp)
+            const { data: candPorTel } = await admin.from('candidatos')
+                .select('user_id')
+                .or(`telefone.ilike.%${num}%,whatsapp.ilike.%${num}%`)
+                .maybeSingle() as { data: any }
+            if (candPorTel) { userId = candPorTel.user_id; userExistente = true; break }
+        }
+    }
+
+    // ── 3. CRIAR USUÁRIO SE NÃO EXISTE ──
+    if (!userId) {
+        // Gerar e-mail único para auth
+        const nomeSlug = `${dados.nome}${dados.sobrenome}`.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)
+        const emailAuth = emailSanitizado || `${nomeSlug}_${Date.now()}@eco.com.br`
+        const senhaTemp = `Eco@${Date.now().toString().slice(-6)}`
+
+        // Criar na auth do Supabase
+        const { data: authData, error: authError } = await admin.auth.admin.createUser({
+            email: emailAuth,
+            password: senhaTemp,
+            email_confirm: true,
+        })
+
+        if (authError || !authData.user) {
+            return { success: false, error: `Erro ao criar usuário na auth: ${authError?.message || 'Desconhecido'}` }
+        }
+
+        // Criar na tabela users
+        const { data: novoUser, error: userError } = await admin.from('users').insert({
+            auth_id: authData.user.id,
+            tipo: 'candidato',
+            nome: dados.nome.trim(),
+            sobrenome: dados.sobrenome?.trim() || null,
+            email: emailAuth,
+            telefone: dados.telefone?.trim() || null,
+            celular: dados.whatsapp?.trim() || null,
+            data_nascimento: dados.data_nascimento || null,
+            cpf: dados.cpf || null,
+            status: 'ativo',
+        } as any).select('id').single() as { data: any, error: any }
+
+        if (userError || !novoUser) {
+            // Rollback da auth
+            await admin.auth.admin.deleteUser(authData.user.id)
+            return { success: false, error: `Erro ao criar usuário: ${userError?.message || 'Desconhecido'}` }
+        }
+
+        userId = novoUser.id
+    }
+
+    // ── 4. INSERIR O CURRÍCULO (candidatos) ──
+    const nomeCompleto = `${dados.nome} ${dados.sobrenome}`.trim()
+    const emailCurriculo = emailSanitizado || `candidato_${userId}@eco.com.br`
+
+    const { data: candidato, error: candError } = await admin.from('candidatos').insert({
+        user_id: userId,
+        nome_completo: nomeCompleto,
+        cargo_desejado: dados.cargo_desejado?.trim() || null,
+        resumo: dados.resumo?.trim() || null,
+        local: dados.local?.trim() || null,
+        data_nascimento: dados.data_nascimento || null,
+        email: emailCurriculo,
+        telefone: dados.telefone?.trim() || null,
+        whatsapp: dados.whatsapp?.trim() || null,
+        linkedin: dados.linkedin?.trim() || null,
+        portfolio: dados.portfolio?.trim() || null,
+        github: dados.github?.trim() || null,
+        disponivel: true,
+    } as any).select('id').single() as { data: any, error: any }
+
+    if (candError || !candidato) {
+        const msg = candError?.message?.includes('candidatos_user_id_key')
+            ? 'O banco rejeitou múltiplos currículos. Rode: ALTER TABLE candidatos DROP CONSTRAINT candidatos_user_id_key;'
+            : `Erro ao criar currículo: ${candError?.message || 'Desconhecido'}`
+        return { success: false, error: msg }
+    }
+
+    const candId = candidato.id
+
+    // ── 5. INSERIR DADOS RELACIONADOS ──
+    const exps = (dados.experiencias || []).filter(e => e.cargo?.trim() && e.empresa?.trim())
+        .map((e, idx) => ({
+            candidato_id: candId, cargo: e.cargo.trim(), empresa: e.empresa.trim(),
+            descricao: e.descricao?.trim() || null, data_inicio: e.data_inicio || null,
+            data_fim: e.em_andamento ? null : (e.data_fim || null), em_andamento: e.em_andamento, ordem: idx,
+        }))
+    if (exps.length > 0) await admin.from('candidato_experiencias').insert(exps as any)
+
+    const forms = (dados.formacoes || []).filter(f => f.curso?.trim() && f.instituicao?.trim())
+        .map((f, idx) => ({
+            candidato_id: candId, curso: f.curso.trim(), instituicao: f.instituicao.trim(),
+            grau: f.grau?.trim() || null, data_inicio: f.data_inicio || null,
+            data_fim: f.em_andamento ? null : (f.data_fim || null), em_andamento: f.em_andamento, ordem: idx,
+        }))
+    if (forms.length > 0) await admin.from('candidato_formacoes').insert(forms as any)
+
+    const habs = (dados.habilidades || []).filter(h => h?.trim())
+        .map((h, idx) => ({ candidato_id: candId, texto: h.trim(), ordem: idx }))
+    if (habs.length > 0) await admin.from('candidato_habilidades').insert(habs as any)
+
+    const idiomas = (dados.idiomas || []).filter(i => i.idioma?.trim())
+        .map((i, idx) => ({ candidato_id: candId, idioma: i.idioma.trim(), nivel: i.nivel || null, ordem: idx }))
+    if (idiomas.length > 0) await admin.from('candidato_idiomas').insert(idiomas as any)
+
+    // ── 6. REGISTRAR DOCUMENTO PDF NA TABELA candidato_documentos ──
+    if (pdfPublicUrl || pdfStoragePath) {
+        await admin.from('candidato_documentos').insert({
+            candidato_id: candId,
+            titulo: 'Currículo (PDF)',
+            tipo: 'PDF',
+            url: pdfPublicUrl || pdfStoragePath,
+            ordem: 0,
+        } as any)
+    }
+
+    return {
+        success: true,
+        candidatoId: candId,
+        userId,
+        userExistente,
+    }
+}
+
+// ── Buscar currículo PDF de um usuário (para /admin/usuarios) ──
+export async function buscarDocumentoPDFDoUsuario(userId: number): Promise<{ url: string, candidatoId: number } | null> {
+    try {
+        const admin = createAdminClient()
+        const { data } = await admin.from('candidatos')
+            .select('id, candidato_documentos(url, tipo, titulo)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle() as { data: any }
+
+        if (!data) return null
+        const docs: any[] = data.candidato_documentos || []
+        const pdfDoc = docs.find((d: any) => d.tipo === 'PDF' || d.titulo?.toLowerCase().includes('pdf') || d.url?.toLowerCase().endsWith('.pdf'))
+        if (!pdfDoc) return null
+        return { url: pdfDoc.url, candidatoId: data.id }
+    } catch { return null }
+}
+
+// ── Upload de currículo PDF para usuário existente (modal /admin/usuarios) ──
+export async function uploadCurriculoPDFExistente(userId: number, base64PDF: string, nomeOriginal: string) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return { success: false, error: 'Não autenticado.' }
+
+    const admin = createAdminClient()
+    const { data: adminUser } = await admin.from('users').select('id, tipo').eq('auth_id', authUser.id).single() as { data: any }
+    if (!adminUser || adminUser.tipo !== 'admin') return { success: false, error: 'Apenas admins.' }
+
+    try {
+        const pdfBuffer = Buffer.from(base64PDF, 'base64')
+        const safe = nomeOriginal.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const storagePath = `arquivos/${Date.now()}_${safe}`
+
+        const { data: uploadData, error: uploadError } = await admin.storage
+            .from('curriculos').upload(storagePath, pdfBuffer, { contentType: 'application/pdf', upsert: false })
+
+        if (uploadError) return { success: false, error: uploadError.message }
+
+        const { data: urlData } = admin.storage.from('curriculos').getPublicUrl(uploadData.path)
+        const publicUrl = urlData?.publicUrl || null
+
+        // Buscar ou criar candidato para esse user
+        let { data: cand } = await admin.from('candidatos').select('id').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle() as { data: any }
+        if (!cand) {
+            const { data: u } = await admin.from('users').select('nome, sobrenome, email').eq('id', userId).single() as { data: any }
+            const { data: newCand } = await admin.from('candidatos').insert({
+                user_id: userId,
+                nome_completo: `${u?.nome || ''} ${u?.sobrenome || ''}`.trim(),
+                email: u?.email || `candidato_${userId}@eco.com.br`,
+                disponivel: true,
+            } as any).select('id').single() as { data: any }
+            cand = newCand
+        }
+
+        if (!cand) return { success: false, error: 'Erro ao localizar/criar currículo.' }
+
+        await admin.from('candidato_documentos').insert({
+            candidato_id: cand.id, titulo: 'Currículo (PDF)', tipo: 'PDF', url: publicUrl || storagePath, ordem: 0,
+        } as any)
+
+        return { success: true, url: publicUrl }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}

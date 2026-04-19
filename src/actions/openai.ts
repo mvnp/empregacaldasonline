@@ -354,6 +354,144 @@ export async function gerarObjetivoComIA(cargo: string): Promise<{ success: true
     }
 }
 
+export async function extrairDadosCurriculoPDF(base64PDF: string): Promise<{ success: true, data: any } | { success: false, error: string }> {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada no banco de dados. Acesse as Configurações.' }
+    }
+
+    try {
+        // Converter base64 para buffer
+        const pdfBuffer = Buffer.from(base64PDF, 'base64')
+        const blob = new Blob([pdfBuffer], { type: 'application/pdf' })
+
+        // 1. Fazer upload do PDF para a API de Files da OpenAI
+        const formData = new FormData()
+        formData.append('file', blob, 'curriculo.pdf')
+        formData.append('purpose', 'assistants')
+
+        const uploadRes = await fetch('https://api.openai.com/v1/files', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${config.openai_token}` },
+            body: formData,
+        })
+
+        if (!uploadRes.ok) {
+            const err = await uploadRes.json()
+            await gravarLog('Erro upload PDF OpenAI', err)
+            return { success: false, error: err.error?.message || 'Erro ao enviar PDF para a OpenAI.' }
+        }
+
+        const uploadedFile = await uploadRes.json()
+        const fileId = uploadedFile.id
+
+        // 2. Chamar responses API com file_search ou via messages
+        const promptTexto = `Você é um especialista em análise de currículos. Leia o arquivo PDF de currículo anexado e extraia as seguintes informações em formato JSON estrito.
+
+RETORNE SOMENTE um JSON válido com esta estrutura exata (sem markdown, sem explicações):
+{
+  "nome": "Primeiro nome do candidato",
+  "sobrenome": "Restante do nome (tudo após o primeiro nome)",
+  "email": "email@exemplo.com ou null se não encontrado",
+  "data_nascimento": "YYYY-MM-DD ou null se não encontrado",
+  "cpf": "000.000.000-00 ou null se não encontrado",
+  "telefone": "número de telefone ou null",
+  "whatsapp": "número de whatsapp ou null (pode ser o mesmo que telefone)",
+  "cargo_desejado": "cargo/título profissional do candidato",
+  "resumo": "resumo profissional se presente no currículo, caso contrário string vazia",
+  "local": "cidade e estado se informado, ex: São Paulo, SP",
+  "linkedin": "URL do linkedin ou null",
+  "github": "URL do github ou null",
+  "portfolio": "URL do portfolio ou null",
+  "habilidades": ["habilidade1", "habilidade2"],
+  "experiencias": [
+    {
+      "cargo": "Cargo ocupado",
+      "empresa": "Nome da empresa",
+      "descricao": "Descrição das atividades",
+      "data_inicio": "YYYY-MM-DD",
+      "data_fim": "YYYY-MM-DD ou null se em andamento",
+      "em_andamento": false
+    }
+  ],
+  "formacoes": [
+    {
+      "curso": "Nome do curso",
+      "instituicao": "Nome da instituição",
+      "grau": "graduacao",
+      "data_inicio": "YYYY-MM-DD",
+      "data_fim": "YYYY-MM-DD ou null se em andamento",
+      "em_andamento": false
+    }
+  ],
+  "idiomas": [
+    { "idioma": "Inglês", "nivel": "intermediario" }
+  ]
+}
+
+Para o campo "grau" use apenas: sem_alfabetizacao, ensino_fundamental, ensino_medio, tecnico, graduacao, pos-graduacao, mestrado, doutorado, mba, outro
+Para o campo "nivel" de idioma use apenas: basico, intermediario, avancado, fluente, nativo
+Se uma informação não estiver presente, use null ou array vazio [].`
+
+        const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: promptTexto },
+                            {
+                                type: 'file',
+                                file: { file_id: fileId }
+                            }
+                        ]
+                    }
+                ],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 15000 } : { max_tokens: 4000 } ),
+                response_format: { type: 'json_object' }
+            })
+        })
+
+        // Deletar arquivo após uso
+        fetch(`https://api.openai.com/v1/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${config.openai_token}` }
+        }).catch(() => {})
+
+        if (!chatRes.ok) {
+            const err = await chatRes.json()
+            await gravarLog('Erro chat PDF OpenAI', err)
+            return { success: false, error: err.error?.message || 'Erro ao processar PDF na OpenAI.' }
+        }
+
+        const chatData = await chatRes.json()
+        const content = chatData.choices?.[0]?.message?.content
+
+        if (chatData.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', chatData.usage.prompt_tokens, chatData.usage.completion_tokens)
+        }
+
+        if (!content) {
+            await gravarLog('PDF - Conteúdo vazio da IA', chatData)
+            return { success: false, error: 'A IA não retornou dados do currículo. Tente novamente.' }
+        }
+
+        let rawStr = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim()
+        const parsed = JSON.parse(rawStr)
+
+        return { success: true, data: parsed }
+    } catch (e: any) {
+        await gravarLog('Erro extrairDadosCurriculoPDF', e.message)
+        return { success: false, error: e.message || 'Erro inesperado ao processar o PDF.' }
+    }
+}
+
 export async function gerarDadosCurriculoComIA(payload: any): Promise<{ success: true, data: any } | { success: false, error: string }> {
     const check = await verificarCreditoCandidato()
     if (!check.success) return { success: false, error: check.error || 'Saldo insuficiente' }
