@@ -572,7 +572,7 @@ export async function extrairDadosCurriculoPDF(base64PDF: string): Promise<{ suc
         const fileId = uploadedFile.id
 
         // 2. Chamar responses API com file_search ou via messages
-        const promptTexto = `Você é um especialista em análise de currículos. Leia o arquivo PDF de currículo anexado e extraia as seguintes informações em formato JSON estrito.
+        const promptTexto = `Você é um especialista em análise de currículos. Leia TODO o arquivo PDF anexado (ATENÇÃO: O documento pode possuir múltiplas páginas, não leia apenas a primeira) e extraia de FORMA COMPLETA as seguintes informações em formato JSON estrito.
 
 RETORNE SOMENTE um JSON válido com esta estrutura exata (sem markdown, sem explicações):
 {
