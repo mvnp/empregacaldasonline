@@ -92,13 +92,39 @@ export default function CurriculoPublicoClient({ candidato }: { candidato: any }
 
     return (
         <div style={{ background: t.bg, minHeight: '100vh', transition: 'background 0.3s' }}>
+            <style dangerouslySetInnerHTML={{__html: `
+                .curriculo-grid {
+                    display: grid;
+                    grid-template-columns: minmax(280px, 320px) 1fr;
+                    gap: 1.25rem;
+                    align-items: start;
+                }
+                .curriculo-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                @media (max-width: 768px) {
+                    .curriculo-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    .curriculo-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 1rem;
+                    }
+                    .curriculo-header button {
+                        align-self: flex-end;
+                        margin-top: -3.5rem;
+                    }
+                }
+            `}} />
             <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1rem' }}>
 
                 {/* ── Header ── */}
-                <div style={{
+                <div className="curriculo-header" style={{
                     background: t.headerBg, border: `1.5px solid ${t.cardBorder}`,
                     borderRadius: 14, padding: '1.25rem 1.5rem', marginBottom: '1.5rem',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     transition: 'background 0.3s, border-color 0.3s',
                 }}>
                     <div>
@@ -128,7 +154,7 @@ export default function CurriculoPublicoClient({ candidato }: { candidato: any }
                     </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 320px) 1fr', gap: '1.25rem', alignItems: 'start' }}>
+                <div className="curriculo-grid">
 
                     {/* ── Sidebar ── */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
