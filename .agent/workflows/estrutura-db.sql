@@ -267,6 +267,22 @@ CREATE TABLE public.ia_creditos (
   CONSTRAINT ia_creditos_pkey PRIMARY KEY (user_id),
   CONSTRAINT ia_creditos_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.interview_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  phone text NOT NULL UNIQUE,
+  step integer DEFAULT 0,
+  nome text,
+  idate text,
+  genero text,
+  escolaridade text,
+  cargo text,
+  experiencia text,
+  motivacao text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  experiencias_profissionais text,
+  CONSTRAINT interview_sessions_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.openai_config (
   user_id uuid NOT NULL,
   openai_token text NOT NULL,
@@ -296,6 +312,31 @@ CREATE TABLE public.portal_config (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT portal_config_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.pub_click_logs (
+  id bigint NOT NULL DEFAULT nextval('pub_click_logs_id_seq'::regclass),
+  empresa_id integer NOT NULL,
+  pub_id integer NOT NULL,
+  formato text NOT NULL,
+  page text NOT NULL,
+  ip text NOT NULL,
+  user_id bigint,
+  clicked_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pub_click_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT pub_click_logs_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
+  CONSTRAINT pub_click_logs_pub_id_fkey FOREIGN KEY (pub_id) REFERENCES public.empresa_pubs(id),
+  CONSTRAINT pub_click_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.pub_click_stats (
+  id bigint NOT NULL DEFAULT nextval('pub_click_stats_id_seq'::regclass),
+  empresa_id integer NOT NULL,
+  pub_id integer NOT NULL,
+  formato text NOT NULL,
+  clicks bigint NOT NULL DEFAULT 1,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pub_click_stats_pkey PRIMARY KEY (id),
+  CONSTRAINT pub_click_stats_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
+  CONSTRAINT pub_click_stats_pub_id_fkey FOREIGN KEY (pub_id) REFERENCES public.empresa_pubs(id)
 );
 CREATE TABLE public.user_enderecos (
   user_id bigint NOT NULL,
@@ -409,33 +450,9 @@ CREATE TABLE public.vagas (
   whatsapp text,
   json_content jsonb,
   salario_a_combinar boolean DEFAULT false,
+  slug text,
+  tipo_pagamento text,
   CONSTRAINT vagas_pkey PRIMARY KEY (id),
   CONSTRAINT vagas_criado_por_fkey FOREIGN KEY (criado_por) REFERENCES public.users(id),
   CONSTRAINT vagas_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id)
-);
-CREATE TABLE public.pub_click_logs (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  empresa_id integer NOT NULL,
-  pub_id integer NOT NULL,
-  formato text NOT NULL,
-  page text NOT NULL,
-  ip text NOT NULL,
-  user_id bigint,
-  clicked_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT pub_click_logs_pkey PRIMARY KEY (id),
-  CONSTRAINT pub_click_logs_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id) ON DELETE CASCADE,
-  CONSTRAINT pub_click_logs_pub_id_fkey FOREIGN KEY (pub_id) REFERENCES public.empresa_pubs(id) ON DELETE CASCADE,
-  CONSTRAINT pub_click_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL
-);
-CREATE TABLE public.pub_click_stats (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  empresa_id integer NOT NULL,
-  pub_id integer NOT NULL,
-  formato text NOT NULL,
-  clicks bigint NOT NULL DEFAULT 1,
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT pub_click_stats_pkey PRIMARY KEY (id),
-  CONSTRAINT uq_pub_click_stats_pub_formato UNIQUE (pub_id, formato),
-  CONSTRAINT pub_click_stats_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id) ON DELETE CASCADE,
-  CONSTRAINT pub_click_stats_pub_id_fkey FOREIGN KEY (pub_id) REFERENCES public.empresa_pubs(id) ON DELETE CASCADE
 );
