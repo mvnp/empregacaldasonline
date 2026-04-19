@@ -754,3 +754,24 @@ Retorne SOMENTE um JSON válido com a seguinte estrutura estrita:
         return { success: false, error: e.message || 'Erro na IA ao gerar currículo.' }
     }
 }
+
+export async function listarLogsIA(pagina: number = 1) {
+    try {
+        await requireAdmin()
+        const adminClient = createAdminClient()
+        const POR_PAGINA = 30
+        const offset = (pagina - 1) * POR_PAGINA
+
+        const { data: logs, error, count } = await (adminClient
+            .from('openai_usage_logs') as any)
+            .select('id, user_id, model, prompt_tokens, completion_tokens, total_tokens, cost_usd, created_at', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + POR_PAGINA - 1)
+
+        if (error) return { success: false, error: error.message, logs: [], total: 0 }
+
+        return { success: true, logs: logs || [], total: count || 0 }
+    } catch (e: any) {
+        return { success: false, error: e.message, logs: [], total: 0 }
+    }
+}

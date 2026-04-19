@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     Briefcase, Users, FileText, TrendingUp, TrendingDown,
-    Download, Calendar, Building2, Award, BarChart3, Target
+    Download, Calendar, Building2, Award, BarChart3, Target, Cpu, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -15,6 +15,7 @@ import {
     RELATORIO_TOP_EMPRESAS, RELATORIO_AREAS_BUSCADAS
 } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
+import { listarLogsIA } from '@/actions/openai'
 
 const PERIODOS = [
     { value: '7d', label: 'Últimos 7 dias' },
@@ -50,6 +51,26 @@ const tooltipStyle: React.CSSProperties = {
 
 export default function RelatoriosPage() {
     const [periodo, setPeriodo] = useState('30d')
+
+    // ── Logs de consumo da IA ──
+    const [iaLogs, setIaLogs] = useState<any[]>([])
+    const [iaTotal, setIaTotal] = useState(0)
+    const [iaPagina, setIaPagina] = useState(1)
+    const [iaLoading, setIaLoading] = useState(true)
+    const IA_POR_PAGINA = 30
+
+    useEffect(() => {
+        setIaLoading(true)
+        listarLogsIA(iaPagina).then(res => {
+            setIaLogs(res.logs || [])
+            setIaTotal(res.total || 0)
+            setIaLoading(false)
+        })
+    }, [iaPagina])
+
+    const iaTotalPaginas = Math.ceil(iaTotal / IA_POR_PAGINA)
+    const iaCustoTotal = iaLogs.reduce((acc, l) => acc + (Number(l.cost_usd) || 0), 0)
+    const iaTokensTotal = iaLogs.reduce((acc, l) => acc + (Number(l.total_tokens) || 0), 0)
 
     const totalCandidaturas = RELATORIO_STATUS_CANDIDATURAS.reduce((a, b) => a + b.valor, 0)
 
@@ -379,6 +400,138 @@ export default function RelatoriosPage() {
                         })}
                     </div>
                 </div>
+            </div>
+
+            {/* ── Tabela de consumo da IA ── */}
+            <div style={{ ...sectionStyle, marginTop: '1.25rem' }}>
+                <div style={{ ...sectionHeaderStyle, justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Cpu style={{ width: 18, height: 18, color: '#7c3aed' }} />
+                        <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#09355F', margin: 0 }}>Consumo da IA (OpenAI)</h2>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            Tokens nesta pág.: <strong style={{ color: '#09355F' }}>{iaTokensTotal.toLocaleString('pt-BR')}</strong>
+                        </span>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            Custo nesta pág.: <strong style={{ color: '#16a34a' }}>US$ {iaCustoTotal.toFixed(6)}</strong>
+                        </span>
+                        <span style={{
+                            fontSize: '0.72rem', background: '#f5f3ff', color: '#7c3aed',
+                            padding: '0.25rem 0.6rem', borderRadius: 6, fontWeight: 600,
+                        }}>
+                            {iaTotal} registros no total
+                        </span>
+                    </div>
+                </div>
+
+                {/* Tabela */}
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #e8edf5' }}>
+                                {['Data / Hora', 'Modelo', 'Tokens Entrada', 'Tokens Saída', 'Total Tokens', 'Custo (USD)'].map(h => (
+                                    <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {iaLoading ? (
+                                <tr>
+                                    <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+                                        <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid #e2e8f0', borderTopColor: '#7c3aed', borderRadius: '50%', animation: 'spin 0.7s linear infinite', marginRight: 8, verticalAlign: 'middle' }} />
+                                        Carregando...
+                                    </td>
+                                </tr>
+                            ) : iaLogs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Nenhum registro encontrado.</td>
+                                </tr>
+                            ) : iaLogs.map((log: any, i: number) => (
+                                <tr key={log.id} style={{
+                                    borderBottom: '1px solid #f0f4f8',
+                                    background: i % 2 === 0 ? '#fff' : '#fafbfd',
+                                    transition: 'background 0.15s',
+                                }}>
+                                    <td style={{ padding: '0.65rem 1rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                        {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </td>
+                                    <td style={{ padding: '0.65rem 1rem' }}>
+                                        <span style={{
+                                            display: 'inline-block', padding: '0.15rem 0.55rem', borderRadius: 6,
+                                            background: '#f5f3ff', color: '#7c3aed', fontWeight: 700, fontSize: '0.72rem',
+                                        }}>{log.model}</span>
+                                    </td>
+                                    <td style={{ padding: '0.65rem 1rem', color: '#475569', textAlign: 'right' }}>
+                                        {Number(log.prompt_tokens).toLocaleString('pt-BR')}
+                                    </td>
+                                    <td style={{ padding: '0.65rem 1rem', color: '#475569', textAlign: 'right' }}>
+                                        {Number(log.completion_tokens).toLocaleString('pt-BR')}
+                                    </td>
+                                    <td style={{ padding: '0.65rem 1rem', fontWeight: 700, color: '#09355F', textAlign: 'right' }}>
+                                        {Number(log.total_tokens).toLocaleString('pt-BR')}
+                                    </td>
+                                    <td style={{ padding: '0.65rem 1rem', textAlign: 'right' }}>
+                                        <span style={{ fontWeight: 700, color: Number(log.cost_usd) > 0.01 ? '#dc2626' : '#16a34a' }}>
+                                            US$ {Number(log.cost_usd).toFixed(6)}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Paginação */}
+                {iaTotalPaginas > 1 && (
+                    <div style={{
+                        padding: '0.85rem 1.25rem', borderTop: '1px solid #e8edf5',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem',
+                    }}>
+                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            Página {iaPagina} de {iaTotalPaginas}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={() => setIaPagina(p => Math.max(1, p - 1))}
+                                disabled={iaPagina === 1}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                    padding: '0.4rem 0.75rem', borderRadius: 8,
+                                    border: '1px solid #e2e8f0', background: iaPagina === 1 ? '#f8fafc' : '#fff',
+                                    color: iaPagina === 1 ? '#cbd5e1' : '#475569', fontWeight: 600, fontSize: '0.78rem',
+                                    cursor: iaPagina === 1 ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                <ChevronLeft size={14} /> Anterior
+                            </button>
+                            {Array.from({ length: Math.min(iaTotalPaginas, 7) }, (_, i) => {
+                                const p = iaTotalPaginas <= 7 ? i + 1 : Math.max(1, Math.min(iaPagina - 3, iaTotalPaginas - 6)) + i
+                                return (
+                                    <button key={p} onClick={() => setIaPagina(p)} style={{
+                                        width: 32, height: 32, borderRadius: 8, border: 'none',
+                                        background: p === iaPagina ? '#7c3aed' : '#f1f5f9',
+                                        color: p === iaPagina ? '#fff' : '#475569',
+                                        fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                                    }}>{p}</button>
+                                )
+                            })}
+                            <button
+                                onClick={() => setIaPagina(p => Math.min(iaTotalPaginas, p + 1))}
+                                disabled={iaPagina === iaTotalPaginas}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                    padding: '0.4rem 0.75rem', borderRadius: 8,
+                                    border: '1px solid #e2e8f0', background: iaPagina === iaTotalPaginas ? '#f8fafc' : '#fff',
+                                    color: iaPagina === iaTotalPaginas ? '#cbd5e1' : '#475569', fontWeight: 600, fontSize: '0.78rem',
+                                    cursor: iaPagina === iaTotalPaginas ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                Próxima <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

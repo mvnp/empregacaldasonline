@@ -32,7 +32,7 @@ export async function listarUsuarios() {
     if (candidatoUsers.length > 0) {
         const ids = candidatoUsers.map((u: any) => u.id)
         const { data: cands } = await (admin.from('candidatos') as any)
-            .select('user_id, whatsapp, telefone, share_token')
+            .select('id, user_id, whatsapp, telefone, share_token')
             .in('user_id', ids)
         
         const candMap: Record<number, any> = {}

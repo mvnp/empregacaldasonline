@@ -197,7 +197,7 @@ export default function CadastrarCandidatoPDFPage() {
                 sobrenome: d.sobrenome || '',
                 email: d.email?.trim() || fallbackEmail,
                 cpf: d.cpf || gerarCpfAleatorio(),
-                data_nascimento: d.data_nascimento || '',
+                data_nascimento: d.data_nascimento || '1900-01-01',
                 telefone: d.telefone ? maskPhone(d.telefone) : '',
                 whatsapp: d.whatsapp ? maskPhone(d.whatsapp) : (d.telefone ? maskPhone(d.telefone) : ''),
                 cargo_desejado: d.cargo_desejado || '',
@@ -213,16 +213,23 @@ export default function CadastrarCandidatoPDFPage() {
             } else {
                 setHabilidades([])
             }
-            
+
             if (d.experiencias?.length > 0) {
-                setExperiencias(d.experiencias.map((e: any) => ({
-                    ...e,
-                    cargo: formatarCamelCase(e.cargo || ''),
-                })))
+                setExperiencias(d.experiencias.map((e: any) => {
+                    const dtInicio = e.data_inicio || ''
+                    const dtFim = e.data_fim || ''
+                    const isEmAndamento = e.em_andamento || !dtInicio || !dtFim
+                    return {
+                        ...e,
+                        cargo: formatarCamelCase(e.cargo || ''),
+                        em_andamento: isEmAndamento,
+                        data_fim: isEmAndamento ? '' : dtFim,
+                    }
+                }))
             } else {
                 setExperiencias([{ cargo: '', empresa: '', descricao: '', data_inicio: '', data_fim: '', em_andamento: false }])
             }
-            
+
             if (d.formacoes?.length > 0) {
                 setFormacoes(d.formacoes.map((f: any) => ({
                     ...f,
@@ -232,7 +239,7 @@ export default function CadastrarCandidatoPDFPage() {
             } else {
                 setFormacoes([{ curso: '', instituicao: '', grau: '', data_inicio: '', data_fim: '', em_andamento: false }])
             }
-            
+
             if (d.idiomas?.length > 0) {
                 const hasPt = d.idiomas.some((i: any) => i.idioma?.toLowerCase()?.includes('portug'))
                 if (hasPt) {
@@ -366,7 +373,7 @@ export default function CadastrarCandidatoPDFPage() {
 
             setUserExistente((resultado as any).userExistente || false)
             setSucesso(true)
-            setTimeout(() => { window.location.href = '/admin/candidatos' }, 2500)
+            setTimeout(() => { window.location.href = '/admin/usuarios' }, 1500)
         } catch {
             setErro('Erro de conexão. Tente novamente.')
             setLoading(false)
@@ -419,7 +426,7 @@ export default function CadastrarCandidatoPDFPage() {
                         ? 'O usuário já existia no sistema — currículo vinculado ao seu cadastro.'
                         : 'Novo usuário candidato criado e currículo salvo com o PDF anexado.'}
                 </p>
-                <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Redirecionando para a lista de candidatos...</p>
+                <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Redirecionando para a lista de usuários...</p>
             </div>
         )
     }
@@ -437,7 +444,7 @@ export default function CadastrarCandidatoPDFPage() {
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Link href="/admin/candidatos" style={{
+                        <Link href="/admin/usuarios" style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             width: 36, height: 36, borderRadius: 10, background: '#f1f5f9',
                             color: '#64748b', textDecoration: 'none',

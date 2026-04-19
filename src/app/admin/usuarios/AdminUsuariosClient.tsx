@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan, Edit2 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -382,6 +382,15 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                            {u.tipo === 'candidato' && (u as any)._candidato?.id && (
+                                <Link href={`/admin/candidatos/cadastrar/ia/curriculo-pdf/edit/${(u as any)._candidato.id}`} style={{
+                                    background: '#fefce8', border: '1.5px solid #fef08a', borderRadius: 8,
+                                    padding: '0.35rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
+                                    color: '#ca8a04', display: 'flex', alignItems: 'center', gap: '0.3rem', textDecoration: 'none'
+                                }}>
+                                    <Edit2 size={14} /> Edit
+                                </Link>
+                            )}
                             <button onClick={() => setModalSenha(u.id)} style={{
                                 background: '#f8fafc', border: '1.5px solid #e8edf5', borderRadius: 8,
                                 padding: '0.35rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,

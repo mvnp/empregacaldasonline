@@ -773,3 +773,28 @@ export async function uploadCurriculoPDFExistente(userId: number, base64PDF: str
         return { success: false, error: e.message }
     }
 }
+
+// ── Buscar Candidato por ID (para edição) ──
+export async function buscarCandidatoPorId(id: number) {
+    try {
+        const admin = await requireAdmin()
+        
+        const { data, error } = await (admin
+            .from('candidatos') as any)
+            .select(`
+                *,
+                candidato_experiencias(*),
+                candidato_formacoes(*),
+                candidato_habilidades(*),
+                candidato_idiomas(*),
+                candidato_documentos(*)
+            `)
+            .eq('id', id)
+            .single()
+
+        if (error) return { success: false, error: error.message, data: null }
+        return { success: true, data }
+    } catch (e: any) {
+        return { success: false, error: e.message, data: null }
+    }
+}
