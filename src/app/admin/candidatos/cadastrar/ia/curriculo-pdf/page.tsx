@@ -11,7 +11,7 @@ import {
     cadastrarCandidatoViaPDF,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem,
 } from '@/actions/candidatos'
-import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA } from '@/actions/openai'
+import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA } from '@/actions/openai'
 
 /* ── helpers ── */
 const gerarCpfAleatorio = () => {
@@ -64,6 +64,17 @@ const NIVEL_IDIOMA = [
     { value: 'nativo', label: 'Nativo' },
 ]
 
+const getIaBtnStyle = (disabled: boolean) => ({
+    display: 'flex', alignItems: 'center', gap: '0.45rem',
+    padding: '0.45rem 1rem', borderRadius: '8px',
+    background: disabled ? '#e2e8f0' : '#094171',
+    color: disabled ? '#94a3b8' : '#ffffff',
+    fontSize: '0.75rem', fontWeight: 700, border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    boxShadow: disabled ? 'none' : '0 1px 3px rgba(0,0,0,0.2)',
+    transition: 'all 0.15s ease-in-out',
+})
+
 /* ── Tipos do form ── */
 interface FormState {
     user_id: number
@@ -106,6 +117,8 @@ export default function CadastrarCandidatoPDFPage() {
     const [resumoIAErro, setResumoIAErro] = useState('')
     const [cargoIALoading, setCargoIALoading] = useState(false)
     const [cargoIAErro, setCargoIAErro] = useState('')
+    const [expIALoading, setExpIALoading] = useState<Record<number, boolean>>({})
+    const [expIAErro, setExpIAErro] = useState<Record<number, string>>({})
 
     const [form, setForm] = useState<FormState>({
         user_id: 0,
@@ -134,7 +147,7 @@ export default function CadastrarCandidatoPDFPage() {
         { curso: '', instituicao: '', grau: '', data_inicio: '', data_fim: '', em_andamento: false }
     ])
     const [habilidades, setHabilidades] = useState<string[]>([''])
-    const [idiomas, setIdiomas] = useState<IdiomaItem[]>([{ idioma: '', nivel: '' }])
+    const [idiomas, setIdiomas] = useState<IdiomaItem[]>([{ idioma: 'Português', nivel: 'nativo' }])
 
     /* ── Converter file para base64 ── */
     function fileToBase64(file: File): Promise<string> {
@@ -217,7 +230,17 @@ export default function CadastrarCandidatoPDFPage() {
                     instituicao: formatarCamelCase(f.instituicao || ''),
                 })))
             }
-            if (d.idiomas?.length > 0) setIdiomas(d.idiomas)
+            
+            if (d.idiomas?.length > 0) {
+                const hasPt = d.idiomas.some((i: any) => i.idioma?.toLowerCase()?.includes('portug'))
+                if (hasPt) {
+                    setIdiomas(d.idiomas)
+                } else {
+                    setIdiomas([{ idioma: 'Português', nivel: 'nativo' }, ...d.idiomas])
+                }
+            } else {
+                setIdiomas([{ idioma: 'Português', nivel: 'nativo' }])
+            }
 
             setPdfStep('done')
         } catch (e: any) {
@@ -270,6 +293,33 @@ export default function CadastrarCandidatoPDFPage() {
             setCargoIAErro('Erro de conexão com a IA.')
         } finally {
             setCargoIALoading(false)
+        }
+    }
+
+    /* ── Gerar Descrição de Experiência com IA ── */
+    async function handleGerarDescricaoExp(idx: number) {
+        const exp = experiencias[idx]
+        if (!exp.cargo.trim() || !exp.empresa.trim()) {
+            setExpIAErro(p => ({ ...p, [idx]: 'Preencha Cargo e Empresa primeiro.' }))
+            return
+        }
+
+        setExpIAErro(p => ({ ...p, [idx]: '' }))
+        setExpIALoading(p => ({ ...p, [idx]: true }))
+
+        try {
+            const res = await gerarDescricaoExperienciaComIA({ cargo: exp.cargo, empresa: exp.empresa, descricaoAtual: exp.descricao })
+            if (res.success) {
+                const v = [...experiencias]
+                v[idx].descricao = res.data
+                setExperiencias(v)
+            } else {
+                setExpIAErro(p => ({ ...p, [idx]: res.error || 'Erro ao gerar descrição.' }))
+            }
+        } catch {
+            setExpIAErro(p => ({ ...p, [idx]: 'Erro de conexão com a IA.' }))
+        } finally {
+            setExpIALoading(p => ({ ...p, [idx]: false }))
         }
     }
 
@@ -513,16 +563,7 @@ export default function CadastrarCandidatoPDFPage() {
                                         type="button"
                                         onClick={handleGerarCargo}
                                         disabled={cargoIALoading || !form.resumo.trim()}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                            padding: '0.3rem 0.75rem', borderRadius: 8,
-                                            background: (cargoIALoading || !form.resumo.trim()) ? '#e0e7ef' : 'linear-gradient(135deg, #09355F, #0d4a80)',
-                                            color: (cargoIALoading || !form.resumo.trim()) ? '#94a3b8' : '#fff',
-                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
-                                            cursor: (cargoIALoading || !form.resumo.trim()) ? 'not-allowed' : 'pointer',
-                                            boxShadow: (cargoIALoading || !form.resumo.trim()) ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
-                                            transition: 'all 0.18s',
-                                        }}
+                                        style={getIaBtnStyle(cargoIALoading || !form.resumo.trim())}
                                     >
                                         {cargoIALoading
                                             ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
@@ -545,16 +586,7 @@ export default function CadastrarCandidatoPDFPage() {
                                         type="button"
                                         onClick={handleGerarResumo}
                                         disabled={resumoIALoading}
-                                        style={{
-                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
-                                            padding: '0.3rem 0.75rem', borderRadius: 8,
-                                            background: resumoIALoading ? '#e0e7ef' : 'linear-gradient(135deg, #09355F, #0d4a80)',
-                                            color: resumoIALoading ? '#94a3b8' : '#fff',
-                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
-                                            cursor: resumoIALoading ? 'not-allowed' : 'pointer',
-                                            boxShadow: resumoIALoading ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
-                                            transition: 'all 0.18s',
-                                        }}
+                                        style={getIaBtnStyle(resumoIALoading)}
                                     >
                                         {resumoIALoading
                                             ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
@@ -662,7 +694,26 @@ export default function CadastrarCandidatoPDFPage() {
                                         </label>
                                     </div>
                                     <div style={{ gridColumn: '1 / -1' }}>
-                                        <label style={labelStyle}>Descrição</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                            <label style={{ ...labelStyle, marginBottom: 0 }}>Descrição</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleGerarDescricaoExp(idx)}
+                                                disabled={expIALoading[idx] || !exp.cargo.trim() || !exp.empresa.trim()}
+                                                style={getIaBtnStyle(expIALoading[idx] || !exp.cargo.trim() || !exp.empresa.trim())}
+                                            >
+                                                {expIALoading[idx]
+                                                    ? <div style={{ width: 10, height: 10, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                                    : <span style={{ fontSize: '0.85rem' }}>✨</span>
+                                                }
+                                                {expIALoading[idx] ? 'Gerando...' : 'Gerar com IA'}
+                                            </button>
+                                        </div>
+                                        {expIAErro[idx] && (
+                                            <div style={{ padding: '0.4rem 0.6rem', background: '#fef2f2', color: '#dc2626', borderRadius: 6, fontSize: '0.72rem', marginBottom: '0.5rem', border: '1px solid #fecaca' }}>
+                                                {expIAErro[idx]}
+                                            </div>
+                                        )}
                                         <textarea style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} placeholder="Principais atividades..." value={exp.descricao} onChange={e => { const v = [...experiencias]; v[idx].descricao = e.target.value; setExperiencias(v) }} />
                                     </div>
                                 </div>
