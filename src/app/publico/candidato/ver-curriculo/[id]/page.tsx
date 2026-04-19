@@ -99,7 +99,9 @@ export default async function CurriculoPublicoPage({ params }: { params: Promise
             id: d.id, nome: d.titulo, url: d.url,
             tipo: d.tipo || (d.titulo.split('.').pop()?.toLowerCase() || 'file'),
             tamanho: 'Anexo',
-            dataUpload: new Date(d.created_at).toISOString().split('T')[0]
+            dataUpload: d.created_at && !isNaN(new Date(d.created_at).getTime()) 
+                ? new Date(d.created_at).toISOString().split('T')[0] 
+                : new Date().toISOString().split('T')[0]
         })),
     }
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2 } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -288,29 +288,49 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                 {u.tipo === 'candidato' && (() => {
                                     const isLoading = pdfCache[u.id] === 'loading'
                                     const temPdf = pdfCache[u.id] !== null && pdfCache[u.id] !== undefined && pdfCache[u.id] !== 'loading'
+                                    const cand = (u as any)._candidato
+                                    const shareToken = cand?.share_token
                                     return (
-                                        <button
-                                            type="button"
-                                            onClick={() => handlePdfBotao(u.id, `${u.nome} ${u.sobrenome}`)}
-                                            title={temPdf ? 'Baixar currículo PDF' : 'Upload de currículo PDF'}
-                                            style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                                padding: '2px 8px', borderRadius: 8,
-                                                background: temPdf ? '#eff6ff' : '#f8fafc',
-                                                color: temPdf ? '#2563eb' : '#94a3b8',
-                                                fontSize: '0.7rem', fontWeight: 700,
-                                                border: `1px solid ${temPdf ? '#bfdbfe' : '#e2e8f0'}`,
-                                                cursor: isLoading ? 'wait' : 'pointer',
-                                            }}
-                                        >
-                                            {isLoading
-                                                ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                                                : temPdf
-                                                    ? <FileText size={12} />
-                                                    : <Upload size={12} />
-                                            }
-                                            {isLoading ? '...' : 'PDF'}
-                                        </button>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePdfBotao(u.id, `${u.nome} ${u.sobrenome}`)}
+                                                title={temPdf ? 'Baixar currículo PDF' : 'Upload de currículo PDF'}
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                    padding: '2px 8px', borderRadius: 8,
+                                                    background: temPdf ? '#eff6ff' : '#f8fafc',
+                                                    color: temPdf ? '#2563eb' : '#94a3b8',
+                                                    fontSize: '0.7rem', fontWeight: 700, border: `1px solid ${temPdf ? '#bfdbfe' : '#e2e8f0'}`,
+                                                    cursor: isLoading ? 'not-allowed' : 'pointer'
+                                                }}
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : (temPdf ? <FileText size={12} /> : <Upload size={12} />)}
+                                                PDF
+                                            </button>
+                                            
+                                            <a
+                                                href={shareToken ? `/publico/candidato/ver-curriculo/${shareToken}` : '#'}
+                                                target={shareToken ? "_blank" : "_self"}
+                                                rel={shareToken ? "noopener noreferrer" : undefined}
+                                                title={shareToken ? "Visualizar CV Público" : "O candidato não possui Currículo Web visível"}
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                    padding: '2px 8px', borderRadius: 8,
+                                                    background: shareToken ? '#f8fafc' : '#f1f5f9',
+                                                    color: shareToken ? '#64748b' : '#cbd5e1',
+                                                    fontSize: '0.7rem', fontWeight: 700, 
+                                                    border: `1px solid ${shareToken ? '#e2e8f0' : '#f1f5f9'}`,
+                                                    textDecoration: 'none',
+                                                    cursor: shareToken ? 'pointer' : 'not-allowed',
+                                                    pointerEvents: shareToken ? 'auto' : 'none'
+                                                }}
+                                                onClick={e => { if(!shareToken) e.preventDefault() }}
+                                            >
+                                                <ExternalLink size={12} /> CV
+                                            </a>
+                                        </div>
                                     )
                                 })()}
                             </h3>
