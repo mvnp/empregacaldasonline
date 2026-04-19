@@ -187,12 +187,15 @@ export default function CadastrarCandidatoPDFPage() {
 
             const d = res.data
 
+            const nomeSlug = `${d.nome || ''}${d.sobrenome || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'candidato'
+            const fallbackEmail = `${nomeSlug}_${Date.now().toString().slice(-4)}@eco.com.br`
+
             // Preencher form com dados extraídos
             setForm(prev => ({
                 ...prev,
                 nome: d.nome || '',
                 sobrenome: d.sobrenome || '',
-                email: d.email || '',
+                email: d.email?.trim() || fallbackEmail,
                 cpf: d.cpf || gerarCpfAleatorio(),
                 data_nascimento: d.data_nascimento || '',
                 telefone: d.telefone ? maskPhone(d.telefone) : '',
@@ -205,19 +208,29 @@ export default function CadastrarCandidatoPDFPage() {
                 github: d.github || '',
             }))
 
-            if (d.habilidades?.length > 0) setHabilidades(d.habilidades.map((h: string) => formatarCamelCase(h)))
+            if (d.habilidades?.length > 0) {
+                setHabilidades(d.habilidades.map((h: string) => formatarCamelCase(h)))
+            } else {
+                setHabilidades([])
+            }
+            
             if (d.experiencias?.length > 0) {
                 setExperiencias(d.experiencias.map((e: any) => ({
                     ...e,
                     cargo: formatarCamelCase(e.cargo || ''),
                 })))
+            } else {
+                setExperiencias([{ cargo: '', empresa: '', descricao: '', data_inicio: '', data_fim: '', em_andamento: false }])
             }
+            
             if (d.formacoes?.length > 0) {
                 setFormacoes(d.formacoes.map((f: any) => ({
                     ...f,
                     curso: formatarCamelCase(f.curso || ''),
                     instituicao: formatarCamelCase(f.instituicao || ''),
                 })))
+            } else {
+                setFormacoes([{ curso: '', instituicao: '', grau: '', data_inicio: '', data_fim: '', em_andamento: false }])
             }
             
             if (d.idiomas?.length > 0) {
