@@ -51,8 +51,16 @@ export default function AdminLayoutClient({ children, isImpersonating = false }:
     const [isMounted, setIsMounted] = useState(false)
 
     // ── Onboarding Gate para Candidatos ──
+    // URLs isentas da validação de onboarding (acesso admin irrestrito)
+    const ONBOARDING_EXEMPT = [
+        '/admin/candidatos/cadastrar/ia/curriculo-pdf',
+    ]
+
     useEffect(() => {
         if (tipoUsuario !== 'candidato' || !onboarding) return
+
+        // Não redirecionar URLs isentas do onboarding
+        if (ONBOARDING_EXEMPT.some(url => pathname.startsWith(url))) return
 
         const { perfilCompleto, temCurriculo } = onboarding
 

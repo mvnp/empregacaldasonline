@@ -670,11 +670,19 @@ export default function CadastrarCandidatoPDFPage() {
                                 <FileScan style={{ width: 20, height: 20, color: '#3b82f6' }} />
                                 Enviar Currículo PDF
                             </h2>
-                            {pdfFile && (
-                                <button onClick={() => setShowPdfModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
-                                    <X style={{ width: 22, height: 22 }} />
-                                </button>
-                            )}
+                            <button
+                                onClick={() => {
+                                    if (!pdfFile) {
+                                        window.location.href = '/admin/candidatos'
+                                    } else {
+                                        setShowPdfModal(false)
+                                    }
+                                }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', borderRadius: 6 }}
+                                aria-label="Fechar"
+                            >
+                                <X style={{ width: 22, height: 22 }} />
+                            </button>
                         </div>
 
                         {/* Corpo do modal */}
