@@ -64,17 +64,6 @@ const NIVEL_IDIOMA = [
     { value: 'nativo', label: 'Nativo' },
 ]
 
-const getIaBtnStyle = (disabled: boolean) => ({
-    display: 'flex', alignItems: 'center', gap: '0.45rem',
-    padding: '0.45rem 1rem', borderRadius: '8px',
-    background: disabled ? '#e2e8f0' : '#094171',
-    color: disabled ? '#94a3b8' : '#ffffff',
-    fontSize: '0.75rem', fontWeight: 700, border: 'none',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    boxShadow: disabled ? 'none' : '0 1px 3px rgba(0,0,0,0.2)',
-    transition: 'all 0.15s ease-in-out',
-})
-
 /* ── Tipos do form ── */
 interface FormState {
     user_id: number
@@ -562,8 +551,17 @@ export default function CadastrarCandidatoPDFPage() {
                                     <button
                                         type="button"
                                         onClick={handleGerarCargo}
-                                        disabled={cargoIALoading || !form.resumo.trim()}
-                                        style={getIaBtnStyle(cargoIALoading || !form.resumo.trim())}
+                                        disabled={cargoIALoading}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                            padding: '0.3rem 0.75rem', borderRadius: 8,
+                                            background: cargoIALoading ? '#e0e7ef' : '#094171',
+                                            color: cargoIALoading ? '#94a3b8' : '#fff',
+                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
+                                            cursor: cargoIALoading ? 'not-allowed' : 'pointer',
+                                            boxShadow: cargoIALoading ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
+                                            transition: 'all 0.18s',
+                                        }}
                                     >
                                         {cargoIALoading
                                             ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
@@ -586,7 +584,16 @@ export default function CadastrarCandidatoPDFPage() {
                                         type="button"
                                         onClick={handleGerarResumo}
                                         disabled={resumoIALoading}
-                                        style={getIaBtnStyle(resumoIALoading)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                            padding: '0.3rem 0.75rem', borderRadius: 8,
+                                            background: resumoIALoading ? '#e0e7ef' : '#094171',
+                                            color: resumoIALoading ? '#94a3b8' : '#fff',
+                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
+                                            cursor: resumoIALoading ? 'not-allowed' : 'pointer',
+                                            boxShadow: resumoIALoading ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
+                                            transition: 'all 0.18s',
+                                        }}
                                     >
                                         {resumoIALoading
                                             ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
@@ -699,8 +706,15 @@ export default function CadastrarCandidatoPDFPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleGerarDescricaoExp(idx)}
-                                                disabled={expIALoading[idx] || !exp.cargo.trim() || !exp.empresa.trim()}
-                                                style={getIaBtnStyle(expIALoading[idx] || !exp.cargo.trim() || !exp.empresa.trim())}
+                                                disabled={expIALoading[idx]}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                                    padding: '0.25rem 0.6rem', borderRadius: 6,
+                                                    background: expIALoading[idx] ? '#e0e7ef' : '#094171',
+                                                    color: expIALoading[idx] ? '#94a3b8' : '#fff',
+                                                    fontSize: '0.68rem', fontWeight: 600, border: 'none',
+                                                    cursor: expIALoading[idx] ? 'not-allowed' : 'pointer',
+                                                }}
                                             >
                                                 {expIALoading[idx]
                                                     ? <div style={{ width: 10, height: 10, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
