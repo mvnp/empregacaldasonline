@@ -277,7 +277,13 @@ export default function CurriculoPublicoClient({ candidato }: { candidato: any }
                         {section(
                             <User style={{ width: 18, height: 18, color: '#2AB9C0' }} />, 'Sobre',
                             <div style={{ padding: '1.25rem 1.5rem' }}>
-                                <p style={{ fontSize: '0.88rem', color: t.text, lineHeight: 1.7, margin: 0, transition: 'color 0.3s' }}>{candidato.bio}</p>
+                                <div style={{ fontSize: '0.88rem', color: t.text, lineHeight: 1.7, margin: 0, transition: 'color 0.3s' }}>
+                                    {(candidato.bio || '').split(/\r?\n|\\n/).filter((l: string) => l.trim() !== '').map((linha: string, idx: number) => (
+                                        <p key={idx} style={{ margin: '0 0 0.8rem', padding: 0 }}>
+                                            {linha}
+                                        </p>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -307,7 +313,13 @@ export default function CurriculoPublicoClient({ candidato }: { candidato: any }
                                         <p style={{ fontSize: '0.75rem', color: t.textFaint, margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'color 0.3s' }}>
                                             <Calendar style={{ width: 11, height: 11 }} /> {exp.periodo}
                                         </p>
-                                        <p style={{ fontSize: '0.82rem', color: t.text, lineHeight: 1.6, margin: 0, transition: 'color 0.3s' }}>{exp.descricao}</p>
+                                        <div style={{ fontSize: '0.82rem', color: t.text, lineHeight: 1.6, margin: 0, transition: 'color 0.3s' }}>
+                                            {(exp.descricao || '').split(/\r?\n|\\n/).filter((l: string) => l.trim() !== '').map((linha: string, jdx: number) => (
+                                                <p key={jdx} style={{ margin: '0 0 0.5rem', padding: 0 }}>
+                                                    {linha}
+                                                </p>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
