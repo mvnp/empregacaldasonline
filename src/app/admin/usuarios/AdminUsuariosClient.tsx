@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -197,6 +197,22 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             <AdminPageHeader
                 titulo="Gestão de Usuários"
                 subtitulo={`${filtrados.length} usuários cadastrados`}
+                acao={
+                    <Link
+                        href="/admin/candidatos/cadastrar/ia/curriculo-pdf"
+                        style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                            padding: '0.6rem 1.25rem', borderRadius: 10,
+                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                            color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+                        }}
+                    >
+                        <FileScan size={16} />
+                        Preencher CV com IA
+                    </Link>
+                }
             />
 
             <AdminFilterBar 
