@@ -11,9 +11,34 @@ import {
     cadastrarCandidatoViaPDF,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem,
 } from '@/actions/candidatos'
-import { extrairDadosCurriculoPDF, gerarResumoComIA } from '@/actions/openai'
+import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA } from '@/actions/openai'
 
 /* ── helpers ── */
+const gerarCpfAleatorio = () => {
+    const n = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10))
+    let d1 = n.reduce((acc, val, i) => acc + val * (10 - i), 0)
+    d1 = 11 - (d1 % 11)
+    if (d1 >= 10) d1 = 0
+    let d2 = n.reduce((acc, val, i) => acc + val * (11 - i), 0) + d1 * 2
+    d2 = 11 - (d2 % 11)
+    if (d2 >= 10) d2 = 0
+    n.push(d1, d2)
+    const s = n.join('')
+    return `${s.slice(0, 3)}.${s.slice(3, 6)}.${s.slice(6, 9)}-${s.slice(9)}`
+}
+
+const formatarCamelCase = (texto: string) => {
+    if (!texto) return ''
+    const preposicoes = ['a', 'ante', 'após', 'até', 'com', 'contra', 'de', 'desde', 'em', 'entre', 'para', 'perante', 'por', 'sem', 'sob', 'sobre', 'trás']
+    return texto.split(' ').map((palavra, index) => {
+        const lower = palavra.toLowerCase()
+        if (index > 0 && preposicoes.includes(lower)) {
+            return lower
+        }
+        return lower.charAt(0).toUpperCase() + lower.slice(1)
+    }).join(' ')
+}
+
 const maskPhone = (v: string) => {
     let d = v.replace(/\D/g, '').substring(0, 11)
     if (!d) return ''
@@ -79,6 +104,8 @@ export default function CadastrarCandidatoPDFPage() {
     const [userExistente, setUserExistente] = useState(false)
     const [resumoIALoading, setResumoIALoading] = useState(false)
     const [resumoIAErro, setResumoIAErro] = useState('')
+    const [cargoIALoading, setCargoIALoading] = useState(false)
+    const [cargoIAErro, setCargoIAErro] = useState('')
 
     const [form, setForm] = useState<FormState>({
         user_id: 0,
@@ -164,10 +191,10 @@ export default function CadastrarCandidatoPDFPage() {
                 nome: d.nome || '',
                 sobrenome: d.sobrenome || '',
                 email: d.email || '',
-                cpf: d.cpf || '',
+                cpf: d.cpf || gerarCpfAleatorio(),
                 data_nascimento: d.data_nascimento || '',
                 telefone: d.telefone ? maskPhone(d.telefone) : '',
-                whatsapp: d.whatsapp ? maskPhone(d.whatsapp) : '',
+                whatsapp: d.whatsapp ? maskPhone(d.whatsapp) : (d.telefone ? maskPhone(d.telefone) : ''),
                 cargo_desejado: d.cargo_desejado || '',
                 resumo: d.resumo || '',
                 local: d.local || '',
@@ -176,9 +203,20 @@ export default function CadastrarCandidatoPDFPage() {
                 github: d.github || '',
             }))
 
-            if (d.habilidades?.length > 0) setHabilidades(d.habilidades)
-            if (d.experiencias?.length > 0) setExperiencias(d.experiencias)
-            if (d.formacoes?.length > 0) setFormacoes(d.formacoes)
+            if (d.habilidades?.length > 0) setHabilidades(d.habilidades.map((h: string) => formatarCamelCase(h)))
+            if (d.experiencias?.length > 0) {
+                setExperiencias(d.experiencias.map((e: any) => ({
+                    ...e,
+                    cargo: formatarCamelCase(e.cargo || ''),
+                })))
+            }
+            if (d.formacoes?.length > 0) {
+                setFormacoes(d.formacoes.map((f: any) => ({
+                    ...f,
+                    curso: formatarCamelCase(f.curso || ''),
+                    instituicao: formatarCamelCase(f.instituicao || ''),
+                })))
+            }
             if (d.idiomas?.length > 0) setIdiomas(d.idiomas)
 
             setPdfStep('done')
@@ -210,6 +248,28 @@ export default function CadastrarCandidatoPDFPage() {
             setResumoIAErro('Erro de conexão com a IA.')
         } finally {
             setResumoIALoading(false)
+        }
+    }
+
+    /* ── Gerar Cargo com IA ── */
+    async function handleGerarCargo() {
+        if (!form.resumo.trim()) {
+            setCargoIAErro('Preencha o resumo primeiro.')
+            return
+        }
+        setCargoIAErro('')
+        setCargoIALoading(true)
+        try {
+            const res = await gerarCargoComIA(form.resumo)
+            if (res.success) {
+                setForm(p => ({ ...p, cargo_desejado: res.data }))
+            } else {
+                setCargoIAErro(res.error || 'Erro ao sugerir cargo.')
+            }
+        } catch {
+            setCargoIAErro('Erro de conexão com a IA.')
+        } finally {
+            setCargoIALoading(false)
         }
     }
 
@@ -447,7 +507,35 @@ export default function CadastrarCandidatoPDFPage() {
                         <h2 style={sectionTitle}><Target style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Cargo e Resumo</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
-                                <label style={labelStyle}>Cargo Desejado</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                    <label style={{ ...labelStyle, marginBottom: 0 }}>Cargo Desejado</label>
+                                    <button
+                                        type="button"
+                                        onClick={handleGerarCargo}
+                                        disabled={cargoIALoading || !form.resumo.trim()}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                            padding: '0.3rem 0.75rem', borderRadius: 8,
+                                            background: (cargoIALoading || !form.resumo.trim()) ? '#e0e7ef' : 'linear-gradient(135deg, #09355F, #0d4a80)',
+                                            color: (cargoIALoading || !form.resumo.trim()) ? '#94a3b8' : '#fff',
+                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
+                                            cursor: (cargoIALoading || !form.resumo.trim()) ? 'not-allowed' : 'pointer',
+                                            boxShadow: (cargoIALoading || !form.resumo.trim()) ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
+                                            transition: 'all 0.18s',
+                                        }}
+                                    >
+                                        {cargoIALoading
+                                            ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                            : <span style={{ fontSize: '0.85rem' }}>✨</span>
+                                        }
+                                        {cargoIALoading ? 'Gerando...' : 'Gerar com IA'}
+                                    </button>
+                                </div>
+                                {cargoIAErro && (
+                                    <div style={{ padding: '0.5rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: '0.78rem', marginBottom: '0.5rem', border: '1px solid #fecaca' }}>
+                                        {cargoIAErro}
+                                    </div>
+                                )}
                                 <input style={inputStyle} placeholder="Ex: Auxiliar Administrativo" value={form.cargo_desejado} onChange={e => setForm(p => ({ ...p, cargo_desejado: e.target.value }))} />
                             </div>
                             <div>
@@ -555,7 +643,7 @@ export default function CadastrarCandidatoPDFPage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                                     <div>
                                         <label style={labelStyle}>Cargo *</label>
-                                        <input style={inputStyle} placeholder="Ex: Atendente" value={exp.cargo} onChange={e => { const v = [...experiencias]; v[idx].cargo = e.target.value; setExperiencias(v) }} />
+                                        <input style={inputStyle} placeholder="Ex: Atendente" value={exp.cargo} onChange={e => { const v = [...experiencias]; v[idx].cargo = formatarCamelCase(e.target.value); setExperiencias(v) }} />
                                     </div>
                                     <div>
                                         <label style={labelStyle}>Empresa *</label>
@@ -598,11 +686,11 @@ export default function CadastrarCandidatoPDFPage() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                                     <div>
                                         <label style={labelStyle}>Curso *</label>
-                                        <input style={inputStyle} placeholder="Ex: Administração" value={f.curso} onChange={e => { const v = [...formacoes]; v[idx].curso = e.target.value; setFormacoes(v) }} />
+                                        <input style={inputStyle} placeholder="Ex: Administração" value={f.curso} onChange={e => { const v = [...formacoes]; v[idx].curso = formatarCamelCase(e.target.value); setFormacoes(v) }} />
                                     </div>
                                     <div>
                                         <label style={labelStyle}>Instituição *</label>
-                                        <input style={inputStyle} placeholder="Nome da instituição" value={f.instituicao} onChange={e => { const v = [...formacoes]; v[idx].instituicao = e.target.value; setFormacoes(v) }} />
+                                        <input style={inputStyle} placeholder="Nome da instituição" value={f.instituicao} onChange={e => { const v = [...formacoes]; v[idx].instituicao = formatarCamelCase(e.target.value); setFormacoes(v) }} />
                                     </div>
                                     <div>
                                         <label style={labelStyle}>Grau</label>
@@ -647,7 +735,7 @@ export default function CadastrarCandidatoPDFPage() {
                         <h2 style={sectionTitle}><Wrench style={{ width: 18, height: 18, color: '#2AB9C0' }} /> Habilidades</h2>
                         {habilidades.map((h, idx) => (
                             <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <input style={{ ...inputStyle, flex: 1 }} placeholder="Ex: Pacote Office, Excel..." value={h} onChange={e => { const v = [...habilidades]; v[idx] = e.target.value; setHabilidades(v) }} />
+                                <input style={{ ...inputStyle, flex: 1 }} placeholder="Ex: Pacote Office, Excel..." value={h} onChange={e => { const v = [...habilidades]; v[idx] = formatarCamelCase(e.target.value); setHabilidades(v) }} />
                                 {habilidades.length > 1 && (
                                     <button type="button" onClick={() => setHabilidades(prev => prev.filter((_, i) => i !== idx))} style={removeBtnStyle} aria-label="Remover">
                                         <X style={{ width: 14, height: 14 }} />

@@ -428,6 +428,118 @@ ${contexto}`
     }
 }
 
+export async function gerarCargoComIA(resumo: string): Promise<{ success: true, data: string } | { success: false, error: string }> {
+    if (!resumo || !resumo.trim()) {
+        return { success: false, error: 'O Resumo / Sobre precisa estar preenchido para a IA sugerir um cargo.' }
+    }
+
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada. Acesse as Configurações.' }
+    }
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [
+                    {
+                        role: 'user',
+                        content: `Atue como um recrutador especialista. Leia o resumo profissional abaixo e sugira um ÚNICO CARGO direto e objetivo (Ex: "Auxiliar Administrativo", "Desenvolvedor Front-end", "Atendente de Loja"). NÃO retorne a palavra "cargo", apenas o nome da profissão em si com as primeiras letras maiúsculas. Retorne APENAS o cargo.\n\nResumo:\n${resumo}`
+                    }
+                ],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 500 } : { max_tokens: 50 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP API (Cargo)', err)
+            return { success: false, error: err.error?.message || 'Erro ao gerar cargo com IA.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        if (!content) return { success: false, error: 'A IA não retornou conteúdo. Tente novamente.' }
+        return { success: true, data: content.replace(/['"]/g, '').trim() }
+    } catch (e: any) {
+        await gravarLog('Erro gerarCargoComIA', e.message)
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
+export async function gerarDescricaoExperienciaComIA(payload: {
+    cargo: string
+    empresa: string
+    descricaoAtual?: string
+}): Promise<{ success: true, data: string } | { success: false, error: string }> {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada. Acesse as Configurações.' }
+    }
+
+    const { cargo, empresa, descricaoAtual } = payload
+
+    if (!cargo || !empresa) {
+         return { success: false, error: 'Preencha Cargo e Empresa primeiro.' }
+    }
+
+    const prompt = `Atue como um recrutador especialista. Melhore ou crie uma descrição profissional para a seguinte experiência de trabalho:
+Cargo: ${cargo}
+Empresa: ${empresa}
+${descricaoAtual ? `\nDescrição atual:\n${descricaoAtual}\n\nMelhore e expanda esta descrição preenchendo lacunas, tornando-a mais profissional.` : '\nCrie uma descrição detalhada de 1 parágrafo das atividades e responsabilidades típicas para este cargo.'}
+
+Regras:
+1. Comece os verbos no infinitivo ou em primeira pessoa (ex: "Atuei em...", "Responsável por...").
+2. FOCO em resultados e responsabilidades.
+3. Não use bullet points, escreva um parágrafo conciso.
+4. Retorne apenas o texto limpo (texto pronto para o input html), sem marcações, tags, negritos ou aspas.`
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 1000 } : { max_tokens: 500 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP API (Desc XP)', err)
+            return { success: false, error: err.error?.message || 'Erro ao gerar descrição com IA.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        if (!content) return { success: false, error: 'A IA não retornou conteúdo. Tente novamente.' }
+        return { success: true, data: content.trim() }
+    } catch (e: any) {
+        await gravarLog('Erro gerarDescricaoExperienciaComIA', e.message)
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
 export async function extrairDadosCurriculoPDF(base64PDF: string): Promise<{ success: true, data: any } | { success: false, error: string }> {
     const config = await lerConfiguracaoOpenAI()
     if (!config || !config.openai_token) {
