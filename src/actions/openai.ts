@@ -327,7 +327,7 @@ export async function gerarObjetivoComIA(cargo: string): Promise<{ success: true
                         content: `Atue como um especialista de RH corporativo rigoroso. Escreva um "Objetivo Profissional / Resumo" altamente convincente (máx. 400 caracteres) para um candidato à vaga: "${cargo}". Regras de ouro: Seja extremamente profissional, sóbrio e voltado a resultados corporativos. NÃO use clichês bajuladores ou excesso de enfeites emocionais (NÃO puxe o saco da empresa ou do recrutador). Use uma linguagem madura de mercado focada em competência. Retorne SOMENTE o parágrafo de texto limpo, sem formatação markdown ou aspas.`
                     }
                 ],
-                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 350 } ),
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 350 } ),
             })
         })
 
@@ -350,6 +350,80 @@ export async function gerarObjetivoComIA(cargo: string): Promise<{ success: true
 
         return { success: true, data: content.trim() }
     } catch (e: any) {
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
+export async function gerarResumoComIA(payload: {
+    cargo: string
+    resumoAtual?: string
+    habilidades?: string[]
+    experiencias?: Array<{ cargo: string; empresa: string; descricao?: string }>
+}): Promise<{ success: true, data: string } | { success: false, error: string }> {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada. Acesse as Configurações.' }
+    }
+
+    const linhasContexto: string[] = []
+    if (payload.cargo) linhasContexto.push(`Cargo/Objetivo: ${payload.cargo}`)
+    if (payload.habilidades?.length) linhasContexto.push(`Habilidades: ${payload.habilidades.slice(0, 12).join(', ')}`)
+    if (payload.experiencias?.length) {
+        const exps = payload.experiencias.slice(0, 4).map(e =>
+            `${e.cargo} na ${e.empresa}${e.descricao ? ` — ${e.descricao.substring(0, 120)}` : ''}`
+        )
+        linhasContexto.push(`Experiências:\n${exps.join('\n')}`)
+    }
+    if (payload.resumoAtual?.trim()) {
+        linhasContexto.push(`Resumo atual (a ser melhorado/expandido):\n${payload.resumoAtual}`)
+    }
+
+    const contexto = linhasContexto.join('\n\n')
+
+    const prompt = `Você é um especialista em redação de currículos e recursos humanos. Com base nas informações abaixo do candidato, escreva um RESUMO PROFISSIONAL completo, elaborado e convincente.
+
+REGRAS:
+- Escreva em primeira pessoa (ex: "Tenho experiência em...")
+- Mínimo 3 parágrafos bem desenvolvidos
+- Destaque pontos fortes, competências, experiências relevantes e diferenciais
+- Use linguagem profissional, clara e direta
+- NÃO use bullet points, apenas parágrafos corridos
+- Retorne SOMENTE o texto do resumo, sem títulos, markdown ou aspas
+
+INFORMAÇÕES DO CANDIDATO:
+${contexto}`
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 800 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP API (Resumo)', err)
+            return { success: false, error: err.error?.message || 'Erro ao gerar resumo com IA.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        if (!content) return { success: false, error: 'A IA não retornou conteúdo. Tente novamente.' }
+        return { success: true, data: content.trim() }
+    } catch (e: any) {
+        await gravarLog('Erro gerarResumoComIA', e.message)
         return { success: false, error: e.message || 'Erro de rede na IA.' }
     }
 }

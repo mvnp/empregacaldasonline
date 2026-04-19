@@ -11,7 +11,7 @@ import {
     cadastrarCandidatoViaPDF,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem,
 } from '@/actions/candidatos'
-import { extrairDadosCurriculoPDF } from '@/actions/openai'
+import { extrairDadosCurriculoPDF, gerarResumoComIA } from '@/actions/openai'
 
 /* ── helpers ── */
 const maskPhone = (v: string) => {
@@ -77,6 +77,8 @@ export default function CadastrarCandidatoPDFPage() {
     const [erro, setErro] = useState('')
     const [sucesso, setSucesso] = useState(false)
     const [userExistente, setUserExistente] = useState(false)
+    const [resumoIALoading, setResumoIALoading] = useState(false)
+    const [resumoIAErro, setResumoIAErro] = useState('')
 
     const [form, setForm] = useState<FormState>({
         user_id: 0,
@@ -185,6 +187,29 @@ export default function CadastrarCandidatoPDFPage() {
             setPdfStep('upload')
         } finally {
             setPdfLoading(false)
+        }
+    }
+
+    /* ── Gerar Resumo com IA ── */
+    async function handleGerarResumo() {
+        setResumoIAErro('')
+        setResumoIALoading(true)
+        try {
+            const res = await gerarResumoComIA({
+                cargo: form.cargo_desejado,
+                resumoAtual: form.resumo,
+                habilidades: habilidades.filter(h => h.trim()),
+                experiencias: experiencias.filter(e => e.cargo.trim() || e.empresa.trim()),
+            })
+            if (res.success) {
+                setForm(p => ({ ...p, resumo: res.data }))
+            } else {
+                setResumoIAErro(res.error || 'Erro ao gerar resumo.')
+            }
+        } catch {
+            setResumoIAErro('Erro de conexão com a IA.')
+        } finally {
+            setResumoIALoading(false)
         }
     }
 
@@ -317,15 +342,26 @@ export default function CadastrarCandidatoPDFPage() {
                     </div>
 
                     {pdfFile && pdfStep === 'done' && (
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            padding: '0.5rem 1rem', borderRadius: 10,
-                            background: '#f0fdf4', border: '1px solid #bbf7d0',
-                            color: '#16a34a', fontSize: '0.8rem', fontWeight: 700,
-                        }}>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const url = URL.createObjectURL(pdfFile)
+                                window.open(url, '_blank')
+                                setTimeout(() => URL.revokeObjectURL(url), 10000)
+                            }}
+                            title="Visualizar PDF"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.5rem 1rem', borderRadius: 10,
+                                background: '#f0fdf4', border: '1px solid #bbf7d0',
+                                color: '#16a34a', fontSize: '0.8rem', fontWeight: 700,
+                                cursor: 'pointer',
+                            }}
+                        >
                             <CheckCircle style={{ width: 16, height: 16 }} />
                             {pdfFile.name}
-                        </div>
+                            <ExternalLink style={{ width: 13, height: 13, opacity: 0.7 }} />
+                        </button>
                     )}
 
                     <button type="button" onClick={() => setShowPdfModal(true)} style={{
@@ -415,9 +451,37 @@ export default function CadastrarCandidatoPDFPage() {
                                 <input style={inputStyle} placeholder="Ex: Auxiliar Administrativo" value={form.cargo_desejado} onChange={e => setForm(p => ({ ...p, cargo_desejado: e.target.value }))} />
                             </div>
                             <div>
-                                <label style={labelStyle}>Resumo / Sobre</label>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                                    <label style={{ ...labelStyle, marginBottom: 0 }}>Resumo / Sobre</label>
+                                    <button
+                                        type="button"
+                                        onClick={handleGerarResumo}
+                                        disabled={resumoIALoading}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                            padding: '0.3rem 0.75rem', borderRadius: 8,
+                                            background: resumoIALoading ? '#e0e7ef' : 'linear-gradient(135deg, #09355F, #0d4a80)',
+                                            color: resumoIALoading ? '#94a3b8' : '#fff',
+                                            fontSize: '0.72rem', fontWeight: 700, border: 'none',
+                                            cursor: resumoIALoading ? 'not-allowed' : 'pointer',
+                                            boxShadow: resumoIALoading ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
+                                            transition: 'all 0.18s',
+                                        }}
+                                    >
+                                        {resumoIALoading
+                                            ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                            : <span style={{ fontSize: '0.85rem' }}>✨</span>
+                                        }
+                                        {resumoIALoading ? 'Gerando...' : 'Gerar com IA'}
+                                    </button>
+                                </div>
+                                {resumoIAErro && (
+                                    <div style={{ padding: '0.5rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: '0.78rem', marginBottom: '0.5rem', border: '1px solid #fecaca' }}>
+                                        {resumoIAErro}
+                                    </div>
+                                )}
                                 <textarea
-                                    style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }}
+                                    style={{ ...inputStyle, minHeight: 300, resize: 'vertical' }}
                                     placeholder="Resumo profissional do candidato..."
                                     value={form.resumo} onChange={e => setForm(p => ({ ...p, resumo: e.target.value }))}
                                 />
@@ -671,13 +735,7 @@ export default function CadastrarCandidatoPDFPage() {
                                 Enviar Currículo PDF
                             </h2>
                             <button
-                                onClick={() => {
-                                    if (!pdfFile) {
-                                        window.location.href = '/admin/candidatos'
-                                    } else {
-                                        setShowPdfModal(false)
-                                    }
-                                }}
+                                onClick={() => setShowPdfModal(false)}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.25rem', borderRadius: 6 }}
                                 aria-label="Fechar"
                             >
@@ -717,14 +775,25 @@ export default function CadastrarCandidatoPDFPage() {
                                     <p style={{ color: '#64748b', fontSize: '0.82rem', textAlign: 'center', maxWidth: 340 }}>
                                         O formulário foi preenchido com as informações encontradas no PDF. Revise os dados e salve.
                                     </p>
-                                    <div style={{
-                                        background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10,
-                                        padding: '0.6rem 1rem', fontSize: '0.8rem', color: '#64748b',
-                                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const url = URL.createObjectURL(pdfFile!)
+                                            window.open(url, '_blank')
+                                            setTimeout(() => URL.revokeObjectURL(url), 10000)
+                                        }}
+                                        title="Abrir PDF"
+                                        style={{
+                                            background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10,
+                                            padding: '0.6rem 1rem', fontSize: '0.8rem', color: '#2563eb',
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            cursor: 'pointer', fontWeight: 600,
+                                        }}
+                                    >
                                         <FileText style={{ width: 14, height: 14, color: '#dc2626' }} />
                                         {pdfFile?.name}
-                                    </div>
+                                        <ExternalLink style={{ width: 12, height: 12 }} />
+                                    </button>
                                     <button onClick={() => setShowPdfModal(false)} style={{
                                         padding: '0.65rem 2rem', borderRadius: 10,
                                         background: 'linear-gradient(135deg, #09355F, #0d4a80)',
