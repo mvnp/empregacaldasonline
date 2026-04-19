@@ -130,7 +130,7 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
             cargo: e.cargo.trim(),
             empresa: e.empresa.trim(),
             descricao: e.descricao?.trim() || null,
-            data_inicio: e.data_inicio || null,
+            data_inicio: e.data_inicio || '1900-01-01',  // NOT NULL no banco
             data_fim: e.em_andamento ? null : (e.data_fim || null),
             em_andamento: e.em_andamento,
             ordem: idx,
@@ -145,7 +145,7 @@ export async function cadastrarCandidato(formData: CandidatoFormData) {
             curso: f.curso.trim(),
             instituicao: f.instituicao.trim(),
             grau: f.grau?.trim() || null,
-            data_inicio: f.data_inicio || null,
+            data_inicio: f.data_inicio || '1900-01-01',  // NOT NULL no banco
             data_fim: f.em_andamento ? null : (f.data_fim || null),
             em_andamento: f.em_andamento,
             ordem: idx,
@@ -229,7 +229,8 @@ export async function atualizarCandidato(id: number, userId: number, formData: C
     // 2. Recriar experiências
     const exps = (formData.experiencias || []).filter(e => e.cargo.trim() && e.empresa.trim()).map((e, idx) => ({
         candidato_id: id, cargo: e.cargo.trim(), empresa: e.empresa.trim(), descricao: e.descricao?.trim() || null,
-        data_inicio: e.data_inicio || null, data_fim: e.em_andamento ? null : (e.data_fim || null),
+        data_inicio: e.data_inicio || '1900-01-01',  // NOT NULL no banco
+        data_fim: e.em_andamento ? null : (e.data_fim || null),
         em_andamento: e.em_andamento, ordem: idx,
     }))
     await recreateRelations('candidato_experiencias', exps)
@@ -237,7 +238,8 @@ export async function atualizarCandidato(id: number, userId: number, formData: C
     // 3. Recriar formações
     const forms = (formData.formacoes || []).filter(f => f.curso.trim() && f.instituicao.trim()).map((f, idx) => ({
         candidato_id: id, curso: f.curso.trim(), instituicao: f.instituicao.trim(), grau: f.grau?.trim() || null,
-        data_inicio: f.data_inicio || null, data_fim: f.em_andamento ? null : (f.data_fim || null),
+        data_inicio: f.data_inicio || '1900-01-01',  // NOT NULL no banco
+        data_fim: f.em_andamento ? null : (f.data_fim || null),
         em_andamento: f.em_andamento, ordem: idx,
     }))
     await recreateRelations('candidato_formacoes', forms)
@@ -477,15 +479,17 @@ export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
         // Não bloqueia o fluxo — apenas loga
     }
 
-    // ── 2. SANITIZAR E BUSCAR USUÁRIO EXISTENTE ──
+    // ── 2. SANITIZAR E BUSCAR USUÁRIO E CANDIDATO EXISTENTES ──
     const emailSanitizado = sanitizarEmail(dados.email)
     const telefoneSanitizado = sanitizarTelefone(dados.telefone)
     const whatsappSanitizado = sanitizarTelefone(dados.whatsapp)
 
     let userId: number | null = null
     let userExistente = false
+    // ID do candidato já existente (null = precisa criar novo)
+    let existingCandidatoId: number | null = null
 
-    // Buscar por e-mail primeiro
+    // Buscar por e-mail primeiro (tabela users)
     if (emailSanitizado) {
         const { data: userPorEmail } = await admin.from('users').select('id').ilike('email', emailSanitizado).maybeSingle() as { data: any }
         if (userPorEmail) {
@@ -495,22 +499,50 @@ export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
     }
 
     // Buscar por telefone / whatsapp / celular se não encontrou por email
+    // Estratégia: pré-filtro com os últimos 6 dígitos (aparecem em qualquer formato),
+    // depois filtragem JS sanitizando AMBOS os lados (input e valor do banco).
     if (!userId && (telefoneSanitizado || whatsappSanitizado)) {
         const numerosParaBuscar = [telefoneSanitizado, whatsappSanitizado].filter(Boolean)
         for (const num of numerosParaBuscar) {
-            // Busca na tabela users (telefone, celular)
-            const { data: userPorTel } = await admin.from('users')
-                .select('id')
-                .or(`telefone.ilike.%${num}%,celular.ilike.%${num}%`)
-                .maybeSingle() as { data: any }
-            if (userPorTel) { userId = userPorTel.id; userExistente = true; break }
+            const sufixo = num.slice(-6) // últimos 6 dígitos — aparecem contíguos em qualquer formatação
 
-            // Busca na tabela candidatos (telefone, whatsapp)
-            const { data: candPorTel } = await admin.from('candidatos')
-                .select('user_id')
-                .or(`telefone.ilike.%${num}%,whatsapp.ilike.%${num}%`)
-                .maybeSingle() as { data: any }
-            if (candPorTel) { userId = candPorTel.user_id; userExistente = true; break }
+            // Busca na tabela users (telefone, celular)
+            const { data: usersPorTel } = await admin.from('users')
+                .select('id, telefone, celular')
+                .or(`telefone.ilike.%${sufixo}%,celular.ilike.%${sufixo}%`) as { data: any[] | null }
+            const userMatch = (usersPorTel || []).find(u =>
+                (u.telefone && sanitizarTelefone(u.telefone) === num) ||
+                (u.celular  && sanitizarTelefone(u.celular)  === num)
+            )
+            if (userMatch) { userId = userMatch.id; userExistente = true; break }
+
+            // Busca na tabela candidatos (telefone, whatsapp) — captura id DO CANDIDATO e user_id
+            const { data: candsPorTel } = await admin.from('candidatos')
+                .select('id, user_id, telefone, whatsapp')
+                .or(`telefone.ilike.%${sufixo}%,whatsapp.ilike.%${sufixo}%`) as { data: any[] | null }
+            const candMatch = (candsPorTel || []).find(c =>
+                (c.telefone && sanitizarTelefone(c.telefone) === num) ||
+                (c.whatsapp && sanitizarTelefone(c.whatsapp) === num)
+            )
+            if (candMatch) {
+                userId = candMatch.user_id
+                existingCandidatoId = candMatch.id  // ← candidato_id correto!
+                userExistente = true
+                break
+            }
+        }
+    }
+
+    // Se já temos userId mas ainda não verificamos se tem candidato na tabela candidatos
+    if (userId && existingCandidatoId === null) {
+        const { data: candExistente } = await admin.from('candidatos')
+            .select('id')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle() as { data: any }
+        if (candExistente) {
+            existingCandidatoId = candExistente.id
         }
     }
 
@@ -555,51 +587,98 @@ export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
         userId = novoUser.id
     }
 
-    // ── 4. INSERIR O CURRÍCULO (candidatos) ──
-    const nomeCompleto = `${dados.nome} ${dados.sobrenome}`.trim()
+    // ── 4. DETERMINAR O candidato_id CORRETO ──
+    // Cenário A: candidato já existe → atualiza dados e usa id existente
+    // Cenário B: user existe mas sem candidato / novo user → cria candidato
+    let candId: number
     const emailCurriculo = emailSanitizado || `candidato_${userId}@eco.com.br`
 
-    const { data: candidato, error: candError } = await admin.from('candidatos').insert({
-        user_id: userId,
-        nome_completo: nomeCompleto,
-        cargo_desejado: dados.cargo_desejado?.trim() || null,
-        resumo: dados.resumo?.trim() || null,
-        local: dados.local?.trim() || null,
-        data_nascimento: dados.data_nascimento || null,
-        email: emailCurriculo,
-        telefone: dados.telefone?.trim() || null,
-        whatsapp: dados.whatsapp?.trim() || null,
-        linkedin: dados.linkedin?.trim() || null,
-        portfolio: dados.portfolio?.trim() || null,
-        github: dados.github?.trim() || null,
-        disponivel: true,
-    } as any).select('id').single() as { data: any, error: any }
+    if (existingCandidatoId !== null) {
+        // Candidato já existe: apenas atualizar dados principais
+        candId = existingCandidatoId
+        await (admin.from('candidatos') as any).update({
+            nome_completo: `${dados.nome} ${dados.sobrenome}`.trim(),
+            cargo_desejado: dados.cargo_desejado?.trim() || null,
+            resumo: dados.resumo?.trim() || null,
+            local: dados.local?.trim() || null,
+            data_nascimento: dados.data_nascimento || null,
+            email: emailCurriculo,
+            telefone: dados.telefone?.trim() || null,
+            whatsapp: dados.whatsapp?.trim() || null,
+            linkedin: dados.linkedin?.trim() || null,
+            portfolio: dados.portfolio?.trim() || null,
+            github: dados.github?.trim() || null,
+            disponivel: true,
+            updated_at: new Date().toISOString(),
+        } as any).eq('id', candId)
+    } else {
+        // Candidato não existe: criar novo registro
+        const { data: candidato, error: candError } = await admin.from('candidatos').insert({
+            user_id: userId,
+            nome_completo: `${dados.nome} ${dados.sobrenome}`.trim(),
+            cargo_desejado: dados.cargo_desejado?.trim() || null,
+            resumo: dados.resumo?.trim() || null,
+            local: dados.local?.trim() || null,
+            data_nascimento: dados.data_nascimento || null,
+            email: emailCurriculo,
+            telefone: dados.telefone?.trim() || null,
+            whatsapp: dados.whatsapp?.trim() || null,
+            linkedin: dados.linkedin?.trim() || null,
+            portfolio: dados.portfolio?.trim() || null,
+            github: dados.github?.trim() || null,
+            disponivel: true,
+        } as any).select('id').single() as { data: any, error: any }
 
-    if (candError || !candidato) {
-        const msg = candError?.message?.includes('candidatos_user_id_key')
-            ? 'O banco rejeitou múltiplos currículos. Rode: ALTER TABLE candidatos DROP CONSTRAINT candidatos_user_id_key;'
-            : `Erro ao criar currículo: ${candError?.message || 'Desconhecido'}`
-        return { success: false, error: msg }
+        if (candError || !candidato) {
+            const msg = candError?.message?.includes('candidatos_user_id_key')
+                ? 'O banco rejeitou múltiplos currículos. Rode: ALTER TABLE candidatos DROP CONSTRAINT candidatos_user_id_key;'
+                : `Erro ao criar currículo: ${candError?.message || 'Desconhecido'}`
+            return { success: false, error: msg }
+        }
+
+        candId = candidato.id
     }
 
-    const candId = candidato.id
+    // ── 5. RECRIAR DADOS RELACIONADOS com o candidato_id correto ──
+    // Apaga registros anteriores para evitar duplicatas (seja candidato novo ou existente)
+    await (admin.from('candidato_experiencias') as any).delete().eq('candidato_id', candId)
+    await (admin.from('candidato_formacoes') as any).delete().eq('candidato_id', candId)
+    await (admin.from('candidato_habilidades') as any).delete().eq('candidato_id', candId)
+    await (admin.from('candidato_idiomas') as any).delete().eq('candidato_id', candId)
 
-    // ── 5. INSERIR DADOS RELACIONADOS ──
-    const exps = (dados.experiencias || []).filter(e => e.cargo?.trim() && e.empresa?.trim())
+    const DATA_INICIO_FALLBACK = '1900-01-01' // fallback quando a IA não extrai a data
+
+    const exps = (dados.experiencias || []).filter(e => e.cargo?.trim() || e.empresa?.trim())
         .map((e, idx) => ({
-            candidato_id: candId, cargo: e.cargo.trim(), empresa: e.empresa.trim(),
-            descricao: e.descricao?.trim() || null, data_inicio: e.data_inicio || null,
-            data_fim: e.em_andamento ? null : (e.data_fim || null), em_andamento: e.em_andamento, ordem: idx,
+            candidato_id: candId,
+            cargo: e.cargo?.trim() || 'Não informado',
+            empresa: e.empresa?.trim() || 'Não informada',
+            descricao: e.descricao?.trim() || null,
+            data_inicio: e.data_inicio || DATA_INICIO_FALLBACK,  // NOT NULL no banco
+            data_fim: e.em_andamento ? null : (e.data_fim || null),
+            em_andamento: e.em_andamento,
+            ordem: idx,
         }))
-    if (exps.length > 0) await admin.from('candidato_experiencias').insert(exps as any)
+    if (exps.length > 0) {
+        const { error: expErr } = await admin.from('candidato_experiencias').insert(exps as any)
+        if (expErr) console.error('[cadastrarCandidatoViaPDF] Erro ao inserir experiencias:', expErr.message)
+    }
 
-    const forms = (dados.formacoes || []).filter(f => f.curso?.trim() && f.instituicao?.trim())
+    const forms = (dados.formacoes || []).filter(f => f.curso?.trim() || f.instituicao?.trim())
         .map((f, idx) => ({
-            candidato_id: candId, curso: f.curso.trim(), instituicao: f.instituicao.trim(),
-            grau: f.grau?.trim() || null, data_inicio: f.data_inicio || null,
-            data_fim: f.em_andamento ? null : (f.data_fim || null), em_andamento: f.em_andamento, ordem: idx,
+            candidato_id: candId,
+            curso: f.curso?.trim() || 'Não informado',
+            instituicao: f.instituicao?.trim() || 'Não informada',
+            grau: f.grau?.trim() || null,
+            data_inicio: f.data_inicio || DATA_INICIO_FALLBACK,  // NOT NULL no banco
+            data_fim: f.em_andamento ? null : (f.data_fim || null),
+            em_andamento: f.em_andamento,
+            ordem: idx,
         }))
-    if (forms.length > 0) await admin.from('candidato_formacoes').insert(forms as any)
+    if (forms.length > 0) {
+        const { error: formErr } = await admin.from('candidato_formacoes').insert(forms as any)
+        if (formErr) console.error('[cadastrarCandidatoViaPDF] Erro ao inserir formacoes:', formErr.message)
+    }
 
     const habs = (dados.habilidades || []).filter(h => h?.trim())
         .map((h, idx) => ({ candidato_id: candId, texto: h.trim(), ordem: idx }))
