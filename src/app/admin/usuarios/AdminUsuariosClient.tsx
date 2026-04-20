@@ -306,23 +306,28 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                     const temPdf = pdfCache[u.id] !== null && pdfCache[u.id] !== undefined && pdfCache[u.id] !== 'loading'
                                     const cand = (u as any)._candidato
                                     const shareToken = cand?.share_token
+                                    const temPdfNoBanco = cand?.candidato_documentos?.some((d: any) => 
+                                        d.tipo?.toLowerCase() === 'pdf' && 
+                                        (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
+                                    )
                                     return (
                                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                                             <button
                                                 type="button"
                                                 onClick={() => handlePdfBotao(u.id, `${u.nome} ${u.sobrenome}`)}
-                                                title={temPdf ? 'Baixar currículo PDF' : 'Upload de currículo PDF'}
+                                                title={temPdf || temPdfNoBanco ? 'Baixar currículo PDF' : 'Upload de currículo PDF'}
                                                 style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
                                                     padding: '2px 8px', borderRadius: 8,
-                                                    background: temPdf ? '#eff6ff' : '#f8fafc',
-                                                    color: temPdf ? '#2563eb' : '#94a3b8',
-                                                    fontSize: '0.7rem', fontWeight: 700, border: `1px solid ${temPdf ? '#bfdbfe' : '#e2e8f0'}`,
+                                                    background: temPdfNoBanco ? '#dc2626' : (temPdf ? '#eff6ff' : '#f8fafc'),
+                                                    color: temPdfNoBanco ? '#fff' : (temPdf ? '#2563eb' : '#94a3b8'),
+                                                    fontSize: '0.7rem', fontWeight: 700, 
+                                                    border: `1px solid ${temPdfNoBanco ? '#b91c1c' : (temPdf ? '#bfdbfe' : '#e2e8f0')}`,
                                                     cursor: isLoading ? 'not-allowed' : 'pointer'
                                                 }}
                                                 disabled={isLoading}
                                             >
-                                                {isLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : (temPdf ? <FileText size={12} /> : <Upload size={12} />)}
+                                                {isLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : (temPdf || temPdfNoBanco ? <FileText size={12} /> : <Upload size={12} />)}
                                                 PDF
                                             </button>
                                             
