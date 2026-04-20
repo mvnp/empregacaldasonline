@@ -7,7 +7,7 @@ import {
     DollarSign, FileText, Mail, ExternalLink, Star, Bot, Image as ImageIcon
 } from 'lucide-react'
 import { cadastrarVaga, editarVaga, type VagaFormData, buscarTodosTitulosVagas } from '@/actions/vagas'
-import { extrairDadosVagaDeImagem } from '@/actions/openai'
+import { gerarItensDaVaga, extrairDadosVagaDeImagem } from '@/actions/openai'
 import { salvarImagemVaga, vincularImagemVaga } from '@/actions/vaga_imagens'
 import { buscarTodasEmpresasNomes, buscarEmpresaPorNome } from '@/actions/empresas'
 
@@ -28,6 +28,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [aiLoading, setAiLoading] = useState(false)
     const [aiError, setAiError] = useState('')
     const [aiGerandoDescricao, setAiGerandoDescricao] = useState(false)
+    const [aiGerandoSecao, setAiGerandoSecao] = useState<Record<string, boolean>>({})
 
     // ── Estado de Imagem Salva ──
     const [aiImageUrl, setAiImageUrl] = useState<string | null>(null)
@@ -874,9 +875,9 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                 </div>
 
                 {/* ── Itens dinâmicos ── */}
-                {renderListSection('Responsabilidades', 'O que o profissional vai fazer...', responsabilidades, setResponsabilidades)}
-                {renderListSection('Requisitos', 'Experiência com React, TypeScript...', requisitos, setRequisitos)}
-                {renderListSection('Diferenciais', 'Conhecimento em AWS, Docker...', diferenciais, setDiferenciais)}
+                {renderListSection('Responsabilidades', 'O que o profissional vai fazer...', responsabilidades, setResponsabilidades, 'responsabilidades')}
+                {renderListSection('Requisitos', 'Experiência com React, TypeScript...', requisitos, setRequisitos, 'requisitos')}
+                {renderListSection('Diferenciais', 'Conhecimento em AWS, Docker...', diferenciais, setDiferenciais, 'diferenciais')}
                 {renderListSection('Benefícios', 'Vale-refeição, plano de saúde...', beneficios, setBeneficios)}
 
                 {/* ── Configurações ── */}
@@ -941,13 +942,63 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         titulo: string,
         placeholder: string,
         items: string[],
-        setItems: React.Dispatch<React.SetStateAction<string[]>>
+        setItems: React.Dispatch<React.SetStateAction<string[]>>,
+        secaoIA?: 'responsabilidades' | 'requisitos' | 'diferenciais'
     ) {
+        const gerandoEstaSecao = secaoIA ? !!aiGerandoSecao[secaoIA] : false
+
+        async function handleGerarComIA() {
+            if (!secaoIA) return
+            if (!form.titulo.trim()) {
+                setErro('Preencha o Título da Vaga para gerar itens com IA.')
+                return
+            }
+            setErro('')
+            setAiGerandoSecao(prev => ({ ...prev, [secaoIA]: true }))
+            const res = await gerarItensDaVaga({
+                titulo: form.titulo,
+                descricao: form.descricao || undefined,
+                secao: secaoIA,
+            })
+            setAiGerandoSecao(prev => ({ ...prev, [secaoIA]: false }))
+            if (res.success && res.data.length > 0) {
+                setItems(res.data)
+            } else if (!res.success) {
+                setErro(res.error || 'Erro ao gerar itens com IA.')
+            }
+        }
+
         return (
             <div style={cardStyle}>
-                <h2 style={sectionTitle}>
-                    <FileText style={{ width: 18, height: 18, color: '#2AB9C0' }} /> {titulo}
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #e8edf5' }}>
+                    <h2 style={{ ...sectionTitle, marginBottom: 0, paddingBottom: 0, borderBottom: 'none', flex: 1 }}>
+                        <FileText style={{ width: 18, height: 18, color: '#2AB9C0' }} /> {titulo}
+                    </h2>
+                    {secaoIA && (
+                        <button
+                            type="button"
+                            onClick={handleGerarComIA}
+                            disabled={gerandoEstaSecao || !form.titulo.trim()}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                padding: '0.3rem 0.65rem', borderRadius: 6,
+                                background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0',
+                                fontSize: '0.75rem', fontWeight: 700,
+                                cursor: (gerandoEstaSecao || !form.titulo.trim()) ? 'not-allowed' : 'pointer',
+                                opacity: (!form.titulo.trim() && !gerandoEstaSecao) ? 0.55 : 1,
+                                transition: 'all 0.2s', flexShrink: 0,
+                            }}
+                            title={!form.titulo.trim() ? 'Preencha o Título da Vaga primeiro' : `Gerar ${titulo.toLowerCase()} com IA`}
+                        >
+                            {gerandoEstaSecao ? (
+                                <div style={{ width: 12, height: 12, border: '2px solid rgba(22,101,52,0.3)', borderTopColor: '#166534', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                            ) : (
+                                <Bot style={{ width: 12, height: 12 }} />
+                            )}
+                            {gerandoEstaSecao ? 'Gerando...' : 'Gerar com IA'}
+                        </button>
+                    )}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {items.map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -957,21 +1008,21 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                 value={item}
                                 onChange={e => updateItem(setItems, idx, e.target.value)}
                             />
-                            {items.length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem(setItems, idx)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        width: 34, height: 34, borderRadius: 8, border: 'none',
-                                        background: '#fef2f2', color: '#dc2626', cursor: 'pointer',
-                                        flexShrink: 0, transition: 'background 0.18s',
-                                    }}
-                                    aria-label={`Remover ${titulo.toLowerCase()}`}
-                                >
-                                    <X style={{ width: 14, height: 14 }} />
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => removeItem(setItems, idx)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: 34, height: 34, borderRadius: 8, border: 'none',
+                                    background: '#fef2f2', color: '#dc2626', cursor: 'pointer',
+                                    flexShrink: 0, transition: 'background 0.18s',
+                                    opacity: items.length === 1 ? 0.35 : 1,
+                                }}
+                                disabled={items.length === 1}
+                                aria-label={`Remover ${titulo.toLowerCase()}`}
+                            >
+                                <X style={{ width: 14, height: 14 }} />
+                            </button>
                         </div>
                     ))}
                 </div>

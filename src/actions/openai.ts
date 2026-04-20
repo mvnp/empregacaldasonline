@@ -840,3 +840,89 @@ export async function listarLogsIA(pagina: number = 1) {
         return { success: false, error: e.message, logs: [], total: 0 }
     }
 }
+
+// ── Gerar itens de uma seção da vaga com IA ──
+export async function gerarItensDaVaga(payload: {
+    titulo: string
+    descricao?: string
+    secao: 'responsabilidades' | 'requisitos' | 'diferenciais'
+}): Promise<{ success: true; data: string[] } | { success: false; error: string }> {
+    if (!payload.titulo?.trim()) {
+        return { success: false, error: 'Preencha o Título da Vaga antes de gerar os itens com IA.' }
+    }
+
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada. Acesse as Configurações.' }
+    }
+
+    const mapaSecao: Record<string, string> = {
+        responsabilidades: 'responsabilidades e atividades que o profissional irá desempenhar no cargo',
+        requisitos: 'requisitos e qualificações necessários para a vaga (formação, experiência, habilidades técnicas)',
+        diferenciais: 'diferenciais e conhecimentos extras que serão considerados um diferencial positivo para os candidatos',
+    }
+
+    const descricaoSecao = mapaSecao[payload.secao]
+    const contextoDescricao = payload.descricao?.trim()
+        ? `\nDescrição da vaga: ${payload.descricao.trim()}`
+        : ''
+
+    const prompt = `Você é um especialista em Recursos Humanos e redação de vagas de emprego. Com base nas informações abaixo, gere de 3 a 5 itens concisos e diretos para a seção de "${payload.secao}" da vaga.
+
+Cargo / Título da Vaga: ${payload.titulo}${contextoDescricao}
+
+Seção a preencher: ${descricaoSecao}
+
+Regras:
+- Retorne SOMENTE um array JSON estrito no formato: ["item 1", "item 2", "item 3"]
+- Cada item deve ser uma frase curta e objetiva (máx. 15 palavras)
+- Comece cada item com verbo no infinitivo (ex: "Atender clientes", "Gerenciar equipe")
+- NÃO numere os itens
+- NÃO use markdown, colchetes extras, explicações ou texto fora do array`
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 1000 } : { max_tokens: 350 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog(`Falha HTTP API (gerarItens - ${payload.secao})`, err)
+            return { success: false, error: err.error?.message || 'Erro ao comunicar com a OpenAI.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        if (!content) return { success: false, error: 'A IA não retornou conteúdo. Tente novamente.' }
+
+        let rawStr = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim()
+
+        try {
+            const parsed = JSON.parse(rawStr)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return { success: true, data: parsed.map((s: any) => String(s).trim()).filter(Boolean) }
+            }
+            return { success: false, error: 'A IA retornou um formato inesperado. Tente novamente.' }
+        } catch {
+            return { success: false, error: 'Falha ao interpretar o retorno da IA. Tente novamente.' }
+        }
+    } catch (e: any) {
+        await gravarLog(`Erro gerarItensDaVaga (${payload.secao})`, e.message)
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
