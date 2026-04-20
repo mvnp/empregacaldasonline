@@ -212,12 +212,11 @@ export async function extrairDadosVagaDeImagem(base64Image: string) {
         }
         
     } catch (e: any) {
-        await gravarLog('Erro inesperado no Try/Catch externo', e.message);
         return { success: false, error: e.message || 'Erro inesperado na IA.' }
     }
 }
 
-export async function gerarDescricaoComIA(titulo: string) {
+export async function gerarDescricaoComIA(titulo: string, textoAtual?: string) {
     if (!titulo || !titulo.trim()) {
         return { success: false, error: 'O título da vaga é obrigatório para gerar a descrição.' }
     }
@@ -226,6 +225,29 @@ export async function gerarDescricaoComIA(titulo: string) {
     if (!config || !config.openai_token) {
         return { success: false, error: 'Chave API da OpenAI não configurada no banco de dados. Acesse as Configurações.' }
     }
+
+    const temTextoAtual = textoAtual && textoAtual.trim().length > 0
+
+    const prompt = temTextoAtual
+        ? `Você é um especialista em Recursos Humanos. Reescreva e melhore a descrição de vaga abaixo, tornando-a mais completa, profissional e atraente. Mantenha todas as informações concretas já mencionadas (horários, requisitos, localidade, condições, etc.) e enriqueça com contexto relevante ao cargo "${titulo}".
+
+TEXTO ATUAL DA VAGA:
+${textoAtual.trim()}
+
+Regras:
+- Preserve TODOS os dados específicos já informados (horários, condições, processos, etc.)
+- Organize o texto em 2 parágrafos fluidos: primeiro sobre as condições/atividades concretas, depois sobre o perfil ideal
+- NÃO invente informações que não estejam no texto original
+- NÃO use formatação Markdown, bullet points ou títulos — apenas texto corrido
+- Retorne somente o texto final, sem introduções como "Aqui está a descrição:"`
+        : `Você é um especialista em Recursos Humanos. Com base no cargo "${titulo}", escreva uma descrição objetiva e direta para esta vaga de emprego.
+
+Regras:
+- Escreva em 1 a 2 parágrafos curtos e diretos
+- Foque nas atividades típicas do cargo, perfil desejado e ambiente de trabalho
+- Seja específico ao cargo informado — NÃO escreva textos genéricos sobre "equipe dinâmica" sem contexto
+- NÃO use formatação Markdown, bullet points ou títulos — apenas texto corrido
+- Retorne somente o texto da descrição, sem introduções`
 
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -236,13 +258,8 @@ export async function gerarDescricaoComIA(titulo: string) {
             },
             body: JSON.stringify({
                 model: config.model || 'gpt-4o',
-                messages: [
-                    {
-                        role: 'user',
-                        content: `Escreva uma breve e atrativa descrição de vaga de emprego baseada no título "${titulo}". Descreva a visão geral, cultura típica e oportunidades que a vaga pode oferecer. Retorne apenas o texto descritivo simples e direto, sem formatação Markdown e sem blocos complexos, em um único parágrafo bem redigido.`
-                    }
-                ],
-                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 350 } ),
+                messages: [{ role: 'user', content: prompt }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 8000 } : { max_tokens: 500 } ),
             })
         })
 
@@ -259,7 +276,7 @@ export async function gerarDescricaoComIA(titulo: string) {
             await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens);
         }
 
-        return { success: true, data: content }
+        return { success: true, data: content?.trim() || '' }
     } catch (e: any) {
         await gravarLog('Erro inesperado no Try/Catch externo (Geração)', e.message);
         return { success: false, error: e.message || 'Erro inesperado na IA ao gerar descrição.' }

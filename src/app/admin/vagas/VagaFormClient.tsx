@@ -746,10 +746,10 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                         setAiGerandoDescricao(true);
                                         setErro('');
                                         const { gerarDescricaoComIA } = await import('@/actions/openai');
-                                        const res = await gerarDescricaoComIA(form.titulo);
+                                        const res = await gerarDescricaoComIA(form.titulo, form.descricao || undefined);
                                         setAiGerandoDescricao(false);
                                         if (res.success && res.data) {
-                                            updateField('descricao', form.descricao ? form.descricao + '\n\n' + res.data : res.data);
+                                            updateField('descricao', res.data);
                                         } else {
                                             setErro(res.error || 'Erro ao gerar descrição.');
                                         }
