@@ -343,7 +343,7 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
     return { success: true, vagaId }
 }
 
-// ── Listar vagas (admin — sem paginação) ──
+// ── Listar vagas (admin — sem paginação, legado) ──
 export async function listarVagas() {
     let admin;
     try {
@@ -359,6 +359,91 @@ export async function listarVagas() {
 
     if (error) return []
     return data || []
+}
+
+// ── Listar vagas (admin — com filtros e paginação no backend) ──
+export interface FiltrosAdmin {
+    busca?: string
+    status?: string
+    modalidade?: string
+    cidade?: string
+    page?: number
+    perPage?: number
+}
+
+export interface ListagemVagasAdminResult {
+    vagas: any[]
+    total: number
+    page: number
+    perPage: number
+    totalPages: number
+}
+
+export async function listarVagasAdmin(filtros: FiltrosAdmin = {}): Promise<ListagemVagasAdminResult> {
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return { vagas: [], total: 0, page: 1, perPage: 18, totalPages: 0 };
+    }
+
+    const page = Math.max(1, filtros.page ?? 1)
+    const perPage = filtros.perPage ?? 18
+    const from = (page - 1) * perPage
+    const to = from + perPage - 1
+
+    // Build queries base
+    let countQuery = admin
+        .from('vagas')
+        .select('id', { count: 'exact', head: true })
+
+    let dataQuery = admin
+        .from('vagas')
+        .select('*, candidaturas(id), empresas(id, user_id, user:user_id(id, tipo))')
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+    // Filtro de busca: título ou empresa (ilike no banco)
+    if (filtros.busca?.trim()) {
+        const termo = `%${filtros.busca.trim()}%`
+        countQuery = countQuery.or(`titulo.ilike.${termo},empresa.ilike.${termo}`) as any
+        dataQuery = dataQuery.or(`titulo.ilike.${termo},empresa.ilike.${termo}`) as any
+    }
+
+    // Filtro de status
+    if (filtros.status) {
+        countQuery = countQuery.eq('status', filtros.status) as any
+        dataQuery = dataQuery.eq('status', filtros.status) as any
+    }
+
+    // Filtro de modalidade
+    if (filtros.modalidade) {
+        countQuery = countQuery.ilike('modalidade', filtros.modalidade) as any
+        dataQuery = dataQuery.ilike('modalidade', filtros.modalidade) as any
+    }
+
+    // Filtro de cidade
+    if (filtros.cidade) {
+        countQuery = countQuery.eq('local', filtros.cidade) as any
+        dataQuery = dataQuery.eq('local', filtros.cidade) as any
+    }
+
+    const [{ count }, { data, error }] = await Promise.all([
+        countQuery as any,
+        dataQuery as any,
+    ])
+
+    if (error) return { vagas: [], total: 0, page, perPage, totalPages: 0 }
+
+    const total = count ?? 0
+
+    return {
+        vagas: data || [],
+        total,
+        page,
+        perPage,
+        totalPages: Math.max(1, Math.ceil(total / perPage)),
+    }
 }
 
 // ── Listar vagas públicas com paginação e filtros ──
