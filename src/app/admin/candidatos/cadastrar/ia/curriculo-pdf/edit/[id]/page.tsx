@@ -12,7 +12,7 @@ import {
     atualizarCandidato, buscarCandidatoPorId,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem, type CandidatoFormData,
 } from '@/actions/candidatos'
-import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA } from '@/actions/openai'
+import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA, gerarHabilidadesComIA } from '@/actions/openai'
 
 /* ── helpers ── */
 const formatarCamelCase = (texto: string) => {
@@ -116,6 +116,8 @@ export default function EditarCandidatoPDFPage() {
     const [resumoIAErro, setResumoIAErro] = useState('')
     const [cargoIALoading, setCargoIALoading] = useState(false)
     const [cargoIAErro, setCargoIAErro] = useState('')
+    const [habilidadesIALoading, setHabilidadesIALoading] = useState(false)
+    const [habilidadesIAErro, setHabilidadesIAErro] = useState('')
     const [expIALoading, setExpIALoading] = useState<Record<number, boolean>>({})
     const [expIAErro, setExpIAErro] = useState<Record<number, string>>({})
 
@@ -295,6 +297,26 @@ export default function EditarCandidatoPDFPage() {
             else setExpIAErro(p => ({ ...p, [idx]: res.error || 'Erro ao gerar descrição.' }))
         } catch { setExpIAErro(p => ({ ...p, [idx]: 'Erro de conexão com a IA.' })) }
         finally { setExpIALoading(p => ({ ...p, [idx]: false })) }
+    }
+
+    /* ── Gerar Habilidades com IA ── */
+    async function handleGerarHabilidades() {
+        if (!form.resumo.trim() && !experiencias.some(e => e.cargo.trim())) {
+            setHabilidadesIAErro('Preencha o Resumo ou os Cargos das Experiências Profissionais primeiro.')
+            return
+        }
+        setHabilidadesIAErro('')
+        setHabilidadesIALoading(true)
+        try {
+            const cargos = experiencias.map(e => e.cargo.trim()).filter(Boolean)
+            const res = await gerarHabilidadesComIA({ resumo: form.resumo, cargos })
+            if (res.success) {
+                const c = habilidades.filter(h => h.trim() !== '')
+                const novasAAdicionar = res.data.map(formatarCamelCase).filter(x => !c.includes(x))
+                if (novasAAdicionar.length > 0) setHabilidades([...c, ...novasAAdicionar])
+            } else setHabilidadesIAErro(res.error || 'Erro ao sugerir habilidades.')
+        } catch { setHabilidadesIAErro('Erro de conexão com a IA.') }
+        finally { setHabilidadesIALoading(false) }
     }
 
     /* ── Submit ── */
@@ -605,7 +627,37 @@ export default function EditarCandidatoPDFPage() {
 
                     {/* ── Habilidades ── */}
                     <div style={cardStyle}>
-                        <h2 style={sectionTitle}><Wrench style={{ width: 18, height: 18, color: '#64748b' }} />Habilidades</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '2px solid #e8edf5', paddingBottom: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#09355F', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Wrench style={{ width: 18, height: 18, color: '#64748b' }} />Habilidades
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={handleGerarHabilidades}
+                                disabled={habilidadesIALoading}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                                    padding: '0.3rem 0.75rem', borderRadius: 8,
+                                    background: habilidadesIALoading ? '#e0e7ef' : '#094171',
+                                    color: habilidadesIALoading ? '#94a3b8' : '#fff',
+                                    fontSize: '0.72rem', fontWeight: 700, border: 'none',
+                                    cursor: habilidadesIALoading ? 'not-allowed' : 'pointer',
+                                    boxShadow: habilidadesIALoading ? 'none' : '0 2px 8px rgba(9,53,95,0.2)',
+                                    transition: 'all 0.18s',
+                                }}
+                            >
+                                {habilidadesIALoading
+                                    ? <div style={{ width: 12, height: 12, border: '2px solid #cbd5e1', borderTopColor: '#64748b', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                    : <span style={{ fontSize: '0.85rem' }}>✨</span>
+                                }
+                                {habilidadesIALoading ? 'Gerando...' : 'Gerar com IA'}
+                            </button>
+                        </div>
+                        {habilidadesIAErro && (
+                            <div style={{ padding: '0.5rem 0.75rem', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: '0.78rem', marginBottom: '1rem', border: '1px solid #fecaca' }}>
+                                {habilidadesIAErro}
+                            </div>
+                        )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             {habilidades.map((h, idx) => (
                                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: '#f1f5f9', borderRadius: 8, padding: '0.3rem 0.6rem', border: '1px solid #e2e8f0' }}>

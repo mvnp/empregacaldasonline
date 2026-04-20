@@ -755,6 +755,71 @@ Retorne SOMENTE um JSON válido com a seguinte estrutura estrita:
     }
 }
 
+export async function gerarHabilidadesComIA(payload: {
+    resumo: string
+    cargos: string[]
+}): Promise<{ success: true, data: string[] } | { success: false, error: string }> {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config || !config.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI não configurada. Acesse as Configurações.' }
+    }
+
+    if (!payload.resumo && (!payload.cargos || payload.cargos.length === 0)) {
+        return { success: false, error: 'Preencha o Resumo ou Experiências Profissionais primeiro.' }
+    }
+
+    const prompt = `Você é um especialista em recrutamento. Com base no resumo profissional e nos cargos já ocupados pelo candidato informados abaixo, sugira exatas 3 a 5 habilidades (hard skills ou soft skills) curtas e relevantes. Retorne apenas o nome das habilidades em um array JSON estrito simples ["skill 1", "skill 2", "skill 3"], sem chaves adicionais, sem markdown e sem explicar nada.
+    
+Resumo/Sobre: ${payload.resumo || 'Não informado'}
+Cargos Anteriores: ${(payload.cargos || []).join(', ') || 'Nenhum'}`
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.openai_token}`
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o',
+                messages: [{ role: 'user', content: prompt }],
+                ...( (config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i) ? { max_completion_tokens: 1500 } : { max_tokens: 100 } ),
+            })
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            await gravarLog('Falha HTTP API (Habilidades)', err)
+            return { success: false, error: err.error?.message || 'Erro ao gerar habilidades com IA.' }
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        if (!content) return { success: false, error: 'A IA não retornou conteúdo. Tente novamente.' }
+        
+        let rawStr = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim()
+        
+        try {
+            const parsed = JSON.parse(rawStr)
+            if (Array.isArray(parsed)) {
+                return { success: true, data: parsed }
+            } else {
+                return { success: false, error: 'A IA retornou um formato inesperado.' }
+            }
+        } catch {
+            return { success: false, error: 'A IA não retornou um array estruturado.' }
+        }
+    } catch (e: any) {
+        await gravarLog('Erro gerarHabilidadesComIA', e.message)
+        return { success: false, error: e.message || 'Erro de rede na IA.' }
+    }
+}
+
 export async function listarLogsIA(pagina: number = 1) {
     try {
         await requireAdmin()
