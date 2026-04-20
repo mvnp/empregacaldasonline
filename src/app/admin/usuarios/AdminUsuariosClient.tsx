@@ -63,18 +63,18 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             const matchBusca = u.nome.toLowerCase().includes(busca.toLowerCase()) || u.email.toLowerCase().includes(busca.toLowerCase())
             if (busca && !matchBusca) return false
             if (filtroTipo) {
-                if (filtroTipo === 'candidato_sem_cv') {
+                if (filtroTipo === 'candidato_sem_cv' || filtroTipo === 'candidato_com_cv') {
                     if (u.tipo !== 'candidato') return false
                     const cand = (u as any)._candidato
-                    if (!cand) return true 
                     
-                    const documents = cand.candidato_documentos || []
+                    const documents = cand?.candidato_documentos || []
                     const temPdfNoBanco = documents.some((d: any) => 
                         d.tipo?.toLowerCase() === 'pdf' && 
                         (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
                     )
                     
-                    if (temPdfNoBanco) return false 
+                    if (filtroTipo === 'candidato_sem_cv' && temPdfNoBanco) return false 
+                    if (filtroTipo === 'candidato_com_cv' && !temPdfNoBanco) return false 
                 } else {
                     if (u.tipo !== filtroTipo) return false
                 }
@@ -250,6 +250,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         { value: 'admin', label: 'Admin' },
                         { value: 'empregador', label: 'Empregador' },
                         { value: 'candidato', label: 'Candidato' },
+                        { value: 'candidato_com_cv', label: 'Candidato com CV' },
                         { value: 'candidato_sem_cv', label: 'Candidato sem CV' }
                     ]}
                 />
