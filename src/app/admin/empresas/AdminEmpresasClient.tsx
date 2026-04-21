@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
-    MapPin, Building2, Globe, Award, Upload, Users, Briefcase,
-    ToggleLeft, ToggleRight, Loader2, Search, ChevronLeft, ChevronRight
+    MapPin, Building2, Globe, Award, Upload, Users, Briefcase, Plus,
+    ToggleLeft, ToggleRight, Loader2, Search, ChevronLeft, ChevronRight, Eye
 } from 'lucide-react'
 import { EmpresaAdmin } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -14,6 +14,7 @@ import FilterSearchInput from '@/components/admin/FilterSearchInput'
 import LoadMoreButton from '@/components/admin/LoadMoreButton'
 import ImportarEstabelecimentosModal from '@/components/admin/ImportarEstabelecimentosModal'
 import { listarEmpresasDeCandidatos } from '@/actions/empresas'
+import Link from 'next/link'
 
 const POR_PAGINA = 18
 
@@ -22,6 +23,17 @@ type EmpresaCandidato = {
     totalCargos: number
     totalCandidatos: number
     cargosExemplo: string[]
+}
+
+function slugify(text: string) {
+    if (!text) return ''
+    return text.toString().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
 }
 
 export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdmin[] }) {
@@ -41,15 +53,34 @@ export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdm
     const [buscaCandidatos, setBuscaCandidatos] = useState('')
     const [paginaCandidatos, setPaginaCandidatos] = useState(1)
 
-    async function handleToggleView() {
+    // Restaurar view salva no reload
+    useEffect(() => {
+        const savedView = localStorage.getItem('empregacaldas_empresas_view')
+        if (savedView === 'cv') {
+            setViewCandidatos(true)
+            setCarregandoCandidatos(true)
+            listarEmpresasDeCandidatos().then(data => {
+                setEmpresasCandidatos(data as EmpresaCandidato[])
+                setCarregandoCandidatos(false)
+            }).catch(() => {
+                setCarregandoCandidatos(false)
+            })
+        }
+    }, [])
+
+    async function handleToggleViewCandidatos() {
         const novaView = !viewCandidatos
         setViewCandidatos(novaView)
+        localStorage.setItem('empregacaldas_empresas_view', novaView ? 'cv' : 'lista')
 
         if (novaView && empresasCandidatos.length === 0) {
             setCarregandoCandidatos(true)
-            const data = await listarEmpresasDeCandidatos() as EmpresaCandidato[]
-            setEmpresasCandidatos(data)
-            setCarregandoCandidatos(false)
+            try {
+                const data = await listarEmpresasDeCandidatos() as EmpresaCandidato[]
+                setEmpresasCandidatos(data)
+            } finally {
+                setCarregandoCandidatos(false)
+            }
         }
         setPaginaCandidatos(1)
         setBuscaCandidatos('')
@@ -93,42 +124,41 @@ export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdm
     const cidadesOpcoes = [...new Set(empresas.map(e => e.local).filter(Boolean))].map(c => ({ value: c as string, label: c as string }))
 
     // ── Botão toggle ──
+    const isViewCandidatos = viewCandidatos
     const BotaoToggle = (
         <button
             id="btn-toggle-empresas-candidatos"
-            onClick={handleToggleView}
-            title={viewCandidatos ? 'Ver empresas cadastradas' : 'Ver empresas dos currículos de candidatos'}
+            onClick={handleToggleViewCandidatos}
+            title={isViewCandidatos ? 'Ver empresas cadastradas' : 'Ver empresas dos currículos de candidatos'}
             style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                background: viewCandidatos
-                    ? 'linear-gradient(135deg, #7c3aed, #a855f7)'
-                    : '#f1f5f9',
-                color: viewCandidatos ? '#fff' : '#475569',
-                border: viewCandidatos ? 'none' : '1.5px solid #e2e8f0',
-                borderRadius: 12,
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                background: isViewCandidatos ? 'linear-gradient(135deg, #7c3aed, #a855f7)' : '#f8fafc',
+                color: isViewCandidatos ? '#fff' : '#475569',
+                border: isViewCandidatos ? '1.5px solid transparent' : '1.5px solid #e2e8f0',
+                borderRadius: 10,
                 padding: '0.65rem 1.1rem', cursor: 'pointer',
                 fontWeight: 600, fontSize: '0.82rem',
-                boxShadow: viewCandidatos ? '0 2px 10px rgba(124,58,237,0.25)' : 'none',
-                transition: 'all 0.2s',
+                boxShadow: isViewCandidatos ? '0 4px 12px rgba(124,58,237,0.25)' : 'none',
+                transition: 'all 0.15s',
                 whiteSpace: 'nowrap',
             }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            onMouseEnter={e => { if (!isViewCandidatos) e.currentTarget.style.background = '#f1f5f9' }}
+            onMouseLeave={e => { if (!isViewCandidatos) e.currentTarget.style.background = '#f8fafc' }}
         >
-            {viewCandidatos
+            {isViewCandidatos
                 ? <ToggleRight style={{ width: 16, height: 16 }} />
-                : <ToggleLeft style={{ width: 16, height: 16 }} />
+                : <Eye style={{ width: 16, height: 16 }} />
             }
-            {viewCandidatos ? 'Currículos' : 'Currículos'}
+            {isViewCandidatos ? 'Empresas (CV)' : 'Ver Empresas (CV)'}
         </button>
     )
 
     return (
         <div>
             <AdminPageHeader
-                titulo={viewCandidatos ? 'Empresas dos Currículos' : 'Empresas'}
+                titulo={isViewCandidatos ? 'Empresas dos Currículos' : 'Empresas'}
                 subtitulo={
-                    viewCandidatos
+                    isViewCandidatos
                         ? carregandoCandidatos
                             ? 'Carregando...'
                             : `${candidatosFiltrados.length} empresas mencionadas em currículos`
@@ -137,34 +167,55 @@ export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdm
                 acao={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {BotaoToggle}
-                        {!viewCandidatos && (
-                            <button
-                                id="btn-importar-estabelecimentos"
-                                onClick={() => setModalImportarAberto(true)}
-                                title="Importar estabelecimentos via CSV"
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                    background: 'linear-gradient(135deg, #09355F, #2AB9C0)',
-                                    color: '#fff', border: 'none', borderRadius: 12,
-                                    padding: '0.65rem 1.1rem', cursor: 'pointer',
-                                    fontWeight: 600, fontSize: '0.82rem',
-                                    boxShadow: '0 2px 8px rgba(9,53,95,0.18)',
-                                    transition: 'opacity 0.15s',
-                                    whiteSpace: 'nowrap',
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-                                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                            >
-                                <Upload style={{ width: 16, height: 16 }} />
-                                Importar CSV
-                            </button>
+                        {!isViewCandidatos && (
+                            <>
+                                <button
+                                    id="btn-importar-estabelecimentos"
+                                    onClick={() => setModalImportarAberto(true)}
+                                    title="Importar estabelecimentos via CSV"
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                        background: '#fff',
+                                        color: '#475569', border: '1.5px solid #e2e8f0', borderRadius: 10,
+                                        padding: '0.65rem 1.1rem', cursor: 'pointer',
+                                        fontWeight: 600, fontSize: '0.82rem',
+                                        transition: 'all 0.15s',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                                >
+                                    <Upload style={{ width: 16, height: 16 }} />
+                                    Importar CSV
+                                </button>
+                                <Link
+                                    id="btn-nova-empresa"
+                                    href="/admin/empresas/cadastrar"
+                                    title="Cadastrar nova empresa"
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                        background: 'linear-gradient(135deg, #09355F, #0d4a80)', textDecoration: 'none',
+                                        color: '#fff', border: '1.5px solid transparent', borderRadius: 10,
+                                        padding: '0.65rem 1.1rem', cursor: 'pointer',
+                                        fontWeight: 700, fontSize: '0.82rem',
+                                        boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
+                                        transition: 'all 0.15s',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                                    onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                                >
+                                    <Plus style={{ width: 16, height: 16 }} />
+                                    Nova Empresa
+                                </Link>
+                            </>
                         )}
                     </div>
                 }
             />
 
             {/* ══════════ VIEW: Empresas dos Currículos ══════════ */}
-            {viewCandidatos ? (
+            {isViewCandidatos ? (
                 <div>
                     {/* Barra de busca */}
                     <div style={{
@@ -224,13 +275,12 @@ export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdm
                                         display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap',
                                         transition: 'border-color 0.18s',
                                     }}>
-                                        {/* Ícone */}
                                         <div style={{
                                             width: 44, height: 44, borderRadius: 11, flexShrink: 0,
-                                            background: 'linear-gradient(135deg, #7c3aed14, #a855f714)',
+                                            background: 'linear-gradient(135deg, #09355F14, #2AB9C014)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}>
-                                            <Building2 style={{ width: 20, height: 20, color: '#7c3aed' }} />
+                                            <Building2 style={{ width: 20, height: 20, color: '#2AB9C0' }} />
                                         </div>
 
                                         {/* Nome + cargos exemplo */}
@@ -272,6 +322,55 @@ export default function AdminEmpresasClient({ empresas }: { empresas: EmpresaAdm
                                             }}>
                                                 Currículo
                                             </span>
+                                            <a
+                                                href={`https://www.google.com/search?q=${encodeURIComponent(`${e.nome}, Caldas Novas`)}`}
+                                                target="_blank" rel="noopener noreferrer"
+                                                style={{
+                                                    background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
+                                                    padding: '0.3rem 0.65rem', cursor: 'pointer',
+                                                    fontSize: '0.72rem', fontWeight: 600, color: '#3b82f6',
+                                                    display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                                    textDecoration: 'none', marginLeft: '0.5rem',
+                                                }}
+                                            >
+                                                <Search style={{ width: 12, height: 12 }} /> Pesquisar no Google
+                                            </a>
+
+                                            {(() => {
+                                                const slugNome = slugify(e.nome)
+                                                const existingEmpresa = empresas.find(emp => slugify(emp.nome) === slugNome)
+
+                                                if (existingEmpresa) {
+                                                    return (
+                                                        <Link
+                                                            href={`/admin/empresas/editar/${existingEmpresa.id}`}
+                                                            style={{
+                                                                background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
+                                                                padding: '0.3rem 0.65rem', cursor: 'pointer',
+                                                                fontSize: '0.72rem', fontWeight: 600, color: '#FE8341',
+                                                                display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                                                textDecoration: 'none', marginLeft: '0.5rem',
+                                                            }}
+                                                        >
+                                                            <Briefcase style={{ width: 12, height: 12 }} /> Editar empresa
+                                                        </Link>
+                                                    )
+                                                }
+                                                return (
+                                                    <Link
+                                                        href={`/admin/empresas/cadastrar?nome=${encodeURIComponent(e.nome)}`}
+                                                        style={{
+                                                            background: 'none', border: '1.5px solid #e8edf5', borderRadius: 8,
+                                                            padding: '0.3rem 0.65rem', cursor: 'pointer',
+                                                            fontSize: '0.72rem', fontWeight: 600, color: '#09355F',
+                                                            display: 'flex', alignItems: 'center', gap: '0.2rem',
+                                                            textDecoration: 'none', marginLeft: '0.5rem',
+                                                        }}
+                                                    >
+                                                        <Plus style={{ width: 12, height: 12 }} /> Criar empresa
+                                                    </Link>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
                                 ))}

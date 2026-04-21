@@ -129,7 +129,113 @@ export async function buscarEmpresaPorNome(nome: string) {
     return data || null;
 }
 
-// ── Empresas mencionadas em candidato_experiencias ──
+// ── Cadastrar empresa diretamente (admin) ──
+export interface EmpresaFormData {
+    nome_fantasia: string
+    razao_social?: string
+    cnpj?: string
+    email_contato: string
+    telefone?: string
+    whatsapp?: string
+    website?: string
+    linkedin?: string
+    local?: string
+    logradouro?: string
+    numero?: string
+    bairro?: string
+    cidade?: string
+    estado?: string
+    descricao?: string
+    setor?: string
+    tamanho_empresa?: string
+    fundacao_ano?: string
+    status?: string
+}
+
+export async function cadastrarEmpresaAdmin(data: EmpresaFormData) {
+    let adminClient;
+    try {
+        adminClient = await requireAdmin();
+    } catch {
+        return { success: false, error: 'Sem permissão.' }
+    }
+
+    if (!data.nome_fantasia?.trim()) return { success: false, error: 'Nome fantasia é obrigatório.' }
+    if (!data.email_contato?.trim()) return { success: false, error: 'E-mail de contato é obrigatório.' }
+
+    // Verificar se já existe empresa com esse nome ou e-mail
+    const { data: existente } = await (adminClient.from('empresas') as any)
+        .select('id')
+        .or(`nome_fantasia.ilike.${data.nome_fantasia.trim()},email_contato.eq.${data.email_contato.trim()}`)
+        .limit(1)
+        .maybeSingle()
+
+    if (existente) return { success: false, error: 'Já existe uma empresa com este nome ou e-mail.' }
+
+    // Criar usuário Auth para o empregador
+    const { data: novoAuth, error: authErr } = await (adminClient as any).auth.admin.createUser({
+        email: data.email_contato.trim(),
+        password: 'Mudar@123',
+        email_confirm: true,
+        user_metadata: { name: data.nome_fantasia.trim() },
+    })
+
+    let userId: number | null = null
+
+    if (novoAuth?.user) {
+        const { data: newUserDb } = await (adminClient.from('users') as any).insert({
+            auth_id: novoAuth.user.id,
+            tipo: 'empregador',
+            nome: data.nome_fantasia.trim(),
+            sobrenome: '(Empresa)',
+            email: data.email_contato.trim(),
+        }).select('id').single()
+
+        if (newUserDb) userId = newUserDb.id
+    }
+
+    if (!userId) {
+        // fallback: pega o user admin logado como criador
+        const { createAdminClient: makeAdmin } = await import('@/lib/supabase')
+        const supabase = await import('@/lib/supabase').then(m => m.createServerSupabaseClient())
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser) {
+            const { data: dbUser } = await makeAdmin()
+                .from('users').select('id').eq('auth_id', authUser.id).single() as any
+            if (dbUser) userId = dbUser.id
+        }
+    }
+
+    const { data: novaEmpresa, error: empErr } = await (adminClient.from('empresas') as any).insert({
+        user_id: userId,
+        nome_fantasia: data.nome_fantasia.trim(),
+        razao_social: data.razao_social?.trim() || data.nome_fantasia.trim(),
+        cnpj: data.cnpj?.trim() || null,
+        email_contato: data.email_contato.trim(),
+        telefone: data.telefone?.trim() || null,
+        whatsapp: data.whatsapp?.trim() || null,
+        website: data.website?.trim() || null,
+        linkedin: data.linkedin?.trim() || null,
+        local: data.local?.trim() || null,
+        logradouro: data.logradouro?.trim() || null,
+        numero: data.numero?.trim() || null,
+        bairro: data.bairro?.trim() || null,
+        cidade: data.cidade?.trim() || null,
+        estado: data.estado?.trim() || null,
+        descricao: data.descricao?.trim() || null,
+        setor: data.setor?.trim() || null,
+        tamanho_empresa: data.tamanho_empresa?.trim() || null,
+        fundacao_ano: data.fundacao_ano ? parseInt(data.fundacao_ano) : null,
+        status: data.status || 'ativa',
+    }).select('id').single()
+
+    if (empErr || !novaEmpresa) {
+        return { success: false, error: 'Erro ao cadastrar empresa: ' + (empErr?.message || 'desconhecido') }
+    }
+
+    return { success: true, id: novaEmpresa.id }
+}
+
 export async function listarEmpresasDeCandidatos() {
     let admin;
     try {
@@ -171,3 +277,41 @@ export async function listarEmpresasDeCandidatos() {
         .sort((a, b) => b.totalCandidatos - a.totalCandidatos)
 }
 
+export async function atualizarEmpresaAdmin(id: number, data: EmpresaFormData) {
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return { success: false, error: 'Sem permissão.' }
+    }
+
+    if (!data.nome_fantasia?.trim()) return { success: false, error: 'Nome fantasia é obrigatório.' }
+
+    const { error } = await (admin.from('empresas') as any).update({
+        nome_fantasia: data.nome_fantasia.trim(),
+        razao_social: data.razao_social?.trim() || null,
+        cnpj: data.cnpj?.trim() || null,
+        email_contato: data.email_contato.trim(),
+        telefone: data.telefone?.trim() || null,
+        whatsapp: data.whatsapp?.trim() || null,
+        website: data.website?.trim() || null,
+        linkedin: data.linkedin?.trim() || null,
+        local: data.local?.trim() || null,
+        logradouro: data.logradouro?.trim() || null,
+        numero: data.numero?.trim() || null,
+        bairro: data.bairro?.trim() || null,
+        cidade: data.cidade?.trim() || null,
+        estado: data.estado?.trim() || null,
+        descricao: data.descricao?.trim() || null,
+        setor: data.setor?.trim() || null,
+        tamanho_empresa: data.tamanho_empresa?.trim() || null,
+        fundacao_ano: data.fundacao_ano ? parseInt(data.fundacao_ano) : null,
+        status: data.status || 'ativa',
+    }).eq('id', id)
+
+    if (error) {
+        return { success: false, error: 'Erro ao atualizar: ' + error.message }
+    }
+
+    return { success: true, id }
+}
