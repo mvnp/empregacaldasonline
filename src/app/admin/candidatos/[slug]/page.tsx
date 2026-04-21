@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
     Mail, Phone, MapPin, Calendar, Clock, Briefcase,
     GraduationCap, FileText, Download, Globe, Linkedin, Github,
-    Shield, Languages, DollarSign, User
+    Shield, Languages, DollarSign, User, Tag
 } from 'lucide-react'
 import { getStatusCandidaturaColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -12,6 +12,7 @@ import DetailMiniInfo from '@/components/admin/DetailMiniInfo'
 import BackButton from '@/components/admin/BackButton'
 import TagBadge from '@/components/admin/TagBadge'
 import { buscarCandidato } from '@/actions/candidatos'
+import CategorizarButton from '@/components/admin/CategorizarButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -139,7 +140,8 @@ export default async function CandidatoDetalhePage({ params }: { params: Promise
                 empresa: c.vaga?.empresa || 'Não informada',
                 data: c.created_at.split('T')[0],
                 status: c.status
-            }))
+            })),
+        categorias: (candidatoDb.categorias || []).map((c: any) => c.vaga_categorias?.descricao).filter(Boolean),
     }
 
     return (
@@ -147,7 +149,12 @@ export default async function CandidatoDetalhePage({ params }: { params: Promise
             <AdminPageHeader
                 titulo={candidato.nome}
                 subtitulo={`${candidato.cargo} · ${candidato.local}`}
-                acao={<BackButton href="/admin/candidatos" />}
+                acao={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CategorizarButton candidatoId={candidato.id} />
+                        <BackButton href="/admin/candidatos" />
+                    </div>
+                }
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '1.25rem', alignItems: 'start' }} className="admin-main-grid">
@@ -215,6 +222,12 @@ export default async function CandidatoDetalhePage({ params }: { params: Promise
                             )}
                         </div>
                     </DetailSection>
+
+                    {candidato.categorias.length > 0 && (
+                        <DetailSection icon={() => <Tag style={{ width: 16, height: 16, color: '#09355F' }} />} titulo="Categorias">
+                            <TagBadge items={candidato.categorias} />
+                        </DetailSection>
+                    )}
 
                     <DetailSection semHeader>
                         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

@@ -5,13 +5,14 @@ import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, User, Briefcase, GraduationCap,
     Wrench, Globe, Phone, DollarSign, ExternalLink, FileText,
-    Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan
+    Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan, Tag
 } from 'lucide-react'
 import {
     cadastrarCandidatoViaPDF,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem,
 } from '@/actions/candidatos'
 import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA, gerarHabilidadesComIA } from '@/actions/openai'
+import CategorizarModal from '@/components/admin/CategorizarModal'
 
 /* ── helpers ── */
 const gerarCpfAleatorio = () => {
@@ -110,6 +111,8 @@ export default function CadastrarCandidatoPDFPage() {
     const [habilidadesIAErro, setHabilidadesIAErro] = useState('')
     const [expIALoading, setExpIALoading] = useState<Record<number, boolean>>({})
     const [expIAErro, setExpIAErro] = useState<Record<number, string>>({})
+    const [showCategorizarModal, setShowCategorizarModal] = useState(false)
+    const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<number[]>([])
 
     const [form, setForm] = useState<FormState>({
         user_id: 0,
@@ -393,6 +396,7 @@ export default function CadastrarCandidatoPDFPage() {
                 experiencias: experiencias.filter(e => e.cargo.trim() || e.empresa.trim()),
                 formacoes: formacoes.filter(f => f.curso.trim() || f.instituicao.trim()),
                 idiomas: idiomas.filter(i => i.idioma.trim()),
+                categoriaIds: categoriasSelecionadas,
                 pdfBase64,
                 pdfNomeOriginal: pdfFile?.name || 'curriculo.pdf',
             })
@@ -491,6 +495,24 @@ export default function CadastrarCandidatoPDFPage() {
                             <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Envie o currículo em PDF — a IA extrai e preenche os dados automaticamente</p>
                         </div>
                     </div>
+
+                    {pdfFile && pdfStep === 'done' && (
+                        <button
+                            type="button"
+                            onClick={() => setShowCategorizarModal(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.65rem 1.4rem', borderRadius: 10,
+                                background: categoriasSelecionadas.length > 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #09355F, #0d4a80)',
+                                color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: categoriasSelecionadas.length > 0 ? '0 4px 12px rgba(16,185,129,0.25)' : '0 4px 12px rgba(9,53,95,0.25)',
+                            }}
+                        >
+                            <Tag style={{ width: 16, height: 16 }} /> 
+                            {categoriasSelecionadas.length > 0 ? `Categorizado (${categoriasSelecionadas.length})` : 'Categorizar'}
+                        </button>
+                    )}
 
                     {pdfFile && pdfStep === 'done' && (
                         <button
@@ -1148,6 +1170,25 @@ export default function CadastrarCandidatoPDFPage() {
                         )}
                     </div>
                 </div>
+            )}
+            {showCategorizarModal && (
+                <CategorizarModal
+                    formSnapshot={{
+                        nome_completo: `${form.nome} ${form.sobrenome}`.trim(),
+                        cargo_desejado: form.cargo_desejado,
+                        resumo: form.resumo,
+                        experiencias: experiencias.filter(e => e.cargo || e.empresa),
+                        formacoes: formacoes.filter(f => f.curso || f.instituicao),
+                        habilidades: habilidades.filter(Boolean),
+                        idiomas: idiomas.filter(i => i.idioma),
+                    }}
+                    initialSelecionadas={categoriasSelecionadas}
+                    onClose={() => setShowCategorizarModal(false)}
+                    onSaved={(selecionadas) => {
+                        setCategoriasSelecionadas(selecionadas)
+                        setShowCategorizarModal(false)
+                    }}
+                />
             )}
         </div>
     )

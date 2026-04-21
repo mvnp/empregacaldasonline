@@ -943,3 +943,71 @@ Regras:
     }
 }
 
+// ── Classificar candidato em categorias com IA ──
+export async function classificarCandidatoComIA(payload: {
+    candidato: Record<string, any>
+    categorias: { id: number; descricao: string }[]
+}): Promise<{ success: boolean; categoriaIds?: number[]; error?: string }> {
+    const config = await lerConfiguracaoOpenAI()
+    if (!config?.openai_token) {
+        return { success: false, error: 'Chave API da OpenAI nao configurada.' }
+    }
+
+    const listaCategorias = payload.categorias
+        .map((c) => 'id=' + c.id + ': ' + c.descricao)
+        .join('\n')
+
+    const dadosCandidato = JSON.stringify(payload.candidato, null, 2)
+
+    const prompt = [
+        'Voce e um classificador de perfis profissionais.',
+        'Com base nas informacoes do candidato abaixo, selecione ATE 2 categorias da lista que melhor representam o perfil desse candidato.',
+        '',
+        'CATEGORIAS DISPONIVEIS:',
+        listaCategorias,
+        '',
+        'DADOS DO CANDIDATO:',
+        dadosCandidato,
+        '',
+        'Responda APENAS com um JSON no formato: { "ids": [<id1>, <id2>] }',
+        'Use apenas IDs da lista. Selecione 1 ou 2 categorias. Sem explicacoes.',
+    ].join('\n')
+
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + config.openai_token,
+            },
+            body: JSON.stringify({
+                model: config.model || 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
+                ...((config.model || '').match(/^(o1|o3|o4|gpt-5|gpt-4\.5)/i)
+                    ? { max_completion_tokens: 200 }
+                    : { max_tokens: 200 }),
+            }),
+        })
+
+        if (!response.ok) {
+            const err = await response.json()
+            return { success: false, error: err.error?.message || 'Erro na API OpenAI.' }
+        }
+
+        const data = await response.json()
+        if (data.usage && config.user_id) {
+            await registrarConsumoToken(config.user_id, config.model || 'gpt-4o-mini', data.usage.prompt_tokens, data.usage.completion_tokens)
+        }
+
+        const content = data.choices?.[0]?.message?.content
+        if (!content) return { success: false, error: 'IA nao retornou conteudo.' }
+
+        const parsed = JSON.parse(content)
+        const ids = (Array.isArray(parsed.ids) ? parsed.ids : []).map(Number).filter(Boolean)
+
+        return { success: true, categoriaIds: ids.slice(0, 2) }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}

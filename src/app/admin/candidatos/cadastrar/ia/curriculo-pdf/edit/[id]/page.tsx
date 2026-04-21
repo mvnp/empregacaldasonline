@@ -6,13 +6,14 @@ import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, User, Briefcase, GraduationCap,
     Wrench, Globe, Phone, DollarSign, ExternalLink, FileText,
-    Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan, RefreshCw
+    Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan, RefreshCw, Tag
 } from 'lucide-react'
 import {
     atualizarCandidato, buscarCandidatoPorId,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem, type CandidatoFormData,
 } from '@/actions/candidatos'
 import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA, gerarHabilidadesComIA } from '@/actions/openai'
+import CategorizarModal from '@/components/admin/CategorizarModal'
 
 /* ── helpers ── */
 const formatarCamelCase = (texto: string) => {
@@ -120,6 +121,7 @@ export default function EditarCandidatoPDFPage() {
     const [habilidadesIAErro, setHabilidadesIAErro] = useState('')
     const [expIALoading, setExpIALoading] = useState<Record<number, boolean>>({})
     const [expIAErro, setExpIAErro] = useState<Record<number, string>>({})
+    const [showCategorizarModal, setShowCategorizarModal] = useState(false)
 
     const [form, setForm] = useState<FormState>(FORM_VAZIO)
     const [experiencias, setExperiencias] = useState<ExperienciaItem[]>([
@@ -420,6 +422,20 @@ export default function EditarCandidatoPDFPage() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                            type="button"
+                            onClick={() => setShowCategorizarModal(true)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.65rem 1.4rem', borderRadius: 10,
+                                background: 'linear-gradient(135deg, #09355F, #0d4a80)',
+                                color: '#fff', fontSize: '0.875rem', fontWeight: 700,
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
+                            }}
+                        >
+                            <Tag style={{ width: 16, height: 16 }} /> Categorizar
+                        </button>
                         {pdfFile && pdfStep === 'done' && (
                             <button type="button" onClick={() => { const url = URL.createObjectURL(pdfFile); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 10000) }}
                                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -768,6 +784,13 @@ export default function EditarCandidatoPDFPage() {
                         </div>
                     </div>
                 </div>
+            )}
+            {showCategorizarModal && (
+                <CategorizarModal
+                    candidatoId={candidatoId}
+                    onClose={() => setShowCategorizarModal(false)}
+                    onSaved={() => setShowCategorizarModal(false)}
+                />
             )}
         </div>
     )

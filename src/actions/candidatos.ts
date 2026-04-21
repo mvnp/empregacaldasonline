@@ -306,6 +306,10 @@ export async function buscarCandidato(id: number) {
             candidaturas:candidaturas(
                 status, created_at,
                 vaga:vagas(titulo, empresa)
+            ),
+            categorias:candidato_categorias(
+                categoria_id,
+                vaga_categorias(descricao, slug)
             )
         `)
         .eq('id', id)
@@ -435,6 +439,7 @@ export interface CandidatoPDFData {
     experiencias: ExperienciaItem[]
     formacoes: FormacaoItem[]
     idiomas: IdiomaItem[]
+    categoriaIds?: number[]
     // PDF storage
     pdfBase64: string
     pdfNomeOriginal: string
@@ -645,6 +650,7 @@ export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
     await (admin.from('candidato_formacoes') as any).delete().eq('candidato_id', candId)
     await (admin.from('candidato_habilidades') as any).delete().eq('candidato_id', candId)
     await (admin.from('candidato_idiomas') as any).delete().eq('candidato_id', candId)
+    await (admin.from('candidato_categorias') as any).delete().eq('candidato_id', candId)
 
     const DATA_INICIO_FALLBACK = '1900-01-01' // fallback quando a IA não extrai a data
 
@@ -687,6 +693,12 @@ export async function cadastrarCandidatoViaPDF(dados: CandidatoPDFData) {
     const idiomas = (dados.idiomas || []).filter(i => i.idioma?.trim())
         .map((i, idx) => ({ candidato_id: candId, idioma: i.idioma.trim(), nivel: i.nivel || null, ordem: idx }))
     if (idiomas.length > 0) await admin.from('candidato_idiomas').insert(idiomas as any)
+
+    const categorias = dados.categoriaIds || []
+    if (categorias.length > 0) {
+        const catRows = categorias.map(cId => ({ candidato_id: candId, categoria_id: cId }))
+        await admin.from('candidato_categorias').insert(catRows as any)
+    }
 
     // ── 6. REGISTRAR DOCUMENTO PDF NA TABELA candidato_documentos ──
     if (pdfPublicUrl || pdfStoragePath) {
@@ -796,5 +808,55 @@ export async function buscarCandidatoPorId(id: number) {
         return { success: true, data }
     } catch (e: any) {
         return { success: false, error: e.message, data: null }
+    }
+}
+
+// ============ CATEGORIAS ============
+
+export async function listarVagaCategorias() {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+        .from('vaga_categorias')
+        .select('id, descricao, slug')
+        .order('descricao') as { data: any; error: any }
+    if (error || !data) return []
+    return data as { id: number; descricao: string; slug: string }[]
+}
+
+export async function buscarCategoriasDoCandidato(candidatoId: number) {
+    const admin = createAdminClient()
+    const { data } = await admin
+        .from('candidato_categorias')
+        .select('categoria_id')
+        .eq('candidato_id', candidatoId) as { data: any }
+    return (data || []).map((r: any) => r.categoria_id as number)
+}
+
+export async function salvarCategoriasCandidato(candidatoId: number, categoriaIds: number[]) {
+    try {
+        const admin = await requireAdmin()
+        await admin.from('candidato_categorias').delete().eq('candidato_id', candidatoId)
+        if (categoriaIds.length > 0) {
+            const rows = categoriaIds.map(catId => ({ candidato_id: candidatoId, categoria_id: catId }))
+            const { error } = await admin.from('candidato_categorias').insert(rows as any)
+            if (error) return { success: false, error: error.message }
+        }
+        return { success: true }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+export async function buscarCandidatoParaCategorizacao(candidatoId: number) {
+    try {
+        const admin = await requireAdmin()
+        const { data, error } = await (admin.from('candidatos') as any)
+            .select('nome_completo, cargo_desejado, resumo, candidato_experiencias(cargo, empresa, descricao), candidato_formacoes(curso, instituicao, grau), candidato_habilidades(texto), candidato_idiomas(idioma, nivel)')
+            .eq('id', candidatoId)
+            .single()
+        if (error || !data) return null
+        return data
+    } catch {
+        return null
     }
 }
