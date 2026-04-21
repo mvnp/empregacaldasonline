@@ -128,3 +128,46 @@ export async function buscarEmpresaPorNome(nome: string) {
         .single();
     return data || null;
 }
+
+// ── Empresas mencionadas em candidato_experiencias ──
+export async function listarEmpresasDeCandidatos() {
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
+
+    const { data, error } = await admin
+        .from('candidato_experiencias')
+        .select('empresa, cargo, candidato_id')
+        .not('empresa', 'is', null)
+        .neq('empresa', '') as { data: any[]; error: any }
+
+    if (error || !data) return []
+
+    // Agrupa por nome de empresa (case-insensitive)
+    const mapa = new Map<string, { empresa: string; cargos: Set<string>; candidatos: Set<number> }>()
+
+    for (const row of data) {
+        const nome = (row.empresa as string).trim()
+        if (!nome) continue
+        const chave = nome.toLowerCase()
+        if (!mapa.has(chave)) {
+            mapa.set(chave, { empresa: nome, cargos: new Set(), candidatos: new Set() })
+        }
+        const entry = mapa.get(chave)!
+        if (row.cargo) entry.cargos.add(row.cargo)
+        if (row.candidato_id) entry.candidatos.add(row.candidato_id)
+    }
+
+    return Array.from(mapa.values())
+        .map(e => ({
+            nome: e.empresa,
+            totalCargos: e.cargos.size,
+            totalCandidatos: e.candidatos.size,
+            cargosExemplo: Array.from(e.cargos).slice(0, 3),
+        }))
+        .sort((a, b) => b.totalCandidatos - a.totalCandidatos)
+}
+
