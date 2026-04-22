@@ -47,6 +47,58 @@ export async function listarUsuarios() {
     return data || []
 }
 
+/**
+ * Retorna usuários candidatos ordenados por candidatos.created_at DESC.
+ * Usado pelo filtro "Últimos candidatos" no painel admin.
+ */
+export async function listarUsuariosUltimosCandidatos() {
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
+
+    // Busca candidatos ordenados pelo created_at da tabela candidatos
+    const { data: cands, error: candError } = await (admin.from('candidatos') as any)
+        .select('id, user_id, whatsapp, telefone, share_token, created_at, candidato_documentos(id, titulo, tipo)')
+        .order('created_at', { ascending: false })
+
+    if (candError || !cands || cands.length === 0) return []
+
+    const userIds = cands.map((c: any) => c.user_id).filter(Boolean)
+
+    const { data: users, error: usersError } = await (admin.from('users') as any)
+        .select(`
+            *,
+            empresas (
+                id,
+                nome_fantasia,
+                razao_social,
+                whatsapp,
+                telefone
+            )
+        `)
+        .in('id', userIds)
+
+    if (usersError || !users) return []
+
+    // Mapa de candidato por user_id
+    const candMap: Record<number, any> = {}
+    for (const c of cands) candMap[c.user_id] = c
+
+    // Mapeia users e injeta _candidato, preservando a ordem de candidatos.created_at
+    const userMap: Record<number, any> = {}
+    for (const u of users) userMap[u.id] = u
+
+    return userIds
+        .filter((uid: number) => userMap[uid])
+        .map((uid: number) => ({
+            ...userMap[uid],
+            _candidato: candMap[uid] || null
+        }))
+}
+
 export async function buscarUsuario(id: number) {
     let admin;
     try {

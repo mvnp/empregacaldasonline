@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan, Edit2 } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan, Edit2, Clock } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -15,35 +16,57 @@ import type { User as UserType } from '@/types/user'
 
 const POR_PAGINA = 18
 
-export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[] }) {
+export default function AdminUsuariosClient({ usuarios, filtroTipoInicial = '' }: { usuarios: UserType[], filtroTipoInicial?: string }) {
+    const router = useRouter()
     const [lista, setLista] = useState(usuarios)
     const [busca, setBusca] = useState('')
-    const [filtroTipo, setFiltroTipo] = useState('')
+    const [filtroTipo, setFiltroTipo] = useState(filtroTipoInicial)
     const [filtroStatus, setFiltroStatus] = useState('')
     const [exibidos, setExibidos] = useState(POR_PAGINA)
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
         setIsMounted(true)
+        // Não restaura filtroTipo do localStorage quando vier via searchParam
         const savedBusca = localStorage.getItem('usuarios_busca')
-        const savedTipo = localStorage.getItem('usuarios_filtroTipo')
         const savedStatus = localStorage.getItem('usuarios_filtroStatus')
         if (savedBusca) setBusca(savedBusca)
-        if (savedTipo) setFiltroTipo(savedTipo)
+        if (!filtroTipoInicial) {
+            const savedTipo = localStorage.getItem('usuarios_filtroTipo')
+            if (savedTipo) setFiltroTipo(savedTipo)
+        }
         if (savedStatus) setFiltroStatus(savedStatus)
-    }, [])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (!isMounted) return
         if (busca) localStorage.setItem('usuarios_busca', busca)
         else localStorage.removeItem('usuarios_busca')
-        
-        if (filtroTipo) localStorage.setItem('usuarios_filtroTipo', filtroTipo)
+
+        // Não persiste ultimos_candidatos no localStorage (filtro de sessão)
+        if (filtroTipo && filtroTipo !== 'ultimos_candidatos') localStorage.setItem('usuarios_filtroTipo', filtroTipo)
         else localStorage.removeItem('usuarios_filtroTipo')
-        
+
         if (filtroStatus) localStorage.setItem('usuarios_filtroStatus', filtroStatus)
         else localStorage.removeItem('usuarios_filtroStatus')
     }, [busca, filtroTipo, filtroStatus, isMounted])
+
+    // Quando o filtro muda para/de ultimos_candidatos, navega via URL para acionar o server component
+    function handleFiltroTipoChange(valor: string) {
+        if (valor === 'ultimos_candidatos') {
+            setFiltroTipo(valor)
+            setExibidos(POR_PAGINA)
+            router.push('/admin/usuarios?filtroTipo=ultimos_candidatos')
+        } else if (filtroTipo === 'ultimos_candidatos') {
+            // Saindo de ultimos_candidatos: recarrega sem o searchParam
+            setFiltroTipo(valor)
+            setExibidos(POR_PAGINA)
+            router.push('/admin/usuarios')
+        } else {
+            setFiltroTipo(valor)
+            setExibidos(POR_PAGINA)
+        }
+    }
 
     const [modalSenha, setModalSenha] = useState<number | null>(null)
     const [novaSenha, setNovaSenha] = useState('')
@@ -63,18 +86,20 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             const matchBusca = u.nome.toLowerCase().includes(busca.toLowerCase()) || u.email.toLowerCase().includes(busca.toLowerCase())
             if (busca && !matchBusca) return false
             if (filtroTipo) {
-                if (filtroTipo === 'candidato_sem_cv' || filtroTipo === 'candidato_com_cv') {
+                if (filtroTipo === 'ultimos_candidatos') {
+                    // Sem filtro de tipo no cliente — o backend já retornou candidatos ordenados por created_at
+                } else if (filtroTipo === 'candidato_sem_cv' || filtroTipo === 'candidato_com_cv') {
                     if (u.tipo !== 'candidato') return false
                     const cand = (u as any)._candidato
-                    
+
                     const documents = cand?.candidato_documentos || []
-                    const temPdfNoBanco = documents.some((d: any) => 
-                        d.tipo?.toLowerCase() === 'pdf' && 
+                    const temPdfNoBanco = documents.some((d: any) =>
+                        d.tipo?.toLowerCase() === 'pdf' &&
                         (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
                     )
-                    
-                    if (filtroTipo === 'candidato_sem_cv' && temPdfNoBanco) return false 
-                    if (filtroTipo === 'candidato_com_cv' && !temPdfNoBanco) return false 
+
+                    if (filtroTipo === 'candidato_sem_cv' && temPdfNoBanco) return false
+                    if (filtroTipo === 'candidato_com_cv' && !temPdfNoBanco) return false
                 } else {
                     if (u.tipo !== filtroTipo) return false
                 }
@@ -105,7 +130,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             window.location.reload()
         }
     }
-    
+
     async function handleSwitchAccount(id: number, tipo: string) {
         const res = await iniciarImpersonacao(id)
         if (res.success) {
@@ -119,11 +144,11 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
 
     async function handleMudarPermissao(id: number, novoTipo: 'admin' | 'empregador' | 'candidato') {
         const c = window.confirm(`Deseja alterar a permissão deste usuário para ${novoTipo.toUpperCase()}?`)
-        if(!c) return;
-        
+        if (!c) return;
+
         const old = lista.find(u => u.id === id)?.tipo
         setLista(prev => prev.map(u => u.id === id ? { ...u, tipo: novoTipo } : u))
-        
+
         const res = await atualizarTipoUsuario(id, novoTipo)
         if (!res.success && old) {
             alert('Erro: ' + res.error)
@@ -142,7 +167,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             return
         }
         if (!modalSenha) return
-        
+
         setSenhaLoading(true)
         const res = await atualizarSenhaUsuario(modalSenha, novaSenha)
         setSenhaLoading(false)
@@ -159,12 +184,12 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
     async function handlePdfBotao(userId: number, nome: string) {
         // Verificar cache
         if (pdfCache[userId] === 'loading') return
-        
+
         if (pdfCache[userId] === undefined) {
             setPdfCache(prev => ({ ...prev, [userId]: 'loading' }))
             const result = await buscarDocumentoPDFDoUsuario(userId)
             setPdfCache(prev => ({ ...prev, [userId]: result ? { url: result.url } : null }))
-            
+
             if (result) {
                 window.open(result.url, '_blank')
             } else {
@@ -231,7 +256,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                 }
             />
 
-            <AdminFilterBar 
+            <AdminFilterBar
                 onBuscar={() => setExibidos(POR_PAGINA)}
                 temFiltroAtivo={!!(busca || filtroTipo || filtroStatus)}
                 onLimpar={() => {
@@ -243,15 +268,17 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
             >
                 <FilterSearchInput value={busca} onChange={setBusca} placeholder="Buscar por nome ou e-mail..." />
                 <FilterSelect
-                    icon={Shield} value={filtroTipo}
-                    onChange={v => { setFiltroTipo(v); setExibidos(POR_PAGINA) }}
+                    icon={filtroTipo === 'ultimos_candidatos' ? Clock : Shield} value={filtroTipo}
+                    onChange={handleFiltroTipoChange}
                     placeholder="Permissão"
+                    flex="0 1 300px"
                     opcoes={[
                         { value: 'admin', label: 'Admin' },
                         { value: 'empregador', label: 'Empregador' },
                         { value: 'candidato', label: 'Candidato' },
                         { value: 'candidato_com_cv', label: 'Candidato com CV' },
-                        { value: 'candidato_sem_cv', label: 'Candidato sem CV' }
+                        { value: 'candidato_sem_cv', label: 'Candidato sem CV' },
+                        { value: 'ultimos_candidatos', label: 'Últimos candidatos' }
                     ]}
                 />
                 <FilterSelect
@@ -280,38 +307,38 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         }}>
                             {u.tipo === 'admin' ? <Shield size={20} /> : (u.tipo === 'empregador' ? <Briefcase size={20} /> : <User size={20} />)}
                         </div>
-                        
+
                         <div style={{ flex: 1, minWidth: 200 }}>
                             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#09355F', margin: '0 0 0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <span>
-                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 
-                                    ? (u as any).empresas[0].nome_fantasia || (u as any).empresas[0].razao_social || `${u.nome} ${u.sobrenome}`
-                                    : `${u.nome} ${u.sobrenome}`
-                                }
+                                    {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0
+                                        ? (u as any).empresas[0].nome_fantasia || (u as any).empresas[0].razao_social || `${u.nome} ${u.sobrenome}`
+                                        : `${u.nome} ${u.sobrenome}`
+                                    }
                                 </span>
-                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 400}}>(Empresa Vinculada)</span>}
+                                {u.tipo === 'empregador' && (u as any).empresas && (u as any).empresas.length > 0 && <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 400 }}>(Empresa Vinculada)</span>}
 
                                 {(u.tipo === 'candidato' || u.tipo === 'empregador') && ((): any => {
                                     const cand = (u as any)._candidato;
                                     const emp = (u as any).empresas?.[0];
-                                    
+
                                     const whatsapp = cand?.whatsapp || emp?.whatsapp;
                                     const telefone = cand?.telefone || emp?.telefone || u.telefone;
-                                    
+
                                     const numFinal = whatsapp || telefone;
                                     const clearNum = numFinal ? numFinal.replace(/\D/g, '') : '';
-                                    
-                                    if(!clearNum) return null;
+
+                                    if (!clearNum) return null;
 
                                     const temWhatsApp = !!whatsapp;
 
                                     return (
                                         <a href={`https://wa.me/55${clearNum}`} target="_blank" rel="noopener noreferrer" style={{
                                             display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                            padding: '2px 8px', borderRadius: 8, 
-                                            background: temWhatsApp ? '#dcfce7' : '#fef3c7', 
+                                            padding: '2px 8px', borderRadius: 8,
+                                            background: temWhatsApp ? '#dcfce7' : '#fef3c7',
                                             color: temWhatsApp ? '#16a34a' : '#d97706',
-                                            fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', 
+                                            fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none',
                                             border: `1px solid ${temWhatsApp ? '#bbf7d0' : '#fde68a'}`
                                         }}>
                                             <MessageCircle size={12} /> Chat
@@ -324,8 +351,8 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                     const temPdf = pdfCache[u.id] !== null && pdfCache[u.id] !== undefined && pdfCache[u.id] !== 'loading'
                                     const cand = (u as any)._candidato
                                     const shareToken = cand?.share_token
-                                    const temPdfNoBanco = cand?.candidato_documentos?.some((d: any) => 
-                                        d.tipo?.toLowerCase() === 'pdf' && 
+                                    const temPdfNoBanco = cand?.candidato_documentos?.some((d: any) =>
+                                        d.tipo?.toLowerCase() === 'pdf' &&
                                         (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
                                     )
                                     return (
@@ -339,7 +366,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                                     padding: '2px 8px', borderRadius: 8,
                                                     background: temPdfNoBanco ? '#dc2626' : (temPdf ? '#eff6ff' : '#f8fafc'),
                                                     color: temPdfNoBanco ? '#fff' : (temPdf ? '#2563eb' : '#94a3b8'),
-                                                    fontSize: '0.7rem', fontWeight: 700, 
+                                                    fontSize: '0.7rem', fontWeight: 700,
                                                     border: `1px solid ${temPdfNoBanco ? '#b91c1c' : (temPdf ? '#bfdbfe' : '#e2e8f0')}`,
                                                     cursor: isLoading ? 'not-allowed' : 'pointer'
                                                 }}
@@ -348,7 +375,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                                 {isLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : (temPdf || temPdfNoBanco ? <FileText size={12} /> : <Upload size={12} />)}
                                                 PDF
                                             </button>
-                                            
+
                                             <a
                                                 href={shareToken ? `/publico/candidato/ver-curriculo/${shareToken}` : '#'}
                                                 target={shareToken ? "_blank" : "_self"}
@@ -359,13 +386,13 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                                                     padding: '2px 8px', borderRadius: 8,
                                                     background: shareToken ? '#f8fafc' : '#f1f5f9',
                                                     color: shareToken ? '#64748b' : '#cbd5e1',
-                                                    fontSize: '0.7rem', fontWeight: 700, 
+                                                    fontSize: '0.7rem', fontWeight: 700,
                                                     border: `1px solid ${shareToken ? '#e2e8f0' : '#f1f5f9'}`,
                                                     textDecoration: 'none',
                                                     cursor: shareToken ? 'pointer' : 'not-allowed',
                                                     pointerEvents: shareToken ? 'auto' : 'none'
                                                 }}
-                                                onClick={e => { if(!shareToken) e.preventDefault() }}
+                                                onClick={e => { if (!shareToken) e.preventDefault() }}
                                             >
                                                 <ExternalLink size={12} /> CV
                                             </a>
@@ -379,8 +406,8 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <select 
-                                value={u.tipo} 
+                            <select
+                                value={u.tipo}
                                 onChange={e => handleMudarPermissao(u.id, e.target.value as any)}
                                 style={{
                                     padding: '0.3rem 0.6rem', borderRadius: 8, border: '1px solid #e8edf5',
@@ -421,7 +448,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                             }}>
                                 <Key size={14} /> Senha
                             </button>
-                            
+
                             <button onClick={() => handleSwitchAccount(u.id, u.tipo)} style={{
                                 background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8,
                                 padding: '0.35rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
@@ -429,7 +456,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                             }}>
                                 <User size={14} /> Switch Account
                             </button>
-                            
+
                             <button onClick={() => handleExcluir(u.id)} style={{
                                 background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,
                                 padding: '0.35rem 0.65rem', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
@@ -441,7 +468,7 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                     </div>
                 ))}
             </div>
-            
+
             <LoadMoreButton
                 totalFiltrado={filtrados.length}
                 exibidos={exibidos}
@@ -461,16 +488,16 @@ export default function AdminUsuariosClient({ usuarios }: { usuarios: UserType[]
                         <form onSubmit={handleSalvarSenha}>
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>Nova Senha</label>
-                                <input 
-                                    type="password" required minLength={6} 
+                                <input
+                                    type="password" required minLength={6}
                                     value={novaSenha} onChange={e => setNovaSenha(e.target.value)}
                                     style={{ width: '100%', padding: '0.6rem', borderRadius: 8, border: '1px solid #cbd5e1' }}
                                 />
                             </div>
                             <div style={{ marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>Confirmar Senha</label>
-                                <input 
-                                    type="password" required minLength={6} 
+                                <input
+                                    type="password" required minLength={6}
                                     value={confirmaSenha} onChange={e => setConfirmaSenha(e.target.value)}
                                     style={{ width: '100%', padding: '0.6rem', borderRadius: 8, border: '1px solid #cbd5e1' }}
                                 />
