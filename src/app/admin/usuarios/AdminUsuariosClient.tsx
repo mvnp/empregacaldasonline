@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan, Edit2, Clock } from 'lucide-react'
+import { User, Shield, Briefcase, Mail, Trash2, Key, Filter, CheckCircle, Slash, MessageCircle, FileText, Upload, X, AlertCircle, Loader2, ExternalLink, FileScan, Edit2, Clock, AlertTriangle } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSearchInput from '@/components/admin/FilterSearchInput'
@@ -355,6 +355,8 @@ export default function AdminUsuariosClient({ usuarios, filtroTipoInicial = '' }
                                         d.tipo?.toLowerCase() === 'pdf' &&
                                         (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
                                     )
+                                    // Tem PDF mas currículo digital incompleto (sem resumo ou sem whatsapp)
+                                    const semCurriculoDigital = temPdfNoBanco && (!cand?.resumo || !cand?.whatsapp)
                                     return (
                                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                                             <button
@@ -396,6 +398,20 @@ export default function AdminUsuariosClient({ usuarios, filtroTipoInicial = '' }
                                             >
                                                 <ExternalLink size={12} /> CV
                                             </a>
+
+                                            {semCurriculoDigital && (
+                                                <span
+                                                    title="Tem PDF mas currículo digital incompleto (sem resumo ou WhatsApp)"
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 18, height: 18, borderRadius: '50%',
+                                                        background: '#fef3c7', border: '1.5px solid #fbbf24',
+                                                        color: '#d97706', flexShrink: 0, cursor: 'help'
+                                                    }}
+                                                >
+                                                    <AlertTriangle size={10} strokeWidth={2.5} />
+                                                </span>
+                                            )}
                                         </div>
                                     )
                                 })()}

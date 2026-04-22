@@ -32,7 +32,7 @@ export async function listarUsuarios() {
     if (candidatoUsers.length > 0) {
         const ids = candidatoUsers.map((u: any) => u.id)
         const { data: cands } = await (admin.from('candidatos') as any)
-            .select('id, user_id, whatsapp, telefone, share_token, candidato_documentos(id, titulo, tipo)')
+            .select('id, user_id, whatsapp, telefone, share_token, resumo, candidato_documentos(id, titulo, tipo)')
             .in('user_id', ids)
         
         const candMap: Record<number, any> = {}
@@ -61,7 +61,7 @@ export async function listarUsuariosUltimosCandidatos() {
 
     // Busca candidatos ordenados pelo created_at da tabela candidatos
     const { data: cands, error: candError } = await (admin.from('candidatos') as any)
-        .select('id, user_id, whatsapp, telefone, share_token, created_at, candidato_documentos(id, titulo, tipo)')
+        .select('id, user_id, whatsapp, telefone, share_token, resumo, created_at, candidato_documentos(id, titulo, tipo)')
         .order('created_at', { ascending: false })
 
     if (candError || !cands || cands.length === 0) return []
