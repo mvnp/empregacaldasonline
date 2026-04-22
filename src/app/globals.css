@@ -932,6 +932,11 @@ body {
 
 @media (max-width: 768px) {
 
+  /* Auth card: padding reduzido no mobile */
+  .auth-card {
+    padding: 1.5rem;
+  }
+
   /* Navbar: hambúrguer aparece, nav some */
   .nav-desktop {
     display: none;
