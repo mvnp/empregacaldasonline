@@ -860,3 +860,40 @@ export async function buscarCandidatoParaCategorizacao(candidatoId: number) {
         return null
     }
 }
+
+/**
+ * Busca o PDF de currículo de um candidato (pelo candidato_id) e retorna base64 + nome.
+ * Usado pelo botão "Usar arquivo já carregado" nos modais de extração via IA.
+ */
+export async function buscarPdfBase64DoCandidato(candidatoId: number): Promise<{ base64: string, nome: string } | null> {
+    try {
+        const admin = await requireAdmin()
+
+        // Busca o documento PDF na tabela candidato_documentos
+        const { data: docs } = await (admin.from('candidato_documentos') as any)
+            .select('url, titulo, tipo')
+            .eq('candidato_id', candidatoId)
+            .order('created_at', { ascending: false })
+
+        const pdfDoc = (docs || []).find((d: any) =>
+            d.tipo?.toUpperCase() === 'PDF' &&
+            (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
+        )
+
+        if (!pdfDoc?.url) return null
+
+        // Faz fetch do arquivo via URL pública
+        const response = await fetch(pdfDoc.url)
+        if (!response.ok) return null
+
+        const arrayBuffer = await response.arrayBuffer()
+        const base64 = Buffer.from(arrayBuffer).toString('base64')
+
+        // Extrai nome do arquivo da URL
+        const nome = pdfDoc.url.split('/').pop()?.split('?')[0] || 'curriculo.pdf'
+
+        return { base64, nome }
+    } catch {
+        return null
+    }
+}

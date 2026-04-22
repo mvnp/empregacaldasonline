@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, User, Briefcase, GraduationCap,
@@ -8,7 +9,7 @@ import {
     Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan
 } from 'lucide-react'
 import {
-    cadastrarCandidatoViaPDF,
+    cadastrarCandidatoViaPDF, buscarPdfBase64DoCandidato,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem,
 } from '@/actions/candidatos'
 import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA, gerarHabilidadesComIA } from '@/actions/openai'
@@ -87,6 +88,10 @@ interface FormState {
 
 /* ── Componente principal ── */
 export default function CadastrarCandidatoPDFPage() {
+    const searchParams = useSearchParams()
+    const candidatoIdParam = searchParams.get('candidatoId')
+    const candidatoIdInicial = candidatoIdParam ? Number(candidatoIdParam) : null
+
     /* Modal PDF */
     const [showPdfModal, setShowPdfModal] = useState(true)
     const [pdfFile, setPdfFile] = useState<File | null>(null)
@@ -96,6 +101,8 @@ export default function CadastrarCandidatoPDFPage() {
     const [pdfErro, setPdfErro] = useState('')
     const [pdfStep, setPdfStep] = useState<'upload' | 'reading' | 'done'>('upload')
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [semCurriculoDigital, setSemCurriculoDigital] = useState(false)
+    const [usandoPdfCarregado, setUsandoPdfCarregado] = useState(false)
 
     /* Form */
     const [loading, setLoading] = useState(false)
@@ -139,6 +146,46 @@ export default function CadastrarCandidatoPDFPage() {
     ])
     const [habilidades, setHabilidades] = useState<string[]>([''])
     const [idiomas, setIdiomas] = useState<IdiomaItem[]>([{ idioma: 'Português', nivel: 'nativo' }])
+
+    /* ── Verificar semCurriculoDigital ao montar (se vier com candidatoId) ── */
+    useEffect(() => {
+        if (!candidatoIdInicial) return
+        // Verifica documentos do candidato para saber se tem PDF sem cv digital
+        import('@/actions/candidatos').then(({ buscarCandidatoPorId }) => {
+            buscarCandidatoPorId(candidatoIdInicial).then(res => {
+                if (!res.success || !res.data) return
+                const c = res.data
+                const docs: any[] = c.candidato_documentos || []
+                const temPdf = docs.some((d: any) =>
+                    d.tipo?.toUpperCase() === 'PDF' &&
+                    (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
+                )
+                setSemCurriculoDigital(temPdf && (!c.resumo || !c.whatsapp))
+            })
+        })
+    }, [candidatoIdInicial]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    /* ── Usar PDF já carregado no banco ── */
+    async function usarPdfJaCarregado() {
+        if (!candidatoIdInicial) return
+        setUsandoPdfCarregado(true)
+        setPdfErro('')
+        try {
+            const resultado = await buscarPdfBase64DoCandidato(candidatoIdInicial)
+            if (!resultado) {
+                setPdfErro('Não foi possível recuperar o arquivo PDF do banco.')
+                return
+            }
+            setPdfBase64(resultado.base64)
+            const blob = new Blob([Buffer.from(resultado.base64, 'base64')], { type: 'application/pdf' })
+            const file = new File([blob], resultado.nome, { type: 'application/pdf' })
+            setPdfFile(file)
+        } catch {
+            setPdfErro('Erro ao recuperar o PDF.')
+        } finally {
+            setUsandoPdfCarregado(false)
+        }
+    }
 
     /* ── Converter file para base64 ── */
     function fileToBase64(file: File): Promise<string> {
@@ -1126,6 +1173,29 @@ export default function CadastrarCandidatoPDFPage() {
                                 >
                                     {pdfFile ? 'Fechar' : 'Cancelar'}
                                 </button>
+                                {semCurriculoDigital && (
+                                    <button
+                                        type="button"
+                                        onClick={usarPdfJaCarregado}
+                                        disabled={usandoPdfCarregado}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            padding: '0.6rem 1.25rem', borderRadius: 8,
+                                            border: '1.5px solid #d97706',
+                                            background: usandoPdfCarregado ? '#fef3c7' : '#fffbeb',
+                                            color: '#92400e', fontWeight: 700,
+                                            cursor: usandoPdfCarregado ? 'not-allowed' : 'pointer',
+                                            fontSize: '0.85rem',
+                                        }}
+                                    >
+                                        {usandoPdfCarregado ? (
+                                            <div style={{ width: 14, height: 14, border: '2px solid #d97706', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                                        ) : (
+                                            <FileText style={{ width: 14, height: 14 }} />
+                                        )}
+                                        {usandoPdfCarregado ? 'Carregando...' : 'Usar arquivo já carregado'}
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleLerPDF}
                                     disabled={!pdfFile || pdfLoading}

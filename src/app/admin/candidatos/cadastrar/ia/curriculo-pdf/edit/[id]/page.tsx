@@ -9,7 +9,7 @@ import {
     Upload, CheckCircle, AlertCircle, Loader2, Target, FileScan, RefreshCw, Tag
 } from 'lucide-react'
 import {
-    atualizarCandidato, buscarCandidatoPorId,
+    atualizarCandidato, buscarCandidatoPorId, buscarPdfBase64DoCandidato,
     type ExperienciaItem, type FormacaoItem, type IdiomaItem, type CandidatoFormData,
 } from '@/actions/candidatos'
 import { extrairDadosCurriculoPDF, gerarResumoComIA, gerarCargoComIA, gerarDescricaoExperienciaComIA, gerarHabilidadesComIA } from '@/actions/openai'
@@ -122,6 +122,8 @@ export default function EditarCandidatoPDFPage() {
     const [expIALoading, setExpIALoading] = useState<Record<number, boolean>>({})
     const [expIAErro, setExpIAErro] = useState<Record<number, string>>({})
     const [showCategorizarModal, setShowCategorizarModal] = useState(false)
+    const [semCurriculoDigital, setSemCurriculoDigital] = useState(false)
+    const [usandoPdfCarregado, setUsandoPdfCarregado] = useState(false)
 
     const [form, setForm] = useState<FormState>(FORM_VAZIO)
     const [experiencias, setExperiencias] = useState<ExperienciaItem[]>([
@@ -190,6 +192,14 @@ export default function EditarCandidatoPDFPage() {
             const ids = c.candidato_idiomas || []
             setIdiomas(ids.length > 0 ? ids.map((i: any) => ({ idioma: i.idioma || '', nivel: i.nivel || '' })) : [{ idioma: 'Português', nivel: 'nativo' }])
 
+            // Detecta se tem PDF mas não tem currículo digital completo
+            const docs: any[] = c.candidato_documentos || []
+            const temPdf = docs.some((d: any) =>
+                d.tipo?.toUpperCase() === 'PDF' &&
+                (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
+            )
+            setSemCurriculoDigital(temPdf && (!c.resumo || !c.whatsapp))
+
             setCarregando(false)
         })
     }, [candidatoId])
@@ -202,6 +212,28 @@ export default function EditarCandidatoPDFPage() {
             reader.onerror = reject
             reader.readAsDataURL(file)
         })
+    }
+
+    /* ── Usar PDF já carregado no banco ── */
+    async function usarPdfJaCarregado() {
+        setUsandoPdfCarregado(true)
+        setPdfErro('')
+        try {
+            const resultado = await buscarPdfBase64DoCandidato(candidatoId)
+            if (!resultado) {
+                setPdfErro('Não foi possível recuperar o arquivo PDF do banco.')
+                return
+            }
+            setPdfBase64(resultado.base64)
+            // Cria um File sintético para manter compatibilidade com o fluxo
+            const blob = new Blob([Buffer.from(resultado.base64, 'base64')], { type: 'application/pdf' })
+            const file = new File([blob], resultado.nome, { type: 'application/pdf' })
+            setPdfFile(file)
+        } catch {
+            setPdfErro('Erro ao recuperar o PDF.')
+        } finally {
+            setUsandoPdfCarregado(false)
+        }
     }
 
     /* ── Selecionar PDF ── */
@@ -775,6 +807,26 @@ export default function EditarCandidatoPDFPage() {
                                         <button type="button" onClick={() => { setShowPdfModal(false); setPdfErro('') }} style={{ flex: 1, padding: '0.75rem', borderRadius: 12, background: '#f1f5f9', border: 'none', color: '#64748b', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem' }}>
                                             Cancelar
                                         </button>
+                                        {semCurriculoDigital && (
+                                            <button
+                                                type="button"
+                                                onClick={usarPdfJaCarregado}
+                                                disabled={usandoPdfCarregado}
+                                                style={{
+                                                    flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                                    padding: '0.75rem', borderRadius: 12, border: '1.5px solid #d97706',
+                                                    background: usandoPdfCarregado ? '#fef3c7' : '#fffbeb',
+                                                    color: '#92400e', fontWeight: 700,
+                                                    cursor: usandoPdfCarregado ? 'not-allowed' : 'pointer', fontSize: '0.85rem'
+                                                }}
+                                            >
+                                                {usandoPdfCarregado
+                                                    ? <><Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> Carregando...
+                                                    </>
+                                                    : <><FileText size={15} /> Usar arquivo já carregado</>
+                                                }
+                                            </button>
+                                        )}
                                         <button type="button" onClick={handleLerPDF} disabled={!pdfFile || pdfLoading} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: 12, background: (!pdfFile || pdfLoading) ? '#94a3b8' : 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontWeight: 800, border: 'none', cursor: (!pdfFile || pdfLoading) ? 'not-allowed' : 'pointer', fontSize: '0.9rem', boxShadow: pdfFile ? '0 4px 12px rgba(245,158,11,0.4)' : 'none' }}>
                                             {pdfLoading ? <><Loader2 size={16} style={{ animation: 'spin 0.8s linear infinite' }} /> Processando...</> : <><RefreshCw size={16} /> Re-extrair com IA</>}
                                         </button>
