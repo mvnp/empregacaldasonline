@@ -869,31 +869,60 @@ export async function buscarPdfBase64DoCandidato(candidatoId: number): Promise<{
     try {
         const admin = await requireAdmin()
 
-        // Busca o documento PDF na tabela candidato_documentos
-        const { data: docs } = await (admin.from('candidato_documentos') as any)
+        // Busca todos os documentos do candidato
+        const { data: docs, error } = await (admin.from('candidato_documentos') as any)
             .select('url, titulo, tipo')
             .eq('candidato_id', candidatoId)
-            .order('created_at', { ascending: false })
 
-        const pdfDoc = (docs || []).find((d: any) =>
-            d.tipo?.toUpperCase() === 'PDF' &&
-            (d.titulo === 'Currículo (PDF)' || d.titulo === 'Curriculo (PDF)')
+        if (error) {
+            console.error('[buscarPdfBase64] Query error:', error.message)
+            return null
+        }
+
+        if (!docs || docs.length === 0) {
+            console.warn('[buscarPdfBase64] Nenhum documento para candidato_id:', candidatoId)
+            return null
+        }
+
+        // Localiza o PDF pelo tipo ou título ou extensão
+        const pdfDoc = (docs as any[]).find((d: any) =>
+            d.tipo?.toUpperCase() === 'PDF' ||
+            d.titulo?.toLowerCase().includes('pdf') ||
+            d.url?.toLowerCase().endsWith('.pdf')
         )
 
-        if (!pdfDoc?.url) return null
+        if (!pdfDoc?.url) {
+            console.warn('[buscarPdfBase64] Nenhum PDF encontrado. Docs:', JSON.stringify(docs))
+            return null
+        }
 
-        // Faz fetch do arquivo via URL pública
-        const response = await fetch(pdfDoc.url)
-        if (!response.ok) return null
+        // Extrai o storage path da URL pública
+        // Formato: https://xxx.supabase.co/storage/v1/object/public/curriculos/arquivos/filename.pdf
+        const match = pdfDoc.url.match(/\/public\/curriculos\/(.+?)(\?|$)/)
+        if (!match) {
+            console.warn('[buscarPdfBase64] URL fora do padrão esperado:', pdfDoc.url)
+            return null
+        }
 
-        const arrayBuffer = await response.arrayBuffer()
+        const storagePath = decodeURIComponent(match[1])
+        const nome = storagePath.split('/').pop() || 'curriculo.pdf'
+
+        // Download via Supabase Storage SDK (não depende de fetch externo)
+        const { data: blob, error: downloadError } = await admin.storage
+            .from('curriculos')
+            .download(storagePath)
+
+        if (downloadError || !blob) {
+            console.error('[buscarPdfBase64] Download error:', downloadError?.message, 'path:', storagePath)
+            return null
+        }
+
+        const arrayBuffer = await blob.arrayBuffer()
         const base64 = Buffer.from(arrayBuffer).toString('base64')
 
-        // Extrai nome do arquivo da URL
-        const nome = pdfDoc.url.split('/').pop()?.split('?')[0] || 'curriculo.pdf'
-
         return { base64, nome }
-    } catch {
+    } catch (e: any) {
+        console.error('[buscarPdfBase64] Exceção:', e?.message)
         return null
     }
 }
