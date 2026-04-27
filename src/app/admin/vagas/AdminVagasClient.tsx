@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
     MapPin, Building2, Briefcase, Eye, Calendar,
@@ -36,15 +37,20 @@ function mapVaga(v: any): VagaAdmin {
 }
 
 export default function AdminVagasClient() {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+
     const [vagas, setVagas] = useState<VagaAdmin[]>([])
     const [total, setTotal] = useState(0)
     const [totalPages, setTotalPages] = useState(1)
-    const [currentPage, setCurrentPage] = useState(1)
 
-    const [busca, setBusca] = useState('')
-    const [filtroStatus, setFiltroStatus] = useState('')
-    const [filtroModalidade, setFiltroModalidade] = useState('')
-    const [filtroCidade, setFiltroCidade] = useState('')
+    // Estados iniciais vindos da URL para persistência
+    const [busca, setBusca] = useState(searchParams.get('busca') || '')
+    const [filtroStatus, setFiltroStatus] = useState(searchParams.get('status') || '')
+    const [filtroModalidade, setFiltroModalidade] = useState(searchParams.get('modalidade') || '')
+    const [filtroCidade, setFiltroCidade] = useState(searchParams.get('cidade') || '')
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1)
 
     const [carregando, setCarregando] = useState(true)
     const [cidadesOpcoes, setCidadesOpcoes] = useState<{ value: string; label: string }[]>([])
@@ -88,17 +94,35 @@ export default function AdminVagasClient() {
         })
     }, [])
 
-    // Dispara busca com debounce quando filtros mudam
+    // Dispara busca com debounce quando filtros mudam e sincroniza com a URL
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current)
         debounceRef.current = setTimeout(() => {
-            buscarVagas({ busca, status: filtroStatus, modalidade: filtroModalidade, cidade: filtroCidade, page: 1 })
+            // Sincronizar estados com a URL
+            const params = new URLSearchParams()
+            if (busca) params.set('busca', busca)
+            if (filtroStatus) params.set('status', filtroStatus)
+            if (filtroModalidade) params.set('modalidade', filtroModalidade)
+            if (filtroCidade) params.set('cidade', filtroCidade)
+            if (currentPage > 1) params.set('page', String(currentPage))
+
+            const query = params.toString()
+            const url = query ? `${pathname}?${query}` : pathname
+            router.replace(url, { scroll: false })
+
+            buscarVagas({ 
+                busca, 
+                status: filtroStatus, 
+                modalidade: filtroModalidade, 
+                cidade: filtroCidade, 
+                page: currentPage 
+            })
         }, 350)
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    }, [busca, filtroStatus, filtroModalidade, filtroCidade, buscarVagas])
+    }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router])
 
     function handlePageChange(newPage: number) {
-        buscarVagas({ busca, status: filtroStatus, modalidade: filtroModalidade, cidade: filtroCidade, page: newPage })
+        setCurrentPage(newPage)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
@@ -154,7 +178,7 @@ export default function AdminVagasClient() {
                     <input
                         type="text"
                         value={busca}
-                        onChange={e => setBusca(e.target.value)}
+                        onChange={e => { setBusca(e.target.value); setCurrentPage(1); }}
                         placeholder="Buscar vaga ou empresa..."
                         style={{
                             width: '100%', paddingLeft: 36, paddingRight: carregando && busca ? 36 : 12,
@@ -177,7 +201,7 @@ export default function AdminVagasClient() {
 
                 <FilterSelect
                     icon={Filter} value={filtroStatus}
-                    onChange={v => setFiltroStatus(v)}
+                    onChange={v => { setFiltroStatus(v); setCurrentPage(1); }}
                     placeholder="Status"
                     opcoes={[
                         { value: 'ativa', label: 'Ativa' },
@@ -188,7 +212,7 @@ export default function AdminVagasClient() {
                 />
                 <FilterSelect
                     icon={Briefcase} value={filtroModalidade}
-                    onChange={v => setFiltroModalidade(v)}
+                    onChange={v => { setFiltroModalidade(v); setCurrentPage(1); }}
                     placeholder="Modalidade"
                     opcoes={[
                         { value: 'Remoto', label: 'Remoto' }, { value: 'Híbrido', label: 'Híbrido' },
@@ -198,7 +222,7 @@ export default function AdminVagasClient() {
                 />
                 <FilterSelect
                     icon={MapPin} value={filtroCidade}
-                    onChange={v => setFiltroCidade(v)}
+                    onChange={v => { setFiltroCidade(v); setCurrentPage(1); }}
                     placeholder="Cidade" flex="0 1 180px"
                     opcoes={cidadesOpcoes}
                 />
