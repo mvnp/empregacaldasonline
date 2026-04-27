@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import {
-    UploadCloud, ArrowLeft, ImageIcon, CheckCircle2, XCircle,
+    UploadCloud, ArrowLeft, ImageIcon, CheckCircle2, XCircle, X,
     Loader2, AlertCircle, ExternalLink, RefreshCw, FileImage, Database
 } from 'lucide-react'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
