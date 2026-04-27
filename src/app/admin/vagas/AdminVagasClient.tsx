@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
     MapPin, Building2, Briefcase, Eye, Calendar,
-    Users, Filter, Plus, Trash2, Search, Loader2, ChevronLeft, ChevronRight
+    Users, Filter, Plus, Trash2, Search, Loader2, ChevronLeft, ChevronRight, UploadCloud
 } from 'lucide-react'
 import { VagaAdmin, getStatusColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
@@ -27,7 +27,7 @@ function mapVaga(v: any): VagaAdmin {
         local: v.local || 'Não informado',
         modalidade: v.modalidade,
         candidaturas: (v.candidaturas || []).length,
-        status: v.status as 'ativa' | 'pausada' | 'expirada',
+        status: v.status as 'ativa' | 'pausada' | 'expirada' | 'rascunho',
         dataPublicacao: `${ano}-${mes}-${dia}`,
         salario: v.salario_min ? `R$ ${v.salario_min}` : 'A combinar',
         nivel: v.nivel,
@@ -119,16 +119,28 @@ export default function AdminVagasClient() {
                 titulo="Vagas"
                 subtitulo={carregando ? 'Buscando...' : `${total} vagas encontradas`}
                 acao={
-                    <Link href="/admin/vagas/cadastrar" style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                        padding: '0.6rem 1.25rem', borderRadius: 10,
-                        background: 'linear-gradient(135deg, #09355F, #0d4a80)',
-                        color: '#fff', fontSize: '0.82rem', fontWeight: 700,
-                        textDecoration: 'none', boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
-                        transition: 'all 0.18s',
-                    }}>
-                        <Plus style={{ width: 16, height: 16 }} /> Cadastrar Vaga
-                    </Link>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Link href="/admin/vagas/em-massa" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                            padding: '0.6rem 1.25rem', borderRadius: 10,
+                            background: 'linear-gradient(135deg, #FE8341, #f97316)',
+                            color: '#fff', fontSize: '0.82rem', fontWeight: 700,
+                            textDecoration: 'none', boxShadow: '0 4px 12px rgba(254,131,65,0.3)',
+                            transition: 'all 0.18s',
+                        }}>
+                            <UploadCloud style={{ width: 16, height: 16 }} /> Vagas em Massa
+                        </Link>
+                        <Link href="/admin/vagas/cadastrar" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                            padding: '0.6rem 1.25rem', borderRadius: 10,
+                            background: 'linear-gradient(135deg, #09355F, #0d4a80)',
+                            color: '#fff', fontSize: '0.82rem', fontWeight: 700,
+                            textDecoration: 'none', boxShadow: '0 4px 12px rgba(9,53,95,0.25)',
+                            transition: 'all 0.18s',
+                        }}>
+                            <Plus style={{ width: 16, height: 16 }} /> Cadastrar Vaga
+                        </Link>
+                    </div>
                 }
             />
 
@@ -167,7 +179,12 @@ export default function AdminVagasClient() {
                     icon={Filter} value={filtroStatus}
                     onChange={v => setFiltroStatus(v)}
                     placeholder="Status"
-                    opcoes={[{ value: 'ativa', label: 'Ativa' }, { value: 'pausada', label: 'Pausada' }, { value: 'expirada', label: 'Expirada' }]}
+                    opcoes={[
+                        { value: 'ativa', label: 'Ativa' },
+                        { value: 'pausada', label: 'Pausada' },
+                        { value: 'expirada', label: 'Expirada' },
+                        { value: 'rascunho', label: 'Rascunho' },
+                    ]}
                 />
                 <FilterSelect
                     icon={Briefcase} value={filtroModalidade}

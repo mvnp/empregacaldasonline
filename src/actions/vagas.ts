@@ -446,6 +446,55 @@ export async function listarVagasAdmin(filtros: FiltrosAdmin = {}): Promise<List
     }
 }
 
+// ── Listar vagas para página Em Massa (rascunho → pausada → ativa, created_at DESC) ──
+export interface VagaEmMassaItem {
+    id: number
+    titulo: string
+    empresa: string
+    status: string
+    modalidade: string
+    nivel: string | null
+    created_at: string
+    vaga_imagens?: any[]
+}
+
+export interface ListagemEmMassaResult {
+    vagas: VagaEmMassaItem[]
+    total: number
+    page: number
+    temMais: boolean
+}
+
+export async function listarVagasParaEmMassa(page = 1, perPage = 30): Promise<ListagemEmMassaResult> {
+    let admin: any
+    try {
+        admin = await requireAdmin()
+    } catch {
+        return { vagas: [], total: 0, page: 1, temMais: false }
+    }
+
+    const from = (page - 1) * perPage
+    const to = from + perPage - 1
+
+    // Ordenação: status DESC (r > p > e > a) = rascunho primeiro, depois created_at DESC
+    const { data, count, error } = await (admin
+        .from('vagas')
+        .select('id, titulo, empresa, status, modalidade, nivel, created_at, vaga_imagens(*)', { count: 'exact' })
+        .order('status', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(from, to) as any)
+
+    if (error) return { vagas: [], total: 0, page, temMais: false }
+
+    const total = count ?? 0
+    return {
+        vagas: data || [],
+        total,
+        page,
+        temMais: to + 1 < total,
+    }
+}
+
 // ── Listar vagas públicas com paginação e filtros ──
 export interface FiltrosPublicos {
     busca?: string
@@ -567,7 +616,7 @@ export async function buscarVaga(id: number) {
     }
 
     const [vagaRes, respRes, reqRes, difRes, benRes] = await Promise.all([
-        admin.from('vagas').select('*, candidaturas(*, candidato:candidatos(*))').eq('id', id).single(),
+        admin.from('vagas').select('*, candidaturas(*, candidato:candidatos(*)), vaga_imagens(*)').eq('id', id).single(),
         admin.from('vaga_responsabilidades').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_requisitos').select('*').eq('vaga_id', id).order('ordem'),
         admin.from('vaga_diferenciais').select('*').eq('vaga_id', id).order('ordem'),
@@ -646,5 +695,214 @@ export async function removerVaga(vagaId: number) {
         return { success: false, error: 'Erro ao excluir vaga. ' + error.message }
     }
 
+    return { success: true }
+}
+
+// ── Cadastrar Vaga em Rascunho (via IA em Massa) ──
+export async function cadastrarVagaRascunho(dadosIA: {
+    titulo?: string
+    empresa?: string
+    descricao?: string
+    local?: string
+    modalidade?: string
+    nivel?: string
+    tipo_contrato?: string
+    salario_min?: string | number
+    salario_max?: string | number
+    mostrar_salario?: boolean
+    salario_a_combinar?: boolean
+    email_contato?: string
+    telefone_contato?: string
+    whatsapp_contato?: string
+    link_externo?: string
+    destaque?: boolean
+    responsabilidades?: string[]
+    requisitos?: string[]
+    diferenciais?: string[]
+    beneficios?: string[]
+    tipo_pagamento?: string
+}) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) {
+        return { success: false, error: 'Você precisa estar logado.' }
+    }
+
+    const admin = createAdminClient()
+    const { data: user } = await admin
+        .from('users')
+        .select('id, tipo')
+        .eq('auth_id', authUser.id)
+        .single() as { data: any; error: any }
+
+    if (!user || !['admin', 'empregador'].includes(user.tipo)) {
+        return { success: false, error: 'Sem permissão para criar vagas.' }
+    }
+
+    const titulo = dadosIA.titulo?.trim() || 'Vaga sem título'
+    const empresa = dadosIA.empresa?.trim() || 'Empresa não identificada'
+
+    // Tentar encontrar empresa existente
+    let empresa_id: number | null = null
+    if (dadosIA.empresa?.trim()) {
+        empresa_id = await encontrarEmpresaExistente(
+            admin,
+            dadosIA.empresa,
+            dadosIA.telefone_contato,
+            dadosIA.whatsapp_contato,
+            dadosIA.email_contato,
+            dadosIA.link_externo
+        )
+    }
+
+    // E-mail de contato fallback
+    let email_contato = dadosIA.email_contato?.trim() || ''
+    if (!email_contato) {
+        const nomeClean = empresa.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
+        const hash = Math.floor(Math.random() * 9999).toString().padStart(4, '0')
+        email_contato = `${nomeClean}${hash}@empregacaldas.online`
+    }
+
+    // Criar empresa se não encontrou
+    if (!empresa_id) {
+        const { data: novoAuthUser } = await admin.auth.admin.createUser({
+            email: email_contato,
+            password: 'Mudar@123',
+            email_confirm: true,
+            user_metadata: { name: empresa }
+        })
+
+        let newUserId = user.id
+        if (novoAuthUser?.user) {
+            const { data: newUserDb } = await (admin.from('users') as any).insert({
+                auth_id: novoAuthUser.user.id,
+                tipo: 'empregador',
+                nome: empresa,
+                sobrenome: '(Empresa)',
+                email: email_contato
+            }).select('id').single()
+            if (newUserDb) newUserId = newUserDb.id
+        }
+
+        const { data: novaEmpresa } = await (admin.from('empresas') as any).insert({
+            user_id: newUserId,
+            nome_fantasia: empresa,
+            razao_social: empresa,
+            local: dadosIA.local?.trim() || null,
+            email_contato: email_contato,
+            telefone: dadosIA.telefone_contato?.trim() || null,
+            whatsapp: dadosIA.whatsapp_contato?.trim() || null,
+            website: dadosIA.link_externo?.trim() || null,
+            status: 'ativa'
+        }).select('id').single()
+
+        if (novaEmpresa) empresa_id = novaEmpresa.id
+    }
+
+    // ── Normalizar valores da IA para os CHECK constraints do banco ──
+    function stripAccents(s: string) {
+        return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    }
+
+    const MODALIDADE_MAP: Record<string, string> = {
+        'remoto': 'remoto', 'remote': 'remoto',
+        'hibrido': 'hibrido', 'hybrid': 'hibrido',
+        'presencial': 'presencial', 'on-site': 'presencial', 'onsite': 'presencial',
+    }
+    const NIVEL_ALLOWED = ['estagio', 'junior', 'pleno', 'senior', 'gerente', 'diretor']
+    const NIVEL_ALIAS: Record<string, string> = {
+        'estagiario': 'estagio', 'intern': 'estagio', 'trainee': 'estagio',
+        'jr': 'junior',
+        'mid': 'pleno', 'mid-level': 'pleno',
+        'sr': 'senior',
+        'manager': 'gerente',
+        'director': 'diretor',
+    }
+    const CONTRATO_MAP: Record<string, string> = {
+        'clt': 'clt', 'efetivo': 'clt', 'pj': 'pj',
+        'estagio': 'estagio',
+        'temporario': 'temporario',
+        'freelancer': 'freelancer', 'freelance': 'freelancer',
+    }
+
+    const rawModalidade = stripAccents(dadosIA.modalidade || '')
+    const modalidade = (MODALIDADE_MAP[rawModalidade] || 'presencial') as 'remoto' | 'hibrido' | 'presencial'
+
+    const rawNivel = stripAccents(dadosIA.nivel || '')
+    const nivel: string | null = NIVEL_ALLOWED.includes(rawNivel)
+        ? rawNivel
+        : (NIVEL_ALIAS[rawNivel] ?? null)
+
+    const rawContrato = stripAccents(dadosIA.tipo_contrato || '')
+    const tipo_contrato = CONTRATO_MAP[rawContrato] || null
+
+    const { data: vaga, error: vagaError } = await admin.from('vagas').insert({
+        titulo,
+        descricao: dadosIA.descricao?.trim() || null,
+        empresa,
+        local: dadosIA.local?.trim() || null,
+        modalidade,
+        tipo_contrato,
+        nivel,
+        salario_min: dadosIA.salario_min ? parseFloat(String(dadosIA.salario_min)) : null,
+        salario_max: dadosIA.salario_max ? parseFloat(String(dadosIA.salario_max)) : null,
+        mostrar_salario: dadosIA.mostrar_salario ?? false,
+        salario_a_combinar: dadosIA.salario_a_combinar ?? true,
+        email_contato,
+        telefone: dadosIA.telefone_contato?.trim() || null,
+        whatsapp: dadosIA.whatsapp_contato?.trim() || null,
+        link_externo: dadosIA.link_externo?.trim() || null,
+        status: 'rascunho',
+        destaque: dadosIA.destaque ?? false,
+        slug: slugify(titulo),
+        tipo_pagamento: dadosIA.tipo_pagamento || null,
+        criado_por: user.id,
+        empresa_id: empresa_id
+    } as any).select('id').single() as { data: any; error: any }
+
+    if (vagaError || !vaga) {
+        return { success: false, error: 'Erro ao criar vaga em rascunho: ' + (vagaError?.message || '') }
+    }
+
+    const vagaId = vaga.id
+
+    const inserirItens = async (tabela: string, itens: string[]) => {
+        const dados = (itens || [])
+            .filter(t => t?.trim())
+            .map((texto, idx) => ({ vaga_id: vagaId, texto: texto.trim(), ordem: idx }))
+        if (dados.length > 0) {
+            await (admin.from(tabela) as any).insert(dados as any)
+        }
+    }
+
+    await Promise.all([
+        inserirItens('vaga_responsabilidades', dadosIA.responsabilidades || []),
+        inserirItens('vaga_requisitos', dadosIA.requisitos || []),
+        inserirItens('vaga_diferenciais', dadosIA.diferenciais || []),
+        inserirItens('vaga_beneficios', dadosIA.beneficios || []),
+    ])
+
+    return { success: true, vagaId }
+}
+
+// ── Publicar Vaga (trocar rascunho → ativa) ──
+export async function publicarVaga(vagaId: number) {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return { success: false, error: 'Não autenticado.' }
+
+    const admin = createAdminClient()
+    const { data: user } = await admin
+        .from('users').select('id, tipo').eq('auth_id', authUser.id).single() as { data: any; error: any }
+
+    if (!user || !['admin', 'empregador'].includes(user.tipo)) {
+        return { success: false, error: 'Sem permissão.' }
+    }
+
+    const { error } = await (admin.from('vagas') as any)
+        .update({ status: 'ativa', updated_at: new Date().toISOString() })
+        .eq('id', vagaId)
+
+    if (error) return { success: false, error: 'Erro ao publicar vaga: ' + error.message }
     return { success: true }
 }

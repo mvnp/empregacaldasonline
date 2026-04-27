@@ -37,6 +37,7 @@ Acesso total ao sistema. Gerencia vagas, candidatos, empresas, relatórios e con
 |---|---|---|
 | `/admin` | `app/admin/page.tsx` | Dashboard geral (KPIs, tabelas recentes, atividade) |
 | `/admin/vagas` | `app/admin/vagas/page.tsx` | Listagem de todas as vagas (filtros + lazy load) |
+| `/admin/vagas/em-massa` | `app/admin/vagas/em-massa/page.tsx` | Upload em massa de imagens de vagas via IA → salva como rascunho |
 | `/admin/vagas/[slug]` | `app/admin/vagas/[slug]/page.tsx` | Detalhe de uma vaga (descrição, candidatos, requisitos) |
 | `/admin/gerar-vagas` | `app/admin/gerar-vagas/page.tsx` | Geração de vagas e descritivos inteligentes |
 | `/admin/candidatos` | `app/admin/candidatos/page.tsx` | Listagem de todos os candidatos (cards + lazy load) |

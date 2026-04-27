@@ -23,7 +23,7 @@ export interface VagaAdmin {
     local: string
     modalidade: string
     candidaturas: number
-    status: 'ativa' | 'pausada' | 'expirada'
+    status: 'ativa' | 'pausada' | 'expirada' | 'rascunho'
     dataPublicacao: string
     salario?: string
     nivel?: string
@@ -211,6 +211,7 @@ export function getStatusColor(status: string) {
         case 'ativa': return { bg: '#e8f5e9', color: '#2e7d32' }
         case 'pausada': return { bg: '#fff3e0', color: '#e65100' }
         case 'expirada': return { bg: '#ffebee', color: '#c62828' }
+        case 'rascunho': return { bg: '#f1f5f9', color: '#64748b' }
         default: return { bg: '#e8ecf5', color: '#09355F' }
     }
 }

@@ -31,8 +31,9 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [aiGerandoSecao, setAiGerandoSecao] = useState<Record<string, boolean>>({})
 
     // ── Estado de Imagem Salva ──
-    const [aiImageUrl, setAiImageUrl] = useState<string | null>(null)
-    const [aiRegistroId, setAiRegistroId] = useState<number | null>(null)
+    const imgDb = initialData?.vaga_imagens?.[0]
+    const [aiImageUrl, setAiImageUrl] = useState<string | null>(imgDb?.url_publica || null)
+    const [aiRegistroId, setAiRegistroId] = useState<number | null>(imgDb?.id || null)
     const [showImagePreview, setShowImagePreview] = useState(false)
 
     const [sugestoesEmpresas, setSugestoesEmpresas] = useState<string[]>([])
@@ -201,7 +202,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                 // ── Processar IA + Upload em paralelo ──────────────────
                 const [response, uploadResult] = await Promise.all([
                     extrairDadosVagaDeImagem(base64Image),
-                    salvarImagemVaga(base64Image, aiFile.name, null),
+                    salvarImagemVaga(base64Image, aiFile.name, isEdit ? vagaId : null),
                 ])
 
                 // ── Salvar image URL para preview ──────────────────────
@@ -320,8 +321,12 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                         <ArrowLeft style={{ width: 18, height: 18 }} />
                     </Link>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F' }}>Cadastrar Vaga</h1>
-                        <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Preencha os dados da nova vaga</p>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#09355F' }}>
+                            {isEdit ? 'Editar Vaga' : 'Cadastrar Vaga'}
+                        </h1>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            {isEdit ? `Editando detalhes da vaga #${vagaId}` : 'Preencha os dados da nova vaga'}
+                        </p>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
