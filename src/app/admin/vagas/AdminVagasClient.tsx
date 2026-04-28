@@ -123,7 +123,8 @@ export default function AdminVagasClient() {
             }
 
             // Só faz o replace se a query atual for diferente da desejada (persistência)
-            if (searchParams.toString() !== query) {
+            const currentSearch = window.location.search.replace('?', '')
+            if (currentSearch !== query) {
                 router.replace(url, { scroll: false })
             }
 
@@ -137,7 +138,7 @@ export default function AdminVagasClient() {
             })
         }, 400)
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router, searchParams, vagas.length])
+    }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router])
 
     // Carrega filtros do sessionStorage no mount se a URL estiver vazia
     useEffect(() => {
