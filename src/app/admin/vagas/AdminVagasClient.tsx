@@ -11,7 +11,7 @@ import { VagaAdmin, getStatusColor } from '@/data/admin'
 import AdminPageHeader from '@/components/admin/AdminPageHeader'
 import AdminFilterBar from '@/components/admin/AdminFilterBar'
 import FilterSelect from '@/components/admin/FilterSelect'
-import { removerVaga, listarVagasAdmin } from '@/actions/vagas'
+import { removerVaga, listarVagasAdmin, buscarCidadesVagas } from '@/actions/vagas'
 
 const POR_PAGINA = 18
 
@@ -55,8 +55,9 @@ export default function AdminVagasClient() {
     const [carregando, setCarregando] = useState(true)
     const [cidadesOpcoes, setCidadesOpcoes] = useState<{ value: string; label: string }[]>([])
 
-    // Debounce ref
+    // Referências para controle de busca e debounce
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastSearchParamsRef = useRef<string>('')
 
     const buscarVagas = useCallback(async (params: {
         busca: string
@@ -65,6 +66,7 @@ export default function AdminVagasClient() {
         cidade: string
         page: number
     }) => {
+        console.log('[AdminVagasClient] Iniciando buscarVagas:', params)
         setCarregando(true)
         try {
             const res = await listarVagasAdmin({
@@ -75,22 +77,23 @@ export default function AdminVagasClient() {
                 page: params.page,
                 perPage: POR_PAGINA,
             })
+            console.log('[AdminVagasClient] Resultados recebidos:', res.vagas.length)
             setVagas(res.vagas.map(mapVaga))
             setTotal(res.total)
             setTotalPages(res.totalPages)
             setCurrentPage(params.page)
+        } catch (err) {
+            console.error('[AdminVagasClient] Erro ao buscar vagas:', err)
         } finally {
             setCarregando(false)
+            console.log('[AdminVagasClient] Carregando finalizado.')
         }
     }, [])
 
-    // Carrega cidades uma vez (sem filtro de busca, para ter todas as opções)
+    // Carrega cidades uma vez de forma otimizada via Server Action
     useEffect(() => {
-        listarVagasAdmin({ perPage: 9999 }).then(res => {
-            const cidades = [...new Set(
-                res.vagas.map((v: any) => v.local).filter(Boolean)
-            )].map(c => ({ value: c, label: c }))
-            setCidadesOpcoes(cidades)
+        buscarCidadesVagas().then(cidades => {
+            setCidadesOpcoes(cidades.map(c => ({ value: c, label: c })))
         })
     }, [])
 
@@ -98,7 +101,6 @@ export default function AdminVagasClient() {
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current)
         debounceRef.current = setTimeout(() => {
-            // Sincronizar estados com a URL
             const params = new URLSearchParams()
             if (busca) params.set('busca', busca)
             if (filtroStatus) params.set('status', filtroStatus)
@@ -108,8 +110,19 @@ export default function AdminVagasClient() {
 
             const query = params.toString()
             const url = query ? `${pathname}?${query}` : pathname
-            router.replace(url, { scroll: false })
+            
+            // Evita busca duplicada se os parâmetros forem idênticos ao último fetch
+            if (lastSearchParamsRef.current === query && vagas.length > 0) {
+                setCarregando(false)
+                return
+            }
 
+            // Só faz o replace se a query atual for diferente da desejada (persistência)
+            if (searchParams.toString() !== query) {
+                router.replace(url, { scroll: false })
+            }
+
+            lastSearchParamsRef.current = query
             buscarVagas({ 
                 busca, 
                 status: filtroStatus, 
@@ -117,9 +130,9 @@ export default function AdminVagasClient() {
                 cidade: filtroCidade, 
                 page: currentPage 
             })
-        }, 350)
+        }, 400)
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router])
+    }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router, searchParams, vagas.length])
 
     function handlePageChange(newPage: number) {
         setCurrentPage(newPage)
@@ -168,7 +181,7 @@ export default function AdminVagasClient() {
                 }
             />
 
-            <AdminFilterBar onBuscar={() => buscarVagas({ busca, status: filtroStatus, modalidade: filtroModalidade, cidade: filtroCidade, page: 1 })}>
+            <AdminFilterBar onBuscar={() => {}}>
                 {/* Campo de busca customizado com ícone de loading */}
                 <div style={{ position: 'relative', flex: '1 1 260px' }}>
                     <Search style={{

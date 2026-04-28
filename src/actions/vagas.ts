@@ -379,7 +379,27 @@ export interface ListagemVagasAdminResult {
     totalPages: number
 }
 
+export async function buscarCidadesVagas(): Promise<string[]> {
+    let admin;
+    try {
+        admin = await requireAdmin();
+    } catch {
+        return [];
+    }
+
+    const { data, error } = await admin
+        .from('vagas')
+        .select('local')
+        .not('local', 'is', null);
+
+    if (error || !data) return [];
+
+    const cidades = [...new Set(data.map((v: any) => v.local))] as string[];
+    return cidades.sort();
+}
+
 export async function listarVagasAdmin(filtros: FiltrosAdmin = {}): Promise<ListagemVagasAdminResult> {
+    console.log('[vagas] listarVagasAdmin filtros:', filtros)
     let admin;
     try {
         admin = await requireAdmin();
