@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
     ArrowLeft, Save, Plus, X, Briefcase,
@@ -18,6 +19,7 @@ interface VagaFormClientProps {
 }
 
 export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaFormClientProps) {
+    const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
     const [sucesso, setSucesso] = useState('')
@@ -170,6 +172,17 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
             // ── Vincular imagem à vaga recém-criada ──────────────────
             if (aiRegistroId && resultado.vagaId) {
                 await vincularImagemVaga(aiRegistroId, resultado.vagaId).catch(() => null)
+            }
+
+            // ── Redirecionamento se for edição ─────────────────────────
+            if (isEdit) {
+                setSucesso(`Vaga "${formData.titulo}" atualizada com sucesso! Redirecionando...`)
+                setLoading(false)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+                setTimeout(() => {
+                    router.push('/admin/vagas')
+                }, 1500)
+                return
             }
 
             // ── Reset completo do formulário para novo cadastro ────────
