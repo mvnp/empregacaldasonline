@@ -16,6 +16,14 @@ export default function AdminFilterBar({ children, onBuscar, onLimpar, temFiltro
             display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
         }}>
             {children}
+            <button
+                onClick={onBuscar}
+                className="btn-primary"
+                style={{ height: 40, padding: '0 1.25rem', borderRadius: 10, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}
+            >
+                <Search style={{ width: 14, height: 14 }} /> Buscar
+            </button>
+
             {onLimpar && temFiltroAtivo && (
                 <button
                     onClick={onLimpar}
@@ -31,13 +39,6 @@ export default function AdminFilterBar({ children, onBuscar, onLimpar, temFiltro
                     Limpar Filtros
                 </button>
             )}
-            <button
-                onClick={onBuscar}
-                className="btn-primary"
-                style={{ height: 40, padding: '0 1.25rem', borderRadius: 10, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}
-            >
-                <Search style={{ width: 14, height: 14 }} /> Buscar
-            </button>
         </div>
     )
 }

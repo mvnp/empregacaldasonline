@@ -111,6 +111,11 @@ export default function AdminVagasClient() {
             const query = params.toString()
             const url = query ? `${pathname}?${query}` : pathname
             
+            // Salvar no sessionStorage para persistência entre navegações
+            sessionStorage.setItem('admin_vagas_filters', JSON.stringify({
+                busca, status: filtroStatus, modalidade: filtroModalidade, cidade: filtroCidade, page: currentPage
+            }))
+
             // Evita busca duplicada se os parâmetros forem idênticos ao último fetch
             if (lastSearchParamsRef.current === query && vagas.length > 0) {
                 setCarregando(false)
@@ -133,6 +138,31 @@ export default function AdminVagasClient() {
         }, 400)
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router, searchParams, vagas.length])
+
+    // Carrega filtros do sessionStorage no mount se a URL estiver vazia
+    useEffect(() => {
+        const saved = sessionStorage.getItem('admin_vagas_filters')
+        if (saved && !searchParams.toString()) {
+            try {
+                const f = JSON.parse(saved)
+                if (f.busca) setBusca(f.busca)
+                if (f.status) setFiltroStatus(f.status)
+                if (f.modalidade) setFiltroModalidade(f.modalidade)
+                if (f.cidade) setFiltroCidade(f.cidade)
+                if (f.page) setCurrentPage(f.page)
+            } catch (e) {}
+        }
+    }, [])
+
+    function handleLimparFiltros() {
+        setBusca('')
+        setFiltroStatus('')
+        setFiltroModalidade('')
+        setFiltroCidade('')
+        setCurrentPage(1)
+        sessionStorage.removeItem('admin_vagas_filters')
+        router.replace(pathname, { scroll: false })
+    }
 
     // Atualiza a lista quando a janela ganha foco (útil pois Editar abre em nova aba)
     useEffect(() => {
@@ -193,7 +223,11 @@ export default function AdminVagasClient() {
                 }
             />
 
-            <AdminFilterBar onBuscar={() => {}}>
+            <AdminFilterBar 
+                onBuscar={() => {}} 
+                onLimpar={handleLimparFiltros}
+                temFiltroAtivo={!!(busca || filtroStatus || filtroModalidade || filtroCidade)}
+            >
                 {/* Campo de busca customizado com ícone de loading */}
                 <div style={{ position: 'relative', flex: '1 1 260px' }}>
                     <Search style={{
