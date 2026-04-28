@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
     LayoutDashboard, Briefcase, Users, Building2, BarChart3,
-    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText, Megaphone, Lock
+    Settings, LogOut, ChevronLeft, ChevronRight, Bell, Search, Menu, X, List, User, FileText, Megaphone, Lock, Image
 } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 
@@ -14,6 +14,7 @@ import { useUser } from '@/contexts/UserContext'
 // ─────────────────────────────────────────────────────────────
 const ADMIN_MENU = [
     { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { label: 'Biblioteca', href: '/admin/biblioteca', icon: Image },
     { label: 'Artigos do Blog', href: '/admin/blog', icon: FileText },
     { label: 'Vagas', href: '/admin/vagas', icon: Briefcase },
     { label: 'Candidatos', href: '/admin/candidatos', icon: Users },

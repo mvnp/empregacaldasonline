@@ -1105,3 +1105,30 @@ body {
       padding-right: 1.25rem !important;
   }
 }
+/* ── Biblioteca de Mídia ─────────────────────── */
+.media-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.media-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(9, 53, 95, 0.12);
+  border-color: #2AB9C0 !important;
+}
+
+.media-card:hover .card-actions {
+  opacity: 1 !important;
+}
+
+.card-actions {
+  transition: opacity 0.2s ease;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
