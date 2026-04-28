@@ -134,6 +134,18 @@ export default function AdminVagasClient() {
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     }, [busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas, pathname, router, searchParams, vagas.length])
 
+    // Atualiza a lista quando a janela ganha foco (útil pois Editar abre em nova aba)
+    useEffect(() => {
+        const handleFocus = () => {
+            // Só atualiza se não estiver carregando e já houver parâmetros definidos
+            if (!carregando) {
+                buscarVagas({ busca, status: filtroStatus, modalidade: filtroModalidade, cidade: filtroCidade, page: currentPage })
+            }
+        }
+        window.addEventListener('focus', handleFocus)
+        return () => window.removeEventListener('focus', handleFocus)
+    }, [carregando, busca, filtroStatus, filtroModalidade, filtroCidade, currentPage, buscarVagas])
+
     function handlePageChange(newPage: number) {
         setCurrentPage(newPage)
         window.scrollTo({ top: 0, behavior: 'smooth' })
