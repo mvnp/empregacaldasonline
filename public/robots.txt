@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Bloquear áreas administrativas e privadas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /cadastro
+Disallow: /esqueci-a-senha
+
+# Sitemap
+Sitemap: https://empregacaldas.online/sitemap.xml
