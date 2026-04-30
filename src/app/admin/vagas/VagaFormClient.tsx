@@ -29,6 +29,13 @@ function toTitleCase(str: string) {
     }).join(' ');
 }
 
+function toCentsString(val: any) {
+    if (val === undefined || val === null || val === '') return ''
+    const num = typeof val === 'number' ? val : parseFloat(String(val).replace(',', '.'))
+    if (isNaN(num)) return ''
+    return Math.round(num * 100).toString()
+}
+
 export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaFormClientProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
@@ -67,10 +74,10 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         modalidade: (initialData?.modalidade || '') as VagaFormData['modalidade'],
         tipo_contrato: initialData?.tipo_contrato || '',
         nivel: initialData?.nivel || '',
-        salario_min: initialData?.salario_min ? formatCurrency(String(initialData.salario_min)) : '',
-        salario_max: initialData?.salario_max ? formatCurrency(String(initialData.salario_max)) : '',
+        salario_min: initialData?.salario_min ? formatCurrency(toCentsString(initialData.salario_min)) : formatCurrency("162100"),
+        salario_max: initialData?.salario_max ? formatCurrency(toCentsString(initialData.salario_max)) : formatCurrency("162100"),
         mostrar_salario: true,
-        salario_a_combinar: initialData ? initialData.salario_a_combinar : false,
+        salario_a_combinar: true,
         email_contato: initialData?.email_contato || '',
         telefone_contato: initialData?.telefone_contato ? formatPhoneInput(initialData.telefone_contato) : (initialData?.telefone ? formatPhoneInput(initialData.telefone) : ''),
         whatsapp_contato: initialData?.whatsapp_contato ? formatPhoneInput(initialData.whatsapp_contato) : (initialData?.whatsapp ? formatPhoneInput(initialData.whatsapp) : ''),
@@ -137,8 +144,8 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         titulo: '', descricao: '', empresa: '', local: '',
         modalidade: '' as VagaFormData['modalidade'],
         tipo_contrato: '', nivel: '',
-        salario_min: '', salario_max: '',
-        mostrar_salario: true, salario_a_combinar: false,
+        salario_min: formatCurrency("162100"), salario_max: formatCurrency("162100"),
+        mostrar_salario: true, salario_a_combinar: true,
         email_contato: '', telefone_contato: '', whatsapp_contato: '',
         link_externo: '', json_content: '', status: 'ativa', destaque: false,
         tipo_pagamento: null,
@@ -272,18 +279,15 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     const rawMin = json.remuneracao?.minimo
                     const rawMax = json.remuneracao?.maximo
                     
-                    updateField('salario_a_combinar', false)
+                    updateField('salario_a_combinar', true)
                     updateField('mostrar_salario', true)
 
                     if (!rawMin && !rawMax) {
                         updateField('salario_min', formatCurrency("162100"))
                         updateField('salario_max', formatCurrency("162100"))
                     } else {
-                        if (rawMin) updateField('salario_min', formatCurrency(String(rawMin).replace(/\./g, '')))
-                        else updateField('salario_min', formatCurrency("162100"))
-                        
-                        if (rawMax) updateField('salario_max', formatCurrency(String(rawMax).replace(/\./g, '')))
-                        else updateField('salario_max', formatCurrency("162100"))
+                        updateField('salario_min', formatCurrency(rawMin ? toCentsString(rawMin) : "162100"))
+                        updateField('salario_max', formatCurrency(rawMax ? toCentsString(rawMax) : "162100"))
                     }
 
                     // ─── Arrays (Responsabilidades, Benefícios...) ───
