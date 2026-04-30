@@ -18,6 +18,17 @@ interface VagaFormClientProps {
     isEdit?: boolean;
 }
 
+function toTitleCase(str: string) {
+    if (!str) return '';
+    const preposicoes = ["a", "ante", "após", "até", "com", "contra", "de", "desde", "em", "entre", "para", "perante", "por", "sem", "sob", "sobre", "trás", "do", "da", "dos", "das", "no", "na", "nos", "nas"];
+    return str.toLowerCase().split(' ').map((word, index) => {
+        if (preposicoes.includes(word) && index !== 0) {
+            return word;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+}
+
 export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaFormClientProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
@@ -49,7 +60,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     }, [])
 
     const [form, setForm] = useState({
-        titulo: initialData?.titulo || '',
+        titulo: toTitleCase(initialData?.titulo || ''),
         descricao: initialData?.descricao || '',
         empresa: initialData?.empresa || '',
         local: initialData?.local || '',
@@ -58,14 +69,14 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
         nivel: initialData?.nivel || '',
         salario_min: initialData?.salario_min ? formatCurrency(String(initialData.salario_min)) : '',
         salario_max: initialData?.salario_max ? formatCurrency(String(initialData.salario_max)) : '',
-        mostrar_salario: initialData ? initialData.mostrar_salario : true,
+        mostrar_salario: true,
         salario_a_combinar: initialData ? initialData.salario_a_combinar : false,
         email_contato: initialData?.email_contato || '',
         telefone_contato: initialData?.telefone_contato ? formatPhoneInput(initialData.telefone_contato) : (initialData?.telefone ? formatPhoneInput(initialData.telefone) : ''),
         whatsapp_contato: initialData?.whatsapp_contato ? formatPhoneInput(initialData.whatsapp_contato) : (initialData?.whatsapp ? formatPhoneInput(initialData.whatsapp) : ''),
         link_externo: initialData?.link_externo || '',
         json_content: initialData?.json_content ? JSON.stringify(initialData.json_content, null, 2) : '',
-        status: initialData?.status || 'ativa',
+        status: (initialData?.status === 'rascunho' || !initialData?.status) ? 'ativa' : initialData.status,
         destaque: initialData ? initialData.destaque : false,
         tipo_pagamento: initialData?.tipo_pagamento || null,
     })
@@ -76,19 +87,14 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
     const [beneficios, setBeneficios] = useState<string[]>(initialData?.beneficios?.length ? initialData.beneficios : [''])
 
     function updateField(field: string, value: any) {
-        setForm(prev => ({ ...prev, [field]: value }))
+        let val = value
+        if (field === 'titulo' && typeof value === 'string') {
+            val = toTitleCase(value)
+        }
+        setForm(prev => ({ ...prev, [field]: val }))
     }
 
-    function toTitleCase(str: string) {
-        if (!str) return '';
-        const preposicoes = ["a", "ante", "após", "até", "com", "contra", "de", "desde", "em", "entre", "para", "perante", "por", "sem", "sob", "sobre", "trás"];
-        return str.toLowerCase().split(' ').map((word, index) => {
-            if (preposicoes.includes(word) && index !== 0) {
-                return word;
-            }
-            return word.charAt(0).toUpperCase() + word.slice(1);
-        }).join(' ');
-    }
+
 
     function formatCurrency(value: string) {
         if (!value) return ''
@@ -266,13 +272,18 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     const rawMin = json.remuneracao?.minimo
                     const rawMax = json.remuneracao?.maximo
                     
+                    updateField('salario_a_combinar', false)
+                    updateField('mostrar_salario', true)
+
                     if (!rawMin && !rawMax) {
-                        updateField('salario_a_combinar', true)
+                        updateField('salario_min', formatCurrency("162100"))
+                        updateField('salario_max', formatCurrency("162100"))
                     } else {
-                        updateField('salario_a_combinar', false)
-                        updateField('mostrar_salario', true)
                         if (rawMin) updateField('salario_min', formatCurrency(String(rawMin).replace(/\./g, '')))
+                        else updateField('salario_min', formatCurrency("162100"))
+                        
                         if (rawMax) updateField('salario_max', formatCurrency(String(rawMax).replace(/\./g, '')))
+                        else updateField('salario_max', formatCurrency("162100"))
                     }
 
                     // ─── Arrays (Responsabilidades, Benefícios...) ───

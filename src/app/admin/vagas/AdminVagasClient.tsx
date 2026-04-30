@@ -57,7 +57,7 @@ export default function AdminVagasClient() {
 
     // Referências para controle de busca e debounce
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const lastSearchParamsRef = useRef<string>('')
+    const lastSearchParamsRef = useRef<string | null>(null)
 
     const buscarVagas = useCallback(async (params: {
         busca: string
@@ -117,7 +117,7 @@ export default function AdminVagasClient() {
             }))
 
             // Evita busca duplicada se os parâmetros forem idênticos ao último fetch
-            if (lastSearchParamsRef.current === query && vagas.length > 0) {
+            if (lastSearchParamsRef.current === query) {
                 setCarregando(false)
                 return
             }
