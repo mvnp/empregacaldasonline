@@ -253,7 +253,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     if (json.descricao) updateField('descricao', json.descricao)
                     if (json.telefone || json.telefone_contato) updateField('telefone_contato', formatPhoneInput(json.telefone || json.telefone_contato))
                     if (json.whatsapp || json.whatsapp_contato) updateField('whatsapp_contato', formatPhoneInput(json.whatsapp || json.whatsapp_contato))
-                    
+
                     if (json.email_contato || json.email) {
                         updateField('email_contato', json.email_contato || json.email)
                     } else if (json.empresa) {
@@ -278,7 +278,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                     // ─── Remuneração ───
                     const rawMin = json.remuneracao?.minimo
                     const rawMax = json.remuneracao?.maximo
-                    
+
                     updateField('salario_a_combinar', true)
                     updateField('mostrar_salario', true)
 
@@ -607,7 +607,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             <div style={{ position: 'relative' }}>
                                 <input
                                     style={inputStyle} placeholder="Ex: Desenvolvedor Front-End React"
-                                    value={form.titulo} 
+                                    value={form.titulo}
                                     onChange={e => {
                                         updateField('titulo', e.target.value)
                                         setMostrarSugestoesTitulos(true)
@@ -671,7 +671,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             <div style={{ position: 'relative' }}>
                                 <input
                                     style={inputStyle} placeholder="Nome da empresa"
-                                    value={form.empresa} 
+                                    value={form.empresa}
                                     onChange={e => {
                                         updateField('empresa', e.target.value)
                                         setMostrarSugestoes(true)
@@ -683,9 +683,9 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                     (() => {
                                         const search = form.empresa.toLowerCase()
                                         const filtradas = sugestoesEmpresas.filter(e => e.toLowerCase().includes(search) && e.toLowerCase() !== search).slice(0, 5)
-                                        
+
                                         if (filtradas.length === 0) return null;
-                                        
+
                                         return (
                                             <ul style={{
                                                 position: 'absolute', top: '100%', left: 0, right: 0,
@@ -701,7 +701,7 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                                                         onClick={async () => {
                                                             updateField('empresa', empresaString)
                                                             setMostrarSugestoes(false)
-                                                            
+
                                                             // Auto-preencher contato
                                                             const dados = await buscarEmpresaPorNome(empresaString) as any
                                                             if (dados) {
@@ -843,18 +843,18 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
 
                     <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem', paddingLeft: '1.5rem' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={form.tipo_pagamento === 'Diária'} 
-                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Diária' : null)} 
+                            <input
+                                type="checkbox"
+                                checked={form.tipo_pagamento === 'Diária'}
+                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Diária' : null)}
                             />
                             Diária
                         </label>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#475569', cursor: 'pointer' }}>
-                            <input 
-                                type="checkbox" 
-                                checked={form.tipo_pagamento === 'Semanal'} 
-                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Semanal' : null)} 
+                            <input
+                                type="checkbox"
+                                checked={form.tipo_pagamento === 'Semanal'}
+                                onChange={e => updateField('tipo_pagamento', e.target.checked ? 'Semanal' : null)}
                             />
                             Semanal
                         </label>
@@ -890,9 +890,9 @@ export default function VagaFormClient({ initialData, vagaId, isEdit }: VagaForm
                             <label style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 WhatsApp
                                 {form.whatsapp_contato && form.whatsapp_contato.replace(/\D/g, '').length >= 10 && (
-                                    <a 
-                                        href={`https://wa.me/55${form.whatsapp_contato.replace(/\D/g, '')}`} 
-                                        target="_blank" rel="noreferrer" 
+                                    <a
+                                        href={`https://wa.me/55${form.whatsapp_contato.replace(/\D/g, '')}`}
+                                        target="_blank" rel="noreferrer"
                                         style={{ fontSize: '0.7rem', color: '#25D366', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
                                     >
                                         <ExternalLink size={12} /> Chat

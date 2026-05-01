@@ -36,6 +36,24 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         ))}
                     </div>
                     <VagaReportButton vagaId={vaga.id} />
+
+                    {/* Botão Mobile Falar com Contratante - Scroll para #candidatar (apenas se não estiver logado) */}
+                    {!mostrarContato && (
+                        <div className="mobile-only-warning" style={{ marginTop: '1.5rem' }}>
+                            <a
+                                href="#candidatar"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+                                    padding: '1rem', borderRadius: 12, background: '#25D366', color: '#fff',
+                                    fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none',
+                                    boxShadow: '0 4px 15px rgba(37,211,102,0.3)', textTransform: 'uppercase'
+                                }}
+                            >
+                                <MessageCircle style={{ width: 18, height: 18 }} />
+                                Falar com Contratante
+                            </a>
+                        </div>
+                    )}
                 </div>
 
                 {/* Responsabilidades */}
@@ -98,6 +116,12 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                         Abaixo disponibilizamos os meios de contato informados pelo contratante para facilitar sua comunicação. Utilize essas informações com responsabilidade e, ao entrar em contato, certifique-se de mencionar que encontrou a vaga através do Emprega Caldas para maior credibilidade no seu processo seletivo.
                     </p>
 
+
+                    {!mostrarContato && (
+                        <p id="candidatar" className="mobile-only-warning" style={{ scrollMarginTop: '40px', fontSize: '0.95rem', color: '#095f17ff', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                            <strong>Para ver os dados do contratante, clique no botão ME CANDIDATAR e se cadastre gratuitamente no portal.</strong>
+                        </p>
+                    )}
 
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
@@ -206,9 +230,9 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
 
                         {isCandidato && whatsAppUrl && (
                             <div style={{ marginTop: '1.25rem' }}>
-                                <Link 
-                                    href={whatsAppUrl} 
-                                    target={whatsAppUrl.startsWith('http') ? '_blank' : '_self'} 
+                                <Link
+                                    href={whatsAppUrl}
+                                    target={whatsAppUrl.startsWith('http') ? '_blank' : '_self'}
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
                                         padding: '1rem', borderRadius: 12, background: '#25D366', color: '#fff',
@@ -297,7 +321,7 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     }
                 }
                 @media (min-width: 901px) {
-                    .mobile-only-apply {
+                    .mobile-only-apply, .mobile-only-warning {
                         display: none !important;
                     }
                 }
