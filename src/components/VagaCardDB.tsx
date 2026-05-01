@@ -139,7 +139,7 @@ export default function VagaCardDB({ vaga }: VagaCardDBProps) {
                     <div style={{ background: '#f8fafc', border: '1.4px dashed #cbd5e1', borderRadius: 10, padding: '0.75rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                         <div>
                             <strong style={{ color: '#09355F' }}>Empresa:</strong>{' '}
-                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                            <Link href="/cadastro/candidato" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
                             <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>login</Link>
                         </div>
                         <div><strong style={{ color: '#09355F' }}>Telefone/WhatsApp:</strong> (64) *****-*****</div>

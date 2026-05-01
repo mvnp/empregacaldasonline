@@ -157,7 +157,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
         }
     }
 
-    let actionLink = `/login?redirect=/admin/candidato/vagas/${vaga.id}`
+    let actionLink = `/cadastro/candidato?vagaId=${vaga.id}`
     if (user) {
         if (isCandidato) {
             actionLink = `/admin/candidato/vagas/${vaga.id}`
@@ -177,6 +177,20 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
             }}
         >
             Candidatar-se <Send style={{ width: 16, height: 16 }} />
+        </Link>
+    )
+
+    const mobileApplyButton = (
+        <Link 
+            href={actionLink} 
+            className="btn-primary" 
+            style={{ 
+                width: '100%', padding: '1rem', fontSize: '1rem', borderRadius: 12, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', 
+                boxShadow: '0 8px 25px rgba(254,131,65,0.25)', textDecoration: 'none' 
+            }}
+        >
+            Me candidatar <Send style={{ width: 16, height: 16 }} />
         </Link>
     )
 
@@ -214,7 +228,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                                     <Building2 style={{ width: 14, height: 14 }} />
                                     {vaga.empresa === 'Empresa: Cadastre-se ou faça login' ? (
                                         <span>
-                                            <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
+                                            <Link href="/cadastro/candidato" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>Cadastre-se</Link> ou faça{' '}
                                             <Link href="/login" style={{ color: '#2AB9C0', textDecoration: 'none', outline: 'none' }}>login</Link>
                                         </span>
                                     ) : (
@@ -290,6 +304,7 @@ export default async function VagaPublicaPage({ params }: { params: Promise<{ id
                         whatsAppUrl={whatsAppUrl}
                         mostrarContato={mostrarContato}
                         actionButton={applyButton}
+                        mobileActionButton={mobileApplyButton}
                     />
                 </div>
             </main>

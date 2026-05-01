@@ -17,9 +17,10 @@ interface VagaDetailDisplayProps {
     whatsAppUrl?: string
     mostrarContato?: boolean
     extraContentDetalhes?: React.ReactNode
+    mobileActionButton?: React.ReactNode
 }
 
-export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton, vagasRelacionadas, isCandidato, whatsAppUrl, mostrarContato, extraContentDetalhes }: VagaDetailDisplayProps) {
+export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime, horario, actionButton, vagasRelacionadas, isCandidato, whatsAppUrl, mostrarContato, extraContentDetalhes, mobileActionButton }: VagaDetailDisplayProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '2rem', alignItems: 'start' }} className="vaga-detail-grid">
 
@@ -96,6 +97,8 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                     <p style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: 1.6, marginBottom: '1.5rem' }}>
                         Abaixo disponibilizamos os meios de contato informados pelo contratante para facilitar sua comunicação. Utilize essas informações com responsabilidade e, ao entrar em contato, certifique-se de mencionar que encontrou a vaga através do Emprega Caldas para maior credibilidade no seu processo seletivo.
                     </p>
+
+
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.95rem', color: '#475569' }}>
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB9C0', flexShrink: 0, marginTop: 9 }} />
@@ -135,6 +138,11 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                             </div>
                         </li>
                     </ul>
+
+                    {/* Botão Me Candidatar - Visível apenas no Mobile */}
+                    <div className="mobile-only-apply" style={{ marginTop: '2rem' }}>
+                        {mobileActionButton}
+                    </div>
                 </div>
 
                 {extraContentDetalhes}
@@ -286,6 +294,11 @@ export default function VagaDetailDisplay({ vaga, empresaPerfil, salario, regime
                 @media (max-width: 900px) {
                     .vaga-detail-grid {
                         grid-template-columns: 1fr !important;
+                    }
+                }
+                @media (min-width: 901px) {
+                    .mobile-only-apply {
+                        display: none !important;
                     }
                 }
             `}</style>
