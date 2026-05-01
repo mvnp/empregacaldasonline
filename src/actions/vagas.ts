@@ -208,7 +208,8 @@ export async function cadastrarVaga(formData: VagaFormData) {
         tipo_pagamento: formData.tipo_pagamento || null,
         json_content: formData.json_content ? JSON.parse(formData.json_content) : null,
         criado_por: user.id,
-        empresa_id: empresa_id
+        empresa_id: empresa_id,
+        updated_at: new Date().toISOString()
     } as any).select('id').single() as { data: any; error: any }
 
     if (vagaError || !vaga) {
@@ -511,6 +512,7 @@ export async function listarVagasParaEmMassa(page = 1, perPage = 30): Promise<Li
         .from('vagas')
         .select('id, titulo, empresa, status, modalidade, nivel, created_at, vaga_imagens(*)', { count: 'exact' })
         .order('status', { ascending: false })
+        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false })
         .range(from, to) as any)
 
@@ -584,6 +586,7 @@ export async function listarVagasPublicas(filtros: FiltrosPublicos = {}): Promis
         .from('vagas')
         .select('id, titulo, empresa, descricao, local, modalidade, tipo_contrato, nivel, salario_min, salario_max, mostrar_salario, salario_a_combinar, destaque, slug, created_at, tipo_pagamento')
         .eq('status', 'ativa')
+        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false })
         .range(from, to)
 
@@ -891,7 +894,8 @@ export async function cadastrarVagaRascunho(dadosIA: {
         slug: slugify(titulo),
         tipo_pagamento: dadosIA.tipo_pagamento || null,
         criado_por: user.id,
-        empresa_id: empresa_id
+        empresa_id: empresa_id,
+        updated_at: new Date().toISOString()
     } as any).select('id').single() as { data: any; error: any }
 
     if (vagaError || !vaga) {
