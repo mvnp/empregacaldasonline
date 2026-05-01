@@ -3,6 +3,7 @@
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase'
 import { requireAdmin, requireAdminOrEmpregador } from '@/lib/server-auth'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 // ── Tipos ──
 export interface VagaFormData {
@@ -233,6 +234,10 @@ export async function cadastrarVaga(formData: VagaFormData) {
         inserirItens('vaga_beneficios', formData.beneficios || []),
     ])
 
+    revalidatePath('/admin/vagas')
+    revalidatePath('/vagas')
+    revalidatePath('/')
+
     return { success: true, vagaId }
 }
 
@@ -339,6 +344,11 @@ export async function editarVaga(vagaId: number, formData: VagaFormData) {
         inserirItens('vaga_diferenciais', formData.diferenciais || []),
         inserirItens('vaga_beneficios', formData.beneficios || []),
     ])
+
+    revalidatePath('/admin/vagas')
+    revalidatePath('/vagas')
+    revalidatePath(`/vagas/${vagaId}`)
+    revalidatePath('/')
 
     return { success: true, vagaId }
 }
@@ -715,6 +725,10 @@ export async function removerVaga(vagaId: number) {
         return { success: false, error: 'Erro ao excluir vaga. ' + error.message }
     }
 
+    revalidatePath('/admin/vagas')
+    revalidatePath('/vagas')
+    revalidatePath('/')
+
     return { success: true }
 }
 
@@ -902,6 +916,11 @@ export async function cadastrarVagaRascunho(dadosIA: {
         inserirItens('vaga_beneficios', dadosIA.beneficios || []),
     ])
 
+    revalidatePath('/admin/vagas')
+    revalidatePath('/admin/vagas/em-massa')
+    revalidatePath('/vagas')
+    revalidatePath('/')
+
     return { success: true, vagaId }
 }
 
@@ -924,5 +943,9 @@ export async function publicarVaga(vagaId: number) {
         .eq('id', vagaId)
 
     if (error) return { success: false, error: 'Erro ao publicar vaga: ' + error.message }
+    revalidatePath('/admin/vagas')
+    revalidatePath('/vagas')
+    revalidatePath('/')
+    
     return { success: true }
 }
